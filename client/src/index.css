@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+:root {
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #17253b;
+  background: #f5f8fc;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --navy: #012052;
+  --blue: #52baff;
+  --blue-dark: #168fdf;
+  --ink: #17253b;
+  --muted: #6d7b90;
+  --line: #e4eaf2;
+  --canvas: #f5f8fc;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; min-height: 100%; background: #f5f8fc; }
+body { margin: 0; min-width: 320px; min-height: 100vh; }
+body, button, input, select { font: inherit; }
+button, input, select { color: inherit; }
+button { border: 0; }
+button, select { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid rgba(82, 186, 255, 0.32); outline-offset: 2px; }
+a { color: inherit; text-decoration: none; }
+#root { min-height: 100vh; }

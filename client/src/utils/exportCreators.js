@@ -1,0 +1,27 @@
+import { calculateBookingPricing } from './pricing'
+
+export function exportCreatorsToCsv(creators) {
+  const headers = [
+    'Link TikTok', 'ID TikTok', 'Segment', 'Category', 'Type', 'Cost', 'Extra/FOC (SHDA + hashtag)',
+    'Tổng Cast (Đã bao gồm thuế)', 'Booking Expense', 'Followers', 'GMV / Month', 'Scope',
+    'Contact', 'Historical campaign', 'MCN note',
+  ]
+  const rows = creators.map((creator) => {
+    const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
+    return [
+      creator.tiktokLink, creator.tiktokId, creator.segment, creator.category, creator.type, creator.cost,
+      creator.extraCost, pricing.totalCast, pricing.bookingExpense, creator.followers, creator.gmvMonth,
+      creator.scope, creator.contact, creator.historicalCampaign, creator.mcnNote,
+    ]
+  })
+  const csv = [headers, ...rows]
+    .map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(','))
+    .join('\n')
+
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'metaecom-creators.csv'
+  link.click()
+  URL.revokeObjectURL(url)
+}

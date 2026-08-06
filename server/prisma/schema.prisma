@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CAMPAIGN_MANAGER
+  MEMBER
+  VIEWER
+  CLIENT
+}
+
+model User {
+  id            String         @id @default(uuid())
+  email         String         @unique
+  password      String
+  role          Role
+  createdAt     DateTime       @default(now())
+  notifications Notification[]
+}
+
+model Creator {
+  id           String            @id @default(uuid())
+  name         String
+  channelLink  String
+  segment      String?
+  tier         String?
+  followers    Int?
+  bookingPrice Decimal?
+  phone        String?
+  email        String?
+  createdAt    DateTime          @default(now())
+  campaigns    CampaignCreator[]
+}
+
+model Campaign {
+  id          String            @id @default(uuid())
+  name        String
+  client      String
+  startDate   DateTime
+  endDate     DateTime
+  budget      Decimal?
+  description String?
+  status      String            @default("active")
+  createdAt   DateTime          @default(now())
+  creators    CampaignCreator[]
+  milestones  Milestone[]
+}
+
+model CampaignCreator {
+  id           String        @id @default(uuid())
+  campaign     Campaign      @relation(fields: [campaignId], references: [id])
+  campaignId   String
+  creator      Creator       @relation(fields: [creatorId], references: [id])
+  creatorId    String
+  deliverables Deliverable[]
+}
+
+model Deliverable {
+  id                String          @id @default(uuid())
+  campaignCreator   CampaignCreator @relation(fields: [campaignCreatorId], references: [id])
+  campaignCreatorId String
+  status            String          @default("not_started")
+  deadline          DateTime?
+  demoUrl           String?
+}
+
+model Milestone {
+  id         String   @id @default(uuid())
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  campaignId String
+  title      String
+  dueDate    DateTime
+}
+
+model ReviewLink {
+  id         String           @id @default(uuid())
+  token      String           @unique
+  campaignId String
+  expiresAt  DateTime
+  revoked    Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+  feedback   ClientFeedback[]
+}
+
+model ClientFeedback {
+  id           String     @id @default(uuid())
+  reviewLink   ReviewLink @relation(fields: [reviewLinkId], references: [id])
+  reviewLinkId String
+  action       String // "approved" | "rejected" | "revision_requested"
+  comment      String?
+  createdAt    DateTime   @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,16 @@
+/* Shared page styles */
+.page { width: min(100%,1600px); min-height: calc(100vh - 76px); margin: 0 auto; padding: 38px clamp(24px,3vw,48px) 64px; }
+.page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 30px; }
+.page-kicker { margin: 0 0 8px; color: #1686d3; font-size: 10px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+.page-heading h1 { margin: 0; color: var(--navy); font-size: clamp(29px,3vw,38px); line-height: 1.13; letter-spacing: -.045em; }
+.page-heading p:last-child { margin: 9px 0 0; color: var(--muted); font-size: 13px; }
+.primary-button, .secondary-button, .danger-text-button { min-height: 43px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 0 17px; border-radius: 11px; font-size: 12px; font-weight: 700; white-space: nowrap; transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease; }
+.primary-button { color: white; background: var(--navy); box-shadow: 0 8px 20px rgba(1,32,82,.15); }
+.primary-button:hover { background: #062e6d; box-shadow: 0 10px 23px rgba(1,32,82,.2); transform: translateY(-1px); }
+.secondary-button { border: 1px solid #dbe4ef; color: #304159; background: white; }
+.secondary-button:hover { border-color: #a9cce7; color: var(--navy); background: #f8fbfe; }
+.danger-text-button { color: #af4050; background: #fff2f4; }
+.heading-actions { display: flex; gap: 10px; }
+.metric-card, .panel { border: 1px solid var(--line); background: white; box-shadow: 0 7px 24px rgba(19,48,84,.045); }
+.panel { min-width: 0; border-radius: 18px; }
+
