@@ -3,6 +3,7 @@ import CreatorTable from './CreatorTable'
 import CreatorToolbar from './CreatorToolbar'
 import ResizeDivider from '../common/ResizeDivider'
 import Icon from '../common/Icon'
+import ImportReviewBanner from './ImportReviewBanner'
 
 const DEFAULT_COLUMN_WIDTHS = [180, 190, 90, 145, 145, 125, 190, 150, 150, 105, 145, 220, 220, 145, 220, 72]
 const DEFAULT_ROW_HEIGHT = 64
@@ -17,12 +18,12 @@ function getDensityLabel(rowHeight) {
   return 'Thoáng'
 }
 
-export default function CreatorWorkspace({ creators, filters, filterOptions, numericFilters, isFullscreen = false, canUndo = false, canRedo = false, recentlyAddedCreatorId, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onSelect, onArchive, onUpdateCreator, onDeleteCreator, onQuickAdd, onUndo, onRedo, onBeginEdit, onCommitEdit, onCancelEdit, onExport, onAddCreator, onEnterFullscreen, onExitFullscreen }) {
+export default function CreatorWorkspace({ creators, filters, filterOptions, numericFilters, isFullscreen = false, canUndo = false, canRedo = false, recentlyAddedCreatorId, importReview, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onSelect, onArchive, onUpdateCreator, onDeleteCreator, onQuickAdd, onUndo, onRedo, onBeginEdit, onCommitEdit, onCancelEdit, onAcceptImport, onCancelImport, onExport, onAddCreator, onEnterFullscreen, onExitFullscreen }) {
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
   const [headerHeight, setHeaderHeight] = useState(64)
   const [toolbarHeight, setToolbarHeight] = useState(106)
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT)
-  const [editMode, setEditMode] = useState(false)
+  const [editMode, setEditMode] = useState(Boolean(importReview))
 
   useEffect(() => {
     if (!isFullscreen || !editMode) return undefined
@@ -47,7 +48,24 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
   const enterEditMode = () => { onBeginEdit(); setEditMode(true) }
   const finishEditMode = () => { onCommitEdit(); setEditMode(false) }
   const cancelEditMode = () => { onCancelEdit(); setEditMode(false) }
-  const exitFullscreen = () => { if (editMode) onCommitEdit(); onExitFullscreen() }
+  const acceptImport = () => { onAcceptImport(); setEditMode(false) }
+  const cancelImport = () => { onCancelImport(); setEditMode(false) }
+  const exitFullscreen = () => {
+    if (importReview) onCancelImport()
+    else if (editMode) onCommitEdit()
+    onExitFullscreen()
+  }
+  useEffect(() => {
+    if (!isFullscreen) return undefined
+    const handleEscape = (event) => {
+      if (event.key !== 'Escape' || event.target.matches('input, select')) return
+      if (importReview) onCancelImport()
+      else if (editMode) onCommitEdit()
+      onExitFullscreen()
+    }
+    window.addEventListener('keydown', handleEscape)
+    return () => window.removeEventListener('keydown', handleEscape)
+  }, [editMode, importReview, isFullscreen, onCancelImport, onCommitEdit, onExitFullscreen])
   const toolbar = <CreatorToolbar filters={filters} options={filterOptions} numericFilters={numericFilters} onFilterChange={onFilterChange} onAddNumericFilter={onAddNumericFilter} onRemoveNumericFilter={onRemoveNumericFilter} onReset={onReset} onEnterFullscreen={isFullscreen ? undefined : onEnterFullscreen} />
 
   return (
@@ -55,13 +73,11 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
       {isFullscreen && (
         <>
           <header className="fullscreen-header" style={{ height: `${headerHeight}px` }}>
-            <div><span className="fullscreen-kicker">Creator Management</span><h2>Danh sách Creator</h2><p>{editMode ? 'Chế độ chỉnh sửa spreadsheet' : `${creators.length} kết quả phù hợp`}</p></div>
+            <div><span className="fullscreen-kicker">Creator Management</span><h2>Danh sách Creator</h2><p>{importReview ? `Xem trước import · ${importReview.fileName}` : editMode ? 'Chế độ chỉnh sửa spreadsheet' : `${creators.length} kết quả phù hợp`}</p></div>
             <div className="fullscreen-actions">
               <button className="secondary-button" onClick={onExport}><Icon name="download" />Export</button>
               {editMode && <div className="history-actions"><button disabled={!canUndo} onClick={onUndo} aria-label="Hoàn tác" title="Undo · Ctrl+Z"><Icon name="undo" size={17} /></button><button disabled={!canRedo} onClick={onRedo} aria-label="Quay lại" title="Redo · Ctrl+Y"><Icon name="redo" size={17} /></button></div>}
-              {editMode ? <button className="quick-add-button" onClick={onQuickAdd}><Icon name="plus" />Thêm nhanh</button> : <button className="primary-button" onClick={onAddCreator}><Icon name="plus" />Thêm Creator</button>}
-              {editMode && <button className="cancel-edit-button" onClick={cancelEditMode}><Icon name="close" size={15} />Hủy thay đổi</button>}
-              <button className={`mode-toggle-button ${editMode ? 'is-editing' : ''}`} onClick={editMode ? finishEditMode : enterEditMode}><Icon name={editMode ? 'check' : 'edit'} size={16} />{editMode ? 'Hoàn tất' : 'Chỉnh sửa'}</button>
+              {importReview ? <><button className="cancel-edit-button" onClick={cancelImport}><Icon name="close" size={15} />Hủy import</button><button className="mode-toggle-button is-editing" onClick={acceptImport}><Icon name="check" size={16} />Chấp nhận tất cả</button></> : <>{editMode ? <button className="quick-add-button" onClick={onQuickAdd}><Icon name="plus" />Thêm nhanh</button> : <button className="primary-button" onClick={onAddCreator}><Icon name="plus" />Thêm Creator</button>}{editMode && <button className="cancel-edit-button" onClick={cancelEditMode}><Icon name="close" size={15} />Hủy thay đổi</button>}<button className={`mode-toggle-button ${editMode ? 'is-editing' : ''}`} onClick={editMode ? finishEditMode : enterEditMode}><Icon name={editMode ? 'check' : 'edit'} size={16} />{editMode ? 'Hoàn tất' : 'Chỉnh sửa'}</button></>}
               <button className="fullscreen-close" onClick={exitFullscreen} aria-label="Thoát toàn màn hình"><Icon name="minimize" /></button>
             </div>
           </header>
@@ -71,8 +87,9 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
         </>
       )}
       {!isFullscreen && toolbar}
-      <div className="table-meta"><span><strong>{creators.length}</strong> Creator</span><span>{editMode ? 'Bấm vào ô để sửa · Enter để lưu · Esc để hủy nội dung đang nhập' : isFullscreen ? 'Kéo mép tiêu đề cột để điều chỉnh độ rộng · Double-click để đặt lại' : 'Cuộn ngang để xem toàn bộ thông tin'}</span></div>
-      <CreatorTable creators={creators} highlightedCreatorId={recentlyAddedCreatorId} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
+      {importReview && isFullscreen && <ImportReviewBanner review={importReview} />}
+      <div className="table-meta"><span><strong>{creators.length}</strong> Creator</span><span>{importReview ? 'Dòng xanh: dữ liệu hợp lệ, dòng lỗi được liệt kê màu đỏ phía trên' : editMode ? 'Bấm vào ô để sửa · Enter để lưu · Esc để hủy nội dung đang nhập' : isFullscreen ? 'Kéo mép tiêu đề cột để điều chỉnh độ rộng · Double-click để đặt lại' : 'Cuộn ngang để xem toàn bộ thông tin'}</span></div>
+      <CreatorTable creators={creators} highlightedCreatorIds={importReview?.importedIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
       <div className="pagination">
         <span>Hiển thị 1–{creators.length} trên {creators.length}</span>
         {isFullscreen && <div className="row-density-controls"><span>Mật độ: <strong>{getDensityLabel(rowHeight)}</strong></span><button disabled={rowHeight === MIN_ROW_HEIGHT} onClick={() => changeRowHeight(-ROW_HEIGHT_STEP)} aria-label="Giảm chiều cao hàng để xem nhiều Creator hơn" title="Xem nhiều hàng hơn"><Icon name="minus" size={14} /></button><button className="density-value" onClick={() => setRowHeight(DEFAULT_ROW_HEIGHT)} title="Đặt lại chiều cao hàng">{rowHeight}px</button><button disabled={rowHeight === MAX_ROW_HEIGHT} onClick={() => changeRowHeight(ROW_HEIGHT_STEP)} aria-label="Tăng chiều cao hàng" title="Tăng chiều cao hàng"><Icon name="plus" size={14} /></button></div>}

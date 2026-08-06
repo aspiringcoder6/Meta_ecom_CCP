@@ -5,7 +5,7 @@ export const STATUS_LABELS = {
   Archived: 'Đã lưu trữ',
 }
 
-export const CREATOR_SEGMENTS = ['MINI', 'TOP', 'MASSIVE']
+export const CREATOR_SEGMENTS = ['MINI', 'TOP', 'MASSIVE', 'FREECAST']
 
 export const CREATOR_CATEGORIES = [
   'BEAUTY', 'MOM&BABY', 'SKINCARE', 'LIFESTYLE', 'CHUYÊN GIA/DƯỢC SĨ',

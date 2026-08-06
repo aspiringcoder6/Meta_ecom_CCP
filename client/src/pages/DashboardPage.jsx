@@ -24,7 +24,7 @@ export default function DashboardPage() {
   return (
     <main className="page dashboard-page">
       <section className="page-heading dashboard-heading">
-        <div><p className="page-kicker">{today}</p><h1>Tổng quan Creator</h1><p>Theo dõi quy mô của mạng lưới Creators, GMV và Booking Expense theo tháng</p></div>
+        <div><p className="page-kicker">{today}</p><h1 className='font-bold'>Tổng quan Creator</h1><p className='font-bold'>Theo dõi quy mô của mạng lưới Creators, GMV và Booking Expense theo tháng</p></div>
         <button className="primary-button" onClick={() => navigate('/creators')}><Icon name="users" />Quản lý Creator</button>
       </section>
       <section className="metrics-grid">

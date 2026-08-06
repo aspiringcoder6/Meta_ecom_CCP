@@ -1,7 +1,7 @@
 import { calculateBookingPricing } from '../../utils/pricing'
 import { formatCompactCurrency } from '../../utils/formatters'
 
-const SEGMENT_ORDER = ['MASSIVE', 'TOP', 'MINI']
+const SEGMENT_ORDER = ['MASSIVE', 'TOP', 'MINI', 'FREECAST']
 
 export default function BookingBySegmentPanel({ creators }) {
   const segments = SEGMENT_ORDER.map((segment) => {

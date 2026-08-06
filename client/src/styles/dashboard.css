@@ -91,6 +91,6 @@
 .booking-segment-list > div > div:first-child strong { color: #34465d; font-size: 9px; }
 .booking-segment-list small { display: block; margin-top: 5px; color: #98a3b1; font-size: 7px; }
 .segment-color { width: 8px; height: 8px; border-radius: 3px; }
-.segment-color-1 { background: var(--navy); } .segment-color-2 { background: #168fde; } .segment-color-3 { background: var(--blue); }
+.segment-color-1 { background: var(--navy); } .segment-color-2 { background: #168fde; } .segment-color-3 { background: var(--blue); } .segment-color-4 { background: #cceaff; }
 .segment-expense-track { height: 5px; margin-top: 7px; border-radius: 6px; overflow: hidden; background: #edf2f7; }
 .segment-expense-track span { height: 100%; display: block; border-radius: inherit; }

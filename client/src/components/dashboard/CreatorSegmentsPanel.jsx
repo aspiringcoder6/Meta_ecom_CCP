@@ -1,7 +1,8 @@
 const SEGMENTS = [
-  { label: 'MASSIVE', colorClass: 'dot-navy' },
-  { label: 'TOP', colorClass: 'dot-blue' },
-  { label: 'MINI', colorClass: 'dot-sky' },
+  { label: 'MASSIVE', colorClass: 'dot-navy', color: 'var(--navy)' },
+  { label: 'TOP', colorClass: 'dot-blue', color: '#168fde' },
+  { label: 'MINI', colorClass: 'dot-sky', color: 'var(--blue)' },
+  { label: 'FREECAST', colorClass: 'dot-pale', color: '#cceaff' },
 ]
 
 export default function CreatorSegmentsPanel({ creators }) {
@@ -10,9 +11,13 @@ export default function CreatorSegmentsPanel({ creators }) {
     const count = creators.filter((creator) => creator.segment === segment.label).length
     return { ...segment, count, percent: total ? Math.round((count / total) * 100) : 0 }
   })
-  const massiveEnd = segments[0]?.percent || 0
-  const topEnd = massiveEnd + (segments[1]?.percent || 0)
-  const donutBackground = `conic-gradient(var(--navy) 0 ${massiveEnd}%, #168fde ${massiveEnd}% ${topEnd}%, var(--blue) ${topEnd}% 100%)`
+  let currentPercent = 0
+  const donutStops = segments.map((segment) => {
+    const start = currentPercent
+    currentPercent += total ? (segment.count / total) * 100 : 0
+    return `${segment.color} ${start}% ${currentPercent}%`
+  })
+  const donutBackground = total ? `conic-gradient(${donutStops.join(',')})` : '#edf2f7'
 
   return (
     <article className="panel segment-panel">

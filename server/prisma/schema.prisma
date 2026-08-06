@@ -6,6 +6,7 @@
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
+  moduleFormat = "esm"
 }
 
 datasource db {
@@ -30,17 +31,34 @@ model User {
 }
 
 model Creator {
-  id           String            @id @default(uuid())
-  name         String
-  channelLink  String
-  segment      String?
-  tier         String?
-  followers    Int?
-  bookingPrice Decimal?
-  phone        String?
-  email        String?
-  createdAt    DateTime          @default(now())
-  campaigns    CampaignCreator[]
+  id                 String            @id @default(uuid())
+  name               String
+  tiktokLink         String            @map("channelLink")
+  tiktokId           String            @unique
+  segment            String?
+  tier               String?
+  category           String?
+  type               String?
+  cost               Decimal           @default(0) @db.Decimal(18, 2)
+  extraCost          Decimal           @default(0) @db.Decimal(18, 2)
+  followers          Int               @default(0)
+  gmvMonth           Decimal           @default(0) @db.Decimal(18, 2)
+  scope              String?
+  contact            String?
+  historicalCampaign String            @default("Chưa hợp tác")
+  mcnNote            String?
+  engagement         Decimal           @default(0) @db.Decimal(8, 2)
+  status             String            @default("Available")
+  bookingPrice       Decimal?          @db.Decimal(18, 2)
+  phone              String?
+  email              String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  campaigns          CampaignCreator[]
+
+  @@index([category])
+  @@index([segment])
+  @@index([status])
 }
 
 model Campaign {

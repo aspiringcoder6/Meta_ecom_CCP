@@ -34,7 +34,7 @@ function ColumnResizeHandle({ index, width, onResize, onReset }) {
   return <span className="column-resize-handle" role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
-export default function CreatorTable({ creators, highlightedCreatorId, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
+export default function CreatorTable({ creators, highlightedCreatorIds = [], onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
   if (!creators.length) return <EmptyResults />
 
   const tableWidth = resizable ? columnWidths.reduce((total, width) => total + width, 0) : undefined
@@ -49,7 +49,7 @@ export default function CreatorTable({ creators, highlightedCreatorId, onSelect,
         <tbody>
           {creators.map((creator) => {
             const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
-            return <tr className={creator.id === highlightedCreatorId ? 'is-newly-added' : ''} key={creator.id} onClick={editMode ? undefined : () => onSelect(creator.id)}>
+            return <tr className={highlightedCreatorIds.includes(creator.id) ? 'is-newly-added' : ''} key={creator.id} onClick={editMode ? undefined : () => onSelect(creator.id)}>
               {editMode ? editableCell(creator, 'tiktokLink', undefined, 'sticky-link-cell') : <td className="sticky-link-cell"><a className="tiktok-link" href={creator.tiktokLink} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>{creator.tiktokLink.replace('https://www.', '')}</a></td>}
               {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
               {editMode ? editableCell(creator, 'segment', CREATOR_FIELD_OPTIONS.segment) : <td><span className="segment-tag">{creator.segment}</span></td>}
