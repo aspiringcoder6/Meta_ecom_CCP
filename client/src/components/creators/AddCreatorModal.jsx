@@ -16,7 +16,7 @@ export default function AddCreatorModal({ onClose, onAdd }) {
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const submit = (event) => {
     event.preventDefault()
-    if (!form.name.trim() || !form.handle.trim()) return
+    if (!form.handle.trim()) return
     onAdd(form)
   }
 
@@ -26,8 +26,8 @@ export default function AddCreatorModal({ onClose, onAdd }) {
       <form className="creator-modal" onSubmit={submit}>
         <div className="modal-header"><div><span className="eyebrow">Kho Creator</span><h2>Thêm Creator mới</h2><p>Tạo profile ngay. Bạn có thể bổ sung lịch sử Campaign sau.</p></div><button className="icon-button" type="button" onClick={onClose}><Icon name="close" /></button></div>
         <div className="form-grid">
-          <label className="field full-field"><span>Tên Creator <b>*</b></span><input autoFocus value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="VD: Ngọc Anh" required /></label>
-          <label className="field"><span>Handle kênh <b>*</b></span><input value={form.handle} onChange={(event) => update('handle', event.target.value)} placeholder="@creator.handle" required /></label>
+          <label className="field full-field"><span>Tên Creator</span><input autoFocus value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="VD: Ngọc Anh" required /></label>
+          <label className="field"><span>ID Tiktok <b>*</b></span><input value={form.handle} onChange={(event) => update('handle', event.target.value)} placeholder="vickiee.bae" required /></label>
           <label className="field"><span>Link TikTok</span><input value={form.tiktokLink} onChange={(event) => update('tiktokLink', event.target.value)} placeholder="https://www.tiktok.com/@..." /></label>
           <label className="field"><span>Segment</span><select value={form.segment} onChange={(event) => update('segment', event.target.value)}>{CREATOR_SEGMENTS.map((value) => <option key={value}>{value}</option>)}</select></label>
           <label className="field"><span>Category</span><select value={form.category} onChange={(event) => update('category', event.target.value)}>{CREATOR_CATEGORIES.map((value) => <option key={value}>{value}</option>)}</select></label>

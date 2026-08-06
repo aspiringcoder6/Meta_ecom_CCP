@@ -18,7 +18,7 @@
 .dashboard-grid { display: grid; gap: 18px; margin-top: 18px; }
 .dashboard-grid-primary { grid-template-columns: minmax(0,1.8fr) minmax(285px,.7fr); }
 .dashboard-grid-secondary { grid-template-columns: minmax(0,1.45fr) minmax(320px,.75fr); }
-.growth-panel, .segment-panel, .top-creators-panel, .activity-panel { padding: 22px; }
+.growth-panel, .segment-panel, .top-creators-panel, .activity-panel, .gmv-category-panel, .booking-segment-panel { padding: 22px; }
 .panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
 .panel-heading h2 { margin: 0; color: var(--navy); font-size: 15px; letter-spacing: -.015em; }
 .panel-heading p { margin: 5px 0 0; color: #8995a7; font-size: 10px; }
@@ -61,3 +61,36 @@
 .activity-item small { margin-top: 3px; color: #99a4b3; font-size: 8px; }
 .unread-dot { position: absolute; right: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--blue-dark); }
 
+/* Financial creator overview */
+.panel-total { display: grid; justify-items: end; gap: 3px; }
+.panel-total span { color: #8a97a8; font-size: 8px; }
+.panel-total strong { color: var(--navy); font-size: 17px; letter-spacing: -.03em; }
+.financial-bar-list { display: grid; gap: 16px; margin-top: 24px; }
+.financial-bar-row { display: grid; grid-template-columns: 145px minmax(120px,1fr) 92px; align-items: center; gap: 14px; }
+.financial-bar-label, .financial-bar-value { min-width: 0; display: grid; gap: 3px; }
+.financial-bar-label strong { overflow: hidden; color: #35455c; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.financial-bar-label small, .financial-bar-value small { color: #96a1b0; font-size: 8px; }
+.financial-bar-track { height: 9px; border-radius: 9px; overflow: hidden; background: #edf3f8; }
+.financial-bar-track span { height: 100%; display: block; border-radius: inherit; background: linear-gradient(90deg,var(--navy),#258fd3 70%,var(--blue)); }
+.financial-bar-value { justify-items: end; }
+.financial-bar-value strong { color: #25445f; font-size: 9px; font-variant-numeric: tabular-nums; }
+.financial-creators-table .financial-mini-header { min-height: 30px; display: grid; grid-template-columns: minmax(174px,1fr) 100px 110px 110px 56px; align-items: center; gap: 10px; padding: 0 21px 0 78px; color: #929ead; font-size: 7px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.financial-creators-table .mini-table-row { grid-template-columns: 24px 40px minmax(110px,1fr) 100px 110px 110px 56px; }
+.financial-value { min-width: 0; display: grid; gap: 2px; }
+.financial-value strong { overflow: hidden; color: #28445e; font-size: 9px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
+.financial-value small { color: #9aa5b4; font-size: 7px; }
+.financial-value.expense strong { color: #75561e; }
+.efficiency-pill { justify-self: end; padding: 5px 7px; border-radius: 8px; color: #147256; background: #e2f5ed; font-size: 9px; font-weight: 800; }
+.booking-total { display: grid; justify-items: center; margin: 19px 0 21px; padding: 17px; border: 1px solid #d8e9f5; border-radius: 15px; background: #f5fbff; }
+.booking-total span { color: #748398; font-size: 8px; }
+.booking-total strong { margin: 4px 0; color: var(--navy); font-size: 23px; letter-spacing: -.04em; }
+.booking-total small { color: #96a1b0; font-size: 8px; }
+.booking-segment-list { display: grid; gap: 17px; }
+.booking-segment-list > div > div:first-child { display: flex; align-items: center; justify-content: space-between; color: #4d5d73; font-size: 9px; }
+.booking-segment-list > div > div:first-child span { display: flex; align-items: center; gap: 7px; font-weight: 700; }
+.booking-segment-list > div > div:first-child strong { color: #34465d; font-size: 9px; }
+.booking-segment-list small { display: block; margin-top: 5px; color: #98a3b1; font-size: 7px; }
+.segment-color { width: 8px; height: 8px; border-radius: 3px; }
+.segment-color-1 { background: var(--navy); } .segment-color-2 { background: #168fde; } .segment-color-3 { background: var(--blue); }
+.segment-expense-track { height: 5px; margin-top: 7px; border-radius: 6px; overflow: hidden; background: #edf2f7; }
+.segment-expense-track span { height: 100%; display: block; border-radius: inherit; }

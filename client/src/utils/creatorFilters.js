@@ -1,0 +1,49 @@
+import { calculateBookingPricing } from './pricing'
+
+export const DEFAULT_CREATOR_FILTERS = { search: '', segment: 'all', category: 'all', type: 'all' }
+
+export const NUMERIC_FILTER_FIELDS = [
+  { value: 'cost', label: 'Cost', format: 'currency' },
+  { value: 'extraCost', label: 'Extra/FOC', format: 'currency' },
+  { value: 'totalCast', label: 'Tổng Cast', format: 'currency' },
+  { value: 'bookingExpense', label: 'Booking Expense', format: 'currency' },
+  { value: 'followers', label: 'Followers', format: 'number' },
+  { value: 'gmvMonth', label: 'GMV / Month', format: 'currency' },
+  { value: 'engagement', label: 'Engagement', format: 'percent' },
+  { value: 'campaigns', label: 'Số campaign', format: 'number' },
+]
+
+export const NUMERIC_FILTER_OPERATORS = [
+  { value: 'between', label: 'Trong khoảng' },
+  { value: 'min', label: 'Tối thiểu' },
+  { value: 'max', label: 'Tối đa' },
+  { value: 'equal', label: 'Bằng' },
+]
+
+export function getCreatorNumericValue(creator, field) {
+  if (field === 'totalCast' || field === 'bookingExpense') {
+    return calculateBookingPricing(creator.cost, creator.extraCost)[field]
+  }
+  return Number(creator[field]) || 0
+}
+
+function matchesNumericFilter(creator, filter) {
+  const creatorValue = getCreatorNumericValue(creator, filter.field)
+  const firstValue = Number(filter.value)
+  const secondValue = Number(filter.maxValue)
+  if (filter.operator === 'between') return creatorValue >= firstValue && creatorValue <= secondValue
+  if (filter.operator === 'min') return creatorValue >= firstValue
+  if (filter.operator === 'max') return creatorValue <= firstValue
+  return creatorValue === firstValue
+}
+
+export function matchesCreatorFilters(creator, filters, numericFilters = []) {
+  const query = filters.search.toLowerCase().trim()
+  const searchableValues = [creator.name, creator.tiktokId, creator.category, creator.scope, creator.contact]
+  const matchesSearch = !query || searchableValues.some((value) => String(value || '').toLowerCase().includes(query))
+  return matchesSearch
+    && (filters.segment === 'all' || creator.segment === filters.segment)
+    && (filters.category === 'all' || creator.category === filters.category)
+    && (filters.type === 'all' || creator.type === filters.type)
+    && numericFilters.every((filter) => matchesNumericFilter(creator, filter))
+}

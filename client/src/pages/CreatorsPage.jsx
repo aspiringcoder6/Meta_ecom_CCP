@@ -1,63 +1,78 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import AddCreatorModal from '../components/creators/AddCreatorModal'
 import CreatorDetailsDrawer from '../components/creators/CreatorDetailsDrawer'
 import CreatorSummary from '../components/creators/CreatorSummary'
-import CreatorTable from '../components/creators/CreatorTable'
-import CreatorToolbar from '../components/creators/CreatorToolbar'
+import CreatorWorkspace from '../components/creators/CreatorWorkspace'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
+import { DEFAULT_CREATOR_FILTERS, matchesCreatorFilters } from '../utils/creatorFilters'
 import { exportCreatorsToCsv } from '../utils/exportCreators'
 
-const DEFAULT_FILTERS = { search: '', segment: 'all', category: 'all', type: 'all' }
-
-function matchesFilters(creator, filters) {
-  const query = filters.search.toLowerCase().trim()
-  const matchesSearch = !query || [creator.name, creator.tiktokId, creator.category, creator.scope, creator.contact].some((value) => value.toLowerCase().includes(query))
-  return matchesSearch
-    && (filters.segment === 'all' || creator.segment === filters.segment)
-    && (filters.category === 'all' || creator.category === filters.category)
-    && (filters.type === 'all' || creator.type === filters.type)
-}
-
 export default function CreatorsPage() {
-  const { creators, addCreator, toggleArchive, showToast } = useApp()
-  const [filters, setFilters] = useState(DEFAULT_FILTERS)
+  const { creators, recentlyAddedCreatorId, addCreator, addQuickCreator, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
+  const [filters, setFilters] = useState(DEFAULT_CREATOR_FILTERS)
+  const [numericFilters, setNumericFilters] = useState([])
   const [selectedCreatorId, setSelectedCreatorId] = useState(null)
   const [addOpen, setAddOpen] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const filterOptions = useMemo(() => ({
     segments: [...new Set(creators.map((creator) => creator.segment))],
     categories: [...new Set(creators.map((creator) => creator.category))],
     types: [...new Set(creators.map((creator) => creator.type))],
   }), [creators])
-  const filteredCreators = useMemo(() => creators.filter((creator) => matchesFilters(creator, filters)), [creators, filters])
+  const filteredCreators = useMemo(() => creators.filter((creator) => matchesCreatorFilters(creator, filters, numericFilters)), [creators, filters, numericFilters])
   const selectedCreator = creators.find((creator) => creator.id === selectedCreatorId)
 
+  useEffect(() => {
+    if (!isFullscreen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const handleKeyDown = (event) => { if (event.key === 'Escape' && !event.target.matches('input, select')) setIsFullscreen(false) }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isFullscreen])
+
   const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
-  const handleAdd = (form) => {
-    addCreator(form)
-    setAddOpen(false)
-  }
+  const resetFilters = () => { setFilters(DEFAULT_CREATOR_FILTERS); setNumericFilters([]) }
+  const handleAdd = (form) => { addCreator(form); setAddOpen(false) }
+  const handleQuickAdd = () => { resetFilters(); addQuickCreator() }
   const handleExport = () => {
     exportCreatorsToCsv(filteredCreators)
     showToast(`Đã Export ${filteredCreators.length} profile Creator`)
+  }
+  const workspaceProps = {
+    creators: filteredCreators, filters, filterOptions, numericFilters, canUndo, canRedo, recentlyAddedCreatorId,
+    onFilterChange: updateFilter,
+    onAddNumericFilter: (filter) => setNumericFilters((current) => [...current, filter]),
+    onRemoveNumericFilter: (filterId) => setNumericFilters((current) => current.filter((filter) => filter.id !== filterId)),
+    onReset: resetFilters,
+    onSelect: setSelectedCreatorId,
+    onArchive: toggleArchive,
+    onUpdateCreator: updateCreator,
+    onDeleteCreator: deleteCreator,
+    onQuickAdd: handleQuickAdd,
+    onUndo: undoCreators,
+    onRedo: redoCreators,
+    onBeginEdit: beginCreatorEditSession,
+    onCommitEdit: commitCreatorEditSession,
+    onCancelEdit: cancelCreatorEditSession,
+    onExport: handleExport,
+    onAddCreator: () => setAddOpen(true),
   }
 
   return (
     <main className="page creators-page">
       <section className="page-heading creators-heading">
-        <div><p className="page-kicker">Kho Creator</p><h1>Creators</h1><p>Tìm kiếm, sắp xếp và quản lý mạng lưới Creator tại một nơi.</p></div>
+        <div><p className="page-kicker">Danh sách Creator</p><h1>Creators</h1><p>Tìm kiếm, sắp xếp và quản lý mạng lưới Creators một cách nhanh chóng và dễ dàng.</p></div>
         <div className="heading-actions"><button className="secondary-button" onClick={handleExport}><Icon name="download" />Export</button><button className="primary-button" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></div>
       </section>
-
       <CreatorSummary creators={creators} />
-      <section className="panel creators-panel">
-        <CreatorToolbar filters={filters} options={filterOptions} onFilterChange={updateFilter} onReset={() => setFilters(DEFAULT_FILTERS)} />
-        <div className="table-meta"><span><strong>{filteredCreators.length}</strong> Creator</span><span>Cuộn ngang để xem toàn bộ thông tin</span></div>
-        <CreatorTable creators={filteredCreators} onSelect={setSelectedCreatorId} onArchive={toggleArchive} />
-        <div className="pagination"><span>Hiển thị 1–{filteredCreators.length} trên {filteredCreators.length}</span><div><button disabled>Trước</button><button className="page-active">1</button><button disabled>Sau</button></div></div>
-      </section>
-
+      <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />
+      {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
       <CreatorDetailsDrawer creator={selectedCreator} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} />
       {addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onAdd={handleAdd} />}
     </main>

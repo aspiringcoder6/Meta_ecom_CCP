@@ -1,5 +1,6 @@
 /* Drawers, dialogs and detail views */
 .drawer-layer, .modal-layer { position: fixed; inset: 0; z-index: 70; }
+.creator-fullscreen-view ~ .drawer-layer, .creator-fullscreen-view ~ .modal-layer { z-index: 350; }
 .drawer-scrim, .modal-scrim { position: absolute; inset: 0; width: 100%; height: 100%; background: rgba(1,20,53,.46); backdrop-filter: blur(2px); }
 .creator-drawer { position: absolute; inset: 0 0 0 auto; width: min(465px,100%); display: flex; flex-direction: column; padding: 24px; overflow-y: auto; background: white; box-shadow: -20px 0 55px rgba(1,32,82,.18); animation: drawer-in 220ms ease-out; }
 @keyframes drawer-in { from { transform: translateX(100%); } }

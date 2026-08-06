@@ -1,30 +1,40 @@
 import { useNavigate } from 'react-router-dom'
-import CreatorGrowthPanel from '../components/dashboard/CreatorGrowthPanel'
+import BookingBySegmentPanel from '../components/dashboard/BookingBySegmentPanel'
 import CreatorSegmentsPanel from '../components/dashboard/CreatorSegmentsPanel'
 import CreatorsToWatch from '../components/dashboard/CreatorsToWatch'
+import GmvCategoryPanel from '../components/dashboard/GmvCategoryPanel'
 import MetricCard from '../components/dashboard/MetricCard'
-import RecentActivity from '../components/dashboard/RecentActivity'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
+import { calculateBookingPricing } from '../utils/pricing'
+import { formatAudience, formatCompactCurrency } from '../utils/formatters'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { creators } = useApp()
+  const availableCreators = creators.filter((creator) => creator.status !== 'Archived')
+  const totalFollowers = availableCreators.reduce((total, creator) => total + creator.followers, 0)
+  const totalGmv = availableCreators.reduce((total, creator) => total + creator.gmvMonth, 0)
+  const totalBookingExpense = availableCreators.reduce((total, creator) => total + calculateBookingPricing(creator.cost, creator.extraCost).bookingExpense, 0)
+  const averageFollowers = availableCreators.length ? totalFollowers / availableCreators.length : 0
+  const averageBooking = availableCreators.length ? totalBookingExpense / availableCreators.length : 0
+  const gmvEfficiency = totalBookingExpense ? totalGmv / totalBookingExpense : 0
+  const today = new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date())
 
   return (
     <main className="page dashboard-page">
       <section className="page-heading dashboard-heading">
-        <div><p className="page-kicker">Thứ Tư, 5 tháng 8</p><h1>Chào buổi sáng, Hiếu</h1><p>Đây là tình hình Creator Network của bạn hôm nay.</p></div>
-        <button className="primary-button" onClick={() => navigate('/creators')}><Icon name="users" />Khám phá Creator</button>
+        <div><p className="page-kicker">{today}</p><h1>Tổng quan Creator</h1><p>Theo dõi quy mô của mạng lưới Creators, GMV và Booking Expense theo tháng</p></div>
+        <button className="primary-button" onClick={() => navigate('/creators')}><Icon name="users" />Quản lý Creator</button>
       </section>
       <section className="metrics-grid">
-        <MetricCard icon="users" label="Tổng số Creator" value="238" trend="+12.4%" trendLabel="so với tháng trước" />
-        <MetricCard icon="userCheck" label="Hợp tác đang hoạt động" value="46" trend="+8.2%" trendLabel="so với tháng trước" tone="navy" />
-        <MetricCard icon="trending" label="Engagement trung bình" value="7.8%" trend="+1.1%" trendLabel="trên tất cả kênh" tone="mint" />
-        <MetricCard icon="sparkles" label="Creator mới trong tháng" value="24" trend="6 hồ sơ chờ duyệt" trendLabel="profile Creator" tone="warm" />
+        <MetricCard icon="users" label="Tổng số Creator" value={String(creators.length)} trend={`${availableCreators.length} khả dụng`} trendLabel={`${creators.length - availableCreators.length} Creator đang lưu trữ`} />
+        <MetricCard icon="trending" label="Tổng Followers" value={formatAudience(totalFollowers)} trend={`${formatAudience(averageFollowers)} TB`} trendLabel="Followers trung bình / Creator" tone="navy" />
+        <MetricCard icon="sparkles" label="Tổng GMV / Month" value={formatCompactCurrency(totalGmv)} trend={`${gmvEfficiency.toFixed(1)}x`} trendLabel="GMV / Booking Expense" tone="mint" />
+        <MetricCard icon="briefcase" label="Booking Expense dự kiến" value={formatCompactCurrency(totalBookingExpense)} trend={formatCompactCurrency(averageBooking)} trendLabel="Chi phí trung bình / Creator" tone="warm" />
       </section>
-      <section className="dashboard-grid dashboard-grid-primary"><CreatorGrowthPanel /><CreatorSegmentsPanel /></section>
-      <section className="dashboard-grid dashboard-grid-secondary"><CreatorsToWatch creators={creators} /><RecentActivity /></section>
+      <section className="dashboard-grid dashboard-grid-primary"><GmvCategoryPanel creators={availableCreators} /><CreatorSegmentsPanel creators={availableCreators} /></section>
+      <section className="dashboard-grid dashboard-grid-secondary"><CreatorsToWatch creators={availableCreators} /><BookingBySegmentPanel creators={availableCreators} /></section>
     </main>
   )
 }

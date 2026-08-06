@@ -5,8 +5,13 @@
   .segment-panel { display: grid; grid-template-columns: 1fr 180px minmax(230px,1fr); align-items: center; gap: 20px; }
   .segment-panel .panel-heading { align-self: start; }
   .creator-toolbar { align-items: stretch; flex-direction: column; }
+  .creator-fullscreen-view .creator-toolbar { align-items: center; flex-direction: row; }
+  .fullscreen-actions { gap: 5px; }
+  .fullscreen-actions .secondary-button { padding-inline: 11px; }
   .search-box { width: 100%; max-width: none; flex: auto; }
   .filter-group { flex-wrap: wrap; }
+  .numeric-filter-builder { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .numeric-filter-actions { align-self: end; }
 }
 
 @media (max-width: 900px) {
@@ -23,9 +28,12 @@
   .sidebar-scrim { position: fixed; inset: 0; z-index: 75; width: 100%; height: 100%; display: block; background: rgba(1,20,53,.48); }
   .creator-table { display: none; }
   .creator-cards { display: grid; padding: 8px 14px; }
+  .creator-fullscreen-view .creator-table { display: table; }
+  .creator-fullscreen-view .creator-cards { display: none; }
   .creator-mobile-card { position: relative; min-height: 80px; display: grid; grid-template-columns: 40px minmax(100px,1fr) auto 18px; align-items: center; gap: 10px; padding: 12px 2px; border-bottom: 1px solid var(--line); background: white; text-align: left; }
   .creator-mobile-card > svg { grid-column: 4; grid-row: 1; color: #9ba6b5; }
   .mobile-card-stats { grid-column: 2 / -1; display: flex; gap: 14px; margin-top: -7px; color: #8995a6; font-size: 8px; }
+  .creator-fullscreen-view .pagination > span { display: none; }
 }
 
 @media (max-width: 680px) {
@@ -42,22 +50,40 @@
   .metric-card { padding: 15px; }
   .metric-value-row { align-items: flex-start; flex-direction: column; }
   .metric-value-row > strong { font-size: 25px; }
-  .growth-panel, .segment-panel, .top-creators-panel, .activity-panel { padding: 18px; }
+  .growth-panel, .segment-panel, .top-creators-panel, .activity-panel, .gmv-category-panel, .booking-segment-panel { padding: 18px; }
   .chart-wrap { height: 200px; }
   .segment-panel { display: block; }
   .mini-table-row { grid-template-columns: 20px 36px minmax(100px,1fr) 72px 16px; }
   .mini-table-row .avatar-medium { width: 36px; height: 36px; }
   .mini-table-row .platform-pill { display: none; }
+  .financial-creators-table .financial-mini-header { display: none; }
+  .financial-creators-table .mini-table-row { grid-template-columns: 22px 34px minmax(105px,1fr) 90px 52px; }
+  .financial-creators-table .mini-table-row .category-tag, .financial-creators-table .financial-value.expense { display: none; }
+  .financial-bar-row { grid-template-columns: 105px minmax(90px,1fr) 78px; gap: 9px; }
   .creator-summary-strip { justify-content: space-around; gap: 8px; padding: 12px; }
   .creator-summary-strip .summary-icon { display: none; }
   .creator-summary-strip > div { text-align: center; }
   .creator-summary-strip > div > span:last-child { justify-items: center; }
   .filter-label { width: 100%; }
+  .fullscreen-button { flex: 1; }
+  .advanced-filters { padding-inline: 12px; }
+  .numeric-filter-builder { grid-template-columns: 1fr; }
+  .numeric-filter-actions, .filter-error { grid-column: 1; }
+  .fullscreen-header { align-items: flex-start; padding: 12px; }
+  .creator-fullscreen-view .creator-toolbar { align-items: stretch; flex-direction: column; }
+  .fullscreen-header .secondary-button { display: none; }
+  .fullscreen-header .primary-button { min-height: 40px; padding-inline: 11px; font-size: 9px; }
+  .mode-toggle-button, .quick-add-button { min-height: 40px; padding-inline: 9px; font-size: 9px; }
+  .cancel-edit-button { min-height: 40px; padding-inline: 8px; font-size: 8px; }
+  .history-actions { height: 40px; }
+  .fullscreen-header h2 { font-size: 17px; }
   .select-wrap { flex: 1; }
   .select-wrap select { width: 100%; }
   .search-box kbd, .table-meta span:last-child { display: none; }
   .pagination > span { display: none; }
   .pagination { justify-content: center; }
+  .creator-fullscreen-view .pagination-pages { display: none; }
+  .row-density-controls { min-width: 0; }
   .notification-popover { position: fixed; top: 62px; right: 10px; width: min(355px,calc(100vw - 20px)); }
   .creator-drawer { padding: 20px; }
   .form-grid { grid-template-columns: 1fr; }
@@ -70,4 +96,3 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
-

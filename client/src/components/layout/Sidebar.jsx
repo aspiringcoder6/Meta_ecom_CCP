@@ -39,7 +39,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
           </NavLink>
           <div className="help-card">
             <span className="help-icon"><Icon name="sparkles" size={18} /></span>
-            <div><strong>Cần hỗ trợ?</strong><small>Xem hướng dẫn nhanh</small></div>
+            <div><strong>Cần hỗ trợ?</strong><small>Xem quick tutorial</small></div>
           </div>
           <button className="collapse-button" onClick={onToggleCollapse}>
             <Icon name="panel" /><span>Thu gọn sidebar</span>

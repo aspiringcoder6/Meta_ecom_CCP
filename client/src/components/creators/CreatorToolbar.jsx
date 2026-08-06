@@ -1,4 +1,5 @@
 import Icon from '../common/Icon'
+import AdvancedNumericFilters from './AdvancedNumericFilters'
 
 function FilterSelect({ value, onChange, options }) {
   return (
@@ -9,22 +10,26 @@ function FilterSelect({ value, onChange, options }) {
   )
 }
 
-export default function CreatorToolbar({ filters, options, onFilterChange, onReset }) {
-  const hasFilters = filters.search || filters.segment !== 'all' || filters.category !== 'all' || filters.type !== 'all'
+export default function CreatorToolbar({ filters, options, numericFilters, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onEnterFullscreen }) {
+  const hasFilters = filters.search || filters.segment !== 'all' || filters.category !== 'all' || filters.type !== 'all' || numericFilters.length > 0
   const segmentOptions = [{ value: 'all', label: 'Tất cả Segment' }, ...options.segments.map((value) => ({ value, label: value }))]
   const categoryOptions = [{ value: 'all', label: 'Tất cả Category' }, ...options.categories.map((value) => ({ value, label: value }))]
   const typeOptions = [{ value: 'all', label: 'Tất cả Type' }, ...options.types.map((value) => ({ value, label: value }))]
 
   return (
-    <div className="creator-toolbar">
-      <label className="search-box"><Icon name="search" size={19} /><input value={filters.search} onChange={(event) => onFilterChange('search', event.target.value)} placeholder="Tìm theo tên, handle, nền tảng..." /><kbd>⌘ K</kbd></label>
-      <div className="filter-group">
-        <span className="filter-label"><Icon name="filter" size={17} /> Bộ lọc</span>
-        <FilterSelect value={filters.segment} onChange={(value) => onFilterChange('segment', value)} options={segmentOptions} />
-        <FilterSelect value={filters.category} onChange={(value) => onFilterChange('category', value)} options={categoryOptions} />
-        <FilterSelect value={filters.type} onChange={(value) => onFilterChange('type', value)} options={typeOptions} />
-        {hasFilters && <button className="clear-filter" onClick={onReset}>Xóa lọc</button>}
+    <div className="creator-toolbar-shell">
+      <div className="creator-toolbar">
+        <label className="search-box"><Icon name="search" size={19} /><input value={filters.search} onChange={(event) => onFilterChange('search', event.target.value)} placeholder="Tìm theo tên, ID TikTok, Category..." /><kbd>⌘ K</kbd></label>
+        <div className="filter-group">
+          <span className="filter-label"><Icon name="filter" size={17} /> Bộ lọc</span>
+          <FilterSelect value={filters.segment} onChange={(value) => onFilterChange('segment', value)} options={segmentOptions} />
+          <FilterSelect value={filters.category} onChange={(value) => onFilterChange('category', value)} options={categoryOptions} />
+          <FilterSelect value={filters.type} onChange={(value) => onFilterChange('type', value)} options={typeOptions} />
+          {hasFilters && <button className="clear-filter" onClick={onReset}>Xóa lọc</button>}
+          {onEnterFullscreen && <button className="fullscreen-button" onClick={onEnterFullscreen}><Icon name="maximize" size={16} /> Toàn màn hình</button>}
+        </div>
       </div>
+      <AdvancedNumericFilters filters={numericFilters} onAdd={onAddNumericFilter} onRemove={onRemoveNumericFilter} />
     </div>
   )
 }

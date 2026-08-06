@@ -4,8 +4,8 @@ export default function UserMenu({ open, onToggle }) {
   return (
     <div className="dropdown-wrap">
       <button className="user-menu" onClick={onToggle}>
-        <span className="avatar avatar-small admin-avatar">HD</span>
-        <span className="user-copy"><strong>Hiếu Đặng</strong><small>Quản trị viên</small></span>
+        <span className="avatar avatar-small admin-avatar">HN</span>
+        <span className="user-copy"><strong>Hiếu Ninh</strong><small>Quản trị viên</small></span>
         <Icon name="chevronDown" size={16} />
       </button>
       {open && (
