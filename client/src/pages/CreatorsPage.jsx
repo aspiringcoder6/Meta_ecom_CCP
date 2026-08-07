@@ -109,7 +109,7 @@ export default function CreatorsPage() {
         <div><p className="page-kicker">Danh sách Creator</p><h1 className='font-bold'>Creators</h1><p className='font-bold'>Tìm kiếm, sắp xếp và quản lý mạng lưới Creators một cách nhanh chóng và dễ dàng.</p></div>
         <div className="heading-actions"><button className="secondary-button" onClick={handleExport}><Icon name="download" />Export</button><CreatorImportMenu onImport={handleImport} /><button className="primary-button" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></div>
       </section>
-      <CreatorSummary creators={creators} />
+      <CreatorSummary creators={creators} onSelect={setSelectedCreatorId} />
       <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />
       {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
       <CreatorDetailsDrawer creator={selectedCreator} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />

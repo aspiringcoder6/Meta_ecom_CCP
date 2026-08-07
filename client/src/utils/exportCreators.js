@@ -4,7 +4,7 @@ export function exportCreatorsToCsv(creators) {
   const headers = [
     'Link TikTok', 'ID TikTok', 'Segment', 'Category', 'Type', 'Cost', 'Extra/FOC (SHDA + hashtag)',
     'Tổng Cast (Đã bao gồm thuế)', 'Booking Expense', 'Followers', 'GMV / Month', 'Scope',
-    'Contact', 'Historical campaign', 'MCN note',
+    'Contact', 'Tình trạng hợp tác', 'MCN note',
   ]
   const rows = creators.map((creator) => {
     const pricing = calculateBookingPricing(creator.cost, creator.extraCost)

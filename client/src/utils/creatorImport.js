@@ -14,7 +14,7 @@ const HEADER_FIELDS = [
   { field: 'gmvMonth', matches: ['gmv month', 'gmv'] },
   { field: 'scope', matches: ['scope'] },
   { field: 'contact', matches: ['contact'] },
-  { field: 'historicalCampaign', matches: ['historical campaign'] },
+  { field: 'historicalCampaign', matches: ['tinh trang hop tac', 'historical campaign'] },
   { field: 'mcnNote', matches: ['mcn note', 'meta ecom note'] },
 ]
 

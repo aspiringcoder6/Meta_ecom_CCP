@@ -5,9 +5,11 @@ const SEGMENT_ORDER = ['MASSIVE', 'TOP', 'MINI', 'FREECAST']
 function groupCreators(creators, field, fallbackLabel) {
   return Object.values(creators.reduce((groups, creator) => {
     const label = String(creator[field] || '').trim() || fallbackLabel
-    const current = groups[label] || { label, count: 0, bookingExpense: 0 }
+    const current = groups[label] || { label, count: 0, bookingExpense: 0, segmentCounts: {} }
     current.count += 1
     current.bookingExpense += calculateBookingPricing(creator.cost, creator.extraCost).bookingExpense
+    const segment = String(creator.segment || '').trim() || 'Chưa phân khúc'
+    current.segmentCounts[segment] = (current.segmentCounts[segment] || 0) + 1
     groups[label] = current
     return groups
   }, {}))
@@ -20,11 +22,11 @@ export function getCreatorInsights(creators) {
     0,
   )
 
-  const categories = groupCreators(availableCreators, 'category', 'Chưa phân loại')
+  const categories = groupCreators(creators, 'category', 'Chưa phân loại')
     .sort((left, right) => right.count - left.count || left.label.localeCompare(right.label, 'vi'))
     .map((category) => ({
       ...category,
-      percent: availableCreators.length ? Math.round((category.count / availableCreators.length) * 100) : 0,
+      percent: creators.length ? Math.round((category.count / creators.length) * 100) : 0,
     }))
 
   const segmentRank = (label) => {
@@ -39,6 +41,14 @@ export function getCreatorInsights(creators) {
       expensePercent: totalBookingExpense ? Math.round((segment.bookingExpense / totalBookingExpense) * 100) : 0,
     }))
 
+  const leadingCreators = [...availableCreators]
+    .sort((left, right) => (Number(right.gmvMonth) || 0) - (Number(left.gmvMonth) || 0))
+    .slice(0, 5)
+    .map((creator) => ({
+      creator,
+      bookingExpense: calculateBookingPricing(creator.cost, creator.extraCost).bookingExpense,
+    }))
+
   return {
     totalCreators: creators.length,
     availableCreators,
@@ -49,5 +59,6 @@ export function getCreatorInsights(creators) {
     categories,
     segments,
     topCategory: categories[0],
+    leadingCreators,
   }
 }

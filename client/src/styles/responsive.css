@@ -66,6 +66,7 @@
   .mini-table-row .platform-pill { display: none; }
   .financial-creators-table .financial-mini-header { display: none; }
   .financial-creators-table .mini-table-row { grid-template-columns: 22px 34px minmax(105px,1fr) 90px 52px; }
+  .creator-insight-leaders-table .mini-table-row { min-width: 0; grid-template-columns: 22px 34px minmax(105px,1fr) 90px; }
   .financial-creators-table .mini-table-row .category-tag, .financial-creators-table .financial-value.expense { display: none; }
   .financial-bar-row { grid-template-columns: 105px minmax(90px,1fr) 78px; gap: 9px; }
   .creator-summary-strip { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0; padding: 6px; }
@@ -76,7 +77,7 @@
   .creator-summary-strip > div > span:last-child { justify-items: center; }
   .creator-insights-heading { align-items: flex-start; }
   .creator-insight-details { padding: 12px; }
-  .category-breakdown-list { grid-template-columns: minmax(0,1fr); }
+  .creator-insight-detail-card { padding: 12px; }
   .filter-label { width: 100%; }
   .fullscreen-button { flex: 1; }
   .advanced-filters { padding-inline: 12px; }
