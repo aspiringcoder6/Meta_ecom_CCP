@@ -11,10 +11,11 @@ import { exportCreatorsToCsv } from '../utils/exportCreators'
 import { parseCreatorImportFile } from '../utils/creatorImport'
 
 export default function CreatorsPage() {
-  const { creators, recentlyAddedCreatorId, addCreator, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
+  const { creators, recentlyAddedCreatorId, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
   const [filters, setFilters] = useState(DEFAULT_CREATOR_FILTERS)
   const [numericFilters, setNumericFilters] = useState([])
   const [selectedCreatorId, setSelectedCreatorId] = useState(null)
+  const [editingCreatorId, setEditingCreatorId] = useState(null)
   const [addOpen, setAddOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [importReview, setImportReview] = useState(null)
@@ -26,6 +27,7 @@ export default function CreatorsPage() {
   }), [creators])
   const filteredCreators = useMemo(() => creators.filter((creator) => matchesCreatorFilters(creator, filters, numericFilters)), [creators, filters, numericFilters])
   const selectedCreator = creators.find((creator) => creator.id === selectedCreatorId)
+  const editingCreator = creators.find((creator) => creator.id === editingCreatorId)
 
   useEffect(() => {
     if (!isFullscreen) return undefined
@@ -38,7 +40,9 @@ export default function CreatorsPage() {
 
   const updateFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
   const resetFilters = () => { setFilters(DEFAULT_CREATOR_FILTERS); setNumericFilters([]) }
-  const handleAdd = (form) => { addCreator(form); setAddOpen(false) }
+  const handleAdd = async (form) => { await addCreator(form); setAddOpen(false) }
+  const handleEdit = async (form) => { await saveCreatorDetails(editingCreatorId, form); setEditingCreatorId(null) }
+  const openCreatorEdit = (creatorId) => { setSelectedCreatorId(null); setEditingCreatorId(creatorId) }
   const handleQuickAdd = () => { resetFilters(); addQuickCreator() }
   const handleExport = () => {
     exportCreatorsToCsv(filteredCreators)
@@ -103,8 +107,9 @@ export default function CreatorsPage() {
       <CreatorSummary creators={creators} />
       <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />
       {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
-      <CreatorDetailsDrawer creator={selectedCreator} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} />
-      {addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onAdd={handleAdd} />}
+      <CreatorDetailsDrawer creator={selectedCreator} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />
+      {addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}
+      {editingCreator && <AddCreatorModal creator={editingCreator} onClose={() => setEditingCreatorId(null)} onSubmit={handleEdit} />}
     </main>
   )
 }

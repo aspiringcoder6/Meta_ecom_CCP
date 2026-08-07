@@ -20,7 +20,6 @@ function creatorHistoryReducer(state, action) {
   }
   if (action.type === 'hydrate') return { past: [], present: action.creators, future: [] }
   if (action.type === 'replaceOne') return { ...state, present: state.present.map((creator) => creator.id === action.creatorId ? action.creator : creator) }
-  if (action.type === 'discardOne') return { ...state, present: state.present.filter((creator) => creator.id !== action.creatorId) }
   if (action.type === 'restore') return action.state
   return state
 }
@@ -35,21 +34,16 @@ function getCreatorBatchChanges(originalCreators, currentCreators) {
   }
 }
 
-function createCreator(form) {
-  const words = form.name.trim().split(/\s+/)
+function creatorPayloadFromForm(form) {
   const tiktokId = form.handle.trim().replace(/^@/, '')
   return {
-    id: Date.now(), name: form.name.trim(),
-    handle: `@${tiktokId}`,
-    initials: words.slice(0, 2).map((word) => word[0]).join('').toUpperCase(),
-    platform: 'TikTok', tiktokLink: form.tiktokLink || `https://www.tiktok.com/@${tiktokId}`,
+    name: form.name.trim(), tiktokLink: form.tiktokLink.trim() || `https://www.tiktok.com/@${tiktokId}`,
     tiktokId, segment: form.segment, category: form.category, type: form.type,
     cost: Number(form.cost) || 0, extraCost: Number(form.extraCost) || 0, gmvMonth: Number(form.gmvMonth) || 0,
-    scope: form.scope || '', contact: form.contact || form.email || 'Chưa cung cấp',
+    scope: form.scope.trim(), contact: form.contact.trim() || form.email.trim(),
     historicalCampaign: form.historicalCampaign || 'Chưa hợp tác', mcnNote: form.mcnNote || '',
     followers: Number(form.followers) || 0, engagement: Number(form.engagement) || 0,
-    status: 'Available', email: form.email || 'Chưa cung cấp', phone: form.phone || 'Chưa cung cấp',
-    bookingPrice: Number(form.cost) || 0, campaigns: 0, color: '#dcecff', accent: '#1769aa',
+    email: form.email.trim(), phone: form.phone.trim(),
   }
 }
 
@@ -108,20 +102,33 @@ export default function AppProvider({ children }) {
     highlightTimer.current = window.setTimeout(() => setRecentlyAddedCreatorId(null), 5000)
   }
 
-  const addCreator = (form) => {
-    const creator = createCreator(form)
-    dispatchCreators({ type: 'apply', update: (current) => [creator, ...current] })
-    highlightCreator(creator.id)
-    void creatorApi.create(creator).then((savedCreator) => {
-      dispatchCreators({ type: 'replaceOne', creatorId: creator.id, creator: savedCreator })
+  const addCreator = async (form) => {
+    try {
+      const savedCreator = await creatorApi.create(creatorPayloadFromForm(form))
+      dispatchCreators({ type: 'apply', update: (current) => [savedCreator, ...current] })
       highlightCreator(savedCreator.id)
       setBackendAvailable(true)
       showToast(`Đã thêm ${savedCreator.name} vào kho Creator`)
-    }).catch((error) => {
-      dispatchCreators({ type: 'discardOne', creatorId: creator.id })
-      showToast(getApiErrorMessage(error, 'Không thể lưu Creator mới.'))
-    })
-    return creator
+      return savedCreator
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Không thể lưu Creator mới.')
+      showToast(message)
+      throw new Error(message)
+    }
+  }
+
+  const saveCreatorDetails = async (creatorId, form) => {
+    try {
+      const savedCreator = await creatorApi.update(creatorId, creatorPayloadFromForm(form))
+      dispatchCreators({ type: 'replaceOne', creatorId, creator: savedCreator })
+      setBackendAvailable(true)
+      showToast(`Đã cập nhật hồ sơ ${savedCreator.name}`)
+      return savedCreator
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Không thể cập nhật Creator.')
+      showToast(message)
+      throw new Error(message)
+    }
   }
 
   const addQuickCreator = () => {
@@ -200,7 +207,7 @@ export default function AppProvider({ children }) {
   }
 
   const value = {
-    creators, isLoadingCreators, backendAvailable, toastMessage, recentlyAddedCreatorId, showToast, addCreator, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
+    creators, isLoadingCreators, backendAvailable, toastMessage, recentlyAddedCreatorId, showToast, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
     undoCreators, redoCreators, canUndo: creatorHistory.past.length > 0, canRedo: creatorHistory.future.length > 0,
     beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession,
   }

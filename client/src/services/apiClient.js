@@ -1,7 +1,13 @@
 import axios from 'axios'
 
+export function normalizeApiBaseUrl(value) {
+  const baseUrl = String(value || '').trim().replace(/\/+$/, '')
+  if (!baseUrl) return '/api'
+  return /\/api$/i.test(baseUrl) ? baseUrl : `${baseUrl}/api`
+}
+
 export const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: normalizeApiBaseUrl(import.meta.env.VITE_API_URL),
   timeout: 15000,
   headers: { 'Content-Type': 'application/json' },
 })
