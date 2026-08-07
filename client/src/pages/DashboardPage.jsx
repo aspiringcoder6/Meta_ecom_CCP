@@ -6,16 +6,17 @@ import GmvCategoryPanel from '../components/dashboard/GmvCategoryPanel'
 import MetricCard from '../components/dashboard/MetricCard'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
-import { calculateBookingPricing } from '../utils/pricing'
 import { formatAudience, formatCompactCurrency } from '../utils/formatters'
+import { getCreatorInsights } from '../utils/creatorInsights'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const { creators } = useApp()
-  const availableCreators = creators.filter((creator) => creator.status !== 'Archived')
+  const creatorInsights = getCreatorInsights(creators)
+  const availableCreators = creatorInsights.availableCreators
   const totalFollowers = availableCreators.reduce((total, creator) => total + creator.followers, 0)
   const totalGmv = availableCreators.reduce((total, creator) => total + creator.gmvMonth, 0)
-  const totalBookingExpense = availableCreators.reduce((total, creator) => total + calculateBookingPricing(creator.cost, creator.extraCost).bookingExpense, 0)
+  const totalBookingExpense = creatorInsights.totalBookingExpense
   const averageFollowers = availableCreators.length ? totalFollowers / availableCreators.length : 0
   const averageBooking = availableCreators.length ? totalBookingExpense / availableCreators.length : 0
   const gmvEfficiency = totalBookingExpense ? totalGmv / totalBookingExpense : 0
