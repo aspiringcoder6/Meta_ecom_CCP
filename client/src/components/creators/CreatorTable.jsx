@@ -5,13 +5,25 @@ import { CREATOR_FIELD_OPTIONS } from '../../utils/creatorValidation'
 import Avatar from '../common/Avatar'
 import Icon from '../common/Icon'
 import EditableCreatorCell from './EditableCreatorCell'
+import CreatorSortableHeader from './CreatorSortableHeader'
 
-const COLUMN_HEADERS = [
-  <span key="tiktok-link">Link TikTok</span>, <span key="tiktok-id">ID TikTok</span>, <span key="segment">Segment</span>, <span key="category">Category</span>, <span key="type">Type</span>, <span key="cost">Cost</span>,
-  <span key="extra">Extra/FOC<br /><small>(SHDA + hashtag)</small></span>,
-  <span key="cast">Tổng Cast<br /><small>(Đã bao gồm thuế)</small></span>,
-  <span key="booking">Booking Expense</span>, <span key="followers">Followers</span>, <span key="gmv">GMV / Month</span>, <span key="scope">Scope</span>, <span key="contact">Contact</span>, <span key="history">Historical campaign</span>, <span key="note">MCN note</span>,
-  <span key="actions" className="sr-only">Thao tác</span>,
+const COLUMNS = [
+  { key: 'tiktokLink', label: <span>Link TikTok</span> },
+  { key: 'tiktokId', label: <span>ID TikTok</span> },
+  { key: 'segment', label: <span>Segment</span> },
+  { key: 'category', label: <span>Category</span> },
+  { key: 'type', label: <span>Type</span> },
+  { key: 'cost', label: <span>Cost</span> },
+  { key: 'extraCost', label: <span>Extra/FOC<br /><small>(SHDA + hashtag)</small></span> },
+  { key: 'totalCast', label: <span>Tổng Cast<br /><small>(Đã bao gồm thuế)</small></span> },
+  { key: 'bookingExpense', label: <span>Booking Expense</span> },
+  { key: 'followers', label: <span>Followers</span> },
+  { key: 'gmvMonth', label: <span>GMV / Month</span> },
+  { key: 'scope', label: <span>Scope</span> },
+  { key: 'contact', label: <span>Contact</span> },
+  { key: 'historicalCampaign', label: <span>Historical campaign</span> },
+  { key: 'mcnNote', label: <span>MCN note</span> },
+  { key: null, label: <span className="sr-only">Thao tác</span> },
 ]
 
 function EmptyResults() {
@@ -34,7 +46,7 @@ function ColumnResizeHandle({ index, width, onResize, onReset }) {
   return <span className="column-resize-handle" role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
-export default function CreatorTable({ creators, highlightedCreatorIds = [], onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
+export default function CreatorTable({ creators, highlightedCreatorIds = [], sortCriteria = [], onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
   if (!creators.length) return <EmptyResults />
 
   const tableWidth = resizable ? columnWidths.reduce((total, width) => total + width, 0) : undefined
@@ -45,7 +57,11 @@ export default function CreatorTable({ creators, highlightedCreatorIds = [], onS
     <div className="creator-table-wrap">
       <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${editMode ? 'is-editing' : ''}`} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
         {resizable && <colgroup>{columnWidths.map((width, index) => <col key={index} style={{ width: `${width}px` }} />)}</colgroup>}
-        <thead><tr>{COLUMN_HEADERS.map((header, index) => <th key={index} style={index === 1 ? secondStickyStyle : undefined}>{header}{resizable && <ColumnResizeHandle index={index} width={columnWidths[index]} onResize={onColumnResize} onReset={onColumnReset} />}</th>)}</tr></thead>
+        <thead><tr>{COLUMNS.map((column, index) => {
+          const sortIndex = sortCriteria.findIndex((criterion) => criterion.key === column.key)
+          const criterion = sortIndex >= 0 ? sortCriteria[sortIndex] : undefined
+          return <th key={column.key || 'actions'} style={index === 1 ? secondStickyStyle : undefined} aria-sort={criterion ? (criterion.direction === 'asc' ? 'ascending' : 'descending') : undefined}><CreatorSortableHeader label={column.label} sortKey={column.key} criterion={criterion} priority={sortIndex + 1} onSort={onSort} />{resizable && <ColumnResizeHandle index={index} width={columnWidths[index]} onResize={onColumnResize} onReset={onColumnReset} />}</th>
+        })}</tr></thead>
         <tbody>
           {creators.map((creator) => {
             const pricing = calculateBookingPricing(creator.cost, creator.extraCost)

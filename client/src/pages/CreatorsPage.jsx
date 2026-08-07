@@ -9,6 +9,7 @@ import { useApp } from '../hooks/useApp'
 import { DEFAULT_CREATOR_FILTERS, matchesCreatorFilters } from '../utils/creatorFilters'
 import { exportCreatorsToCsv } from '../utils/exportCreators'
 import { parseCreatorImportFile } from '../utils/creatorImport'
+import { cycleCreatorSort, sortCreators } from '../utils/creatorSorting'
 
 export default function CreatorsPage() {
   const { creators, recentlyAddedCreatorId, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
@@ -19,6 +20,7 @@ export default function CreatorsPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [importReview, setImportReview] = useState(null)
+  const [sortCriteria, setSortCriteria] = useState([])
 
   const filterOptions = useMemo(() => ({
     segments: [...new Set(creators.map((creator) => creator.segment))],
@@ -26,6 +28,7 @@ export default function CreatorsPage() {
     types: [...new Set(creators.map((creator) => creator.type))],
   }), [creators])
   const filteredCreators = useMemo(() => creators.filter((creator) => matchesCreatorFilters(creator, filters, numericFilters)), [creators, filters, numericFilters])
+  const displayedCreators = useMemo(() => sortCreators(filteredCreators, sortCriteria), [filteredCreators, sortCriteria])
   const selectedCreator = creators.find((creator) => creator.id === selectedCreatorId)
   const editingCreator = creators.find((creator) => creator.id === editingCreatorId)
 
@@ -45,8 +48,8 @@ export default function CreatorsPage() {
   const openCreatorEdit = (creatorId) => { setSelectedCreatorId(null); setEditingCreatorId(creatorId) }
   const handleQuickAdd = () => { resetFilters(); addQuickCreator() }
   const handleExport = () => {
-    exportCreatorsToCsv(filteredCreators)
-    showToast(`Đã Export ${filteredCreators.length} profile Creator`)
+    exportCreatorsToCsv(displayedCreators)
+    showToast(`Đã Export ${displayedCreators.length} profile Creator`)
   }
   const handleImport = async (file, mode) => {
     try {
@@ -77,11 +80,12 @@ export default function CreatorsPage() {
     setImportReview(null)
   }
   const workspaceProps = {
-    creators: filteredCreators, filters, filterOptions, numericFilters, canUndo, canRedo, recentlyAddedCreatorId, importReview,
+    creators: displayedCreators, filters, filterOptions, numericFilters, sortCriteria, canUndo, canRedo, recentlyAddedCreatorId, importReview,
     onFilterChange: updateFilter,
     onAddNumericFilter: (filter) => setNumericFilters((current) => [...current, filter]),
     onRemoveNumericFilter: (filterId) => setNumericFilters((current) => current.filter((filter) => filter.id !== filterId)),
     onReset: resetFilters,
+    onSort: (key) => setSortCriteria((current) => cycleCreatorSort(current, key)),
     onSelect: setSelectedCreatorId,
     onArchive: toggleArchive,
     onUpdateCreator: updateCreator,

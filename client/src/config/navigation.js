@@ -9,7 +9,7 @@ export const NAV_ITEMS = [
 
 export const PAGE_META = {
   '/dashboard': { label: 'Dashboard', icon: 'dashboard' },
-  '/creators': { label: 'Creators', icon: 'users' },
+  '/creators': { label: 'Creators management', icon: 'users' },
   '/campaigns': { label: 'Campaigns', icon: 'briefcase' },
   '/deliverables': { label: 'Deliverables', icon: 'checkSquare' },
   '/reviews': { label: 'Client Review', icon: 'message' },

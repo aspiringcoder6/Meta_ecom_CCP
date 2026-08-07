@@ -17,7 +17,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
         <div className="brand-row">
           <button className="brand" onClick={goHome} aria-label="Dashboard MetaEcom">
             <img className="brand-mark" src="/Logo/metaIcon.jpg" alt="" />
-            <span className="brand-copy"><strong>MetaEcom</strong><small>Creator Campaign Platform</small></span>
+            <span className="brand-copy"><strong>Meta Ecom</strong><small>Creator Campaign Platform</small></span>
           </button>
           <button className="icon-button sidebar-close" onClick={onCloseMobile} aria-label="Đóng thanh điều hướng"><Icon name="close" /></button>
         </div>

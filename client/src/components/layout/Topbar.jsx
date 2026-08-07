@@ -16,7 +16,7 @@ export default function Topbar({ onOpenMobile }) {
     <header className="topbar">
       <div className="topbar-title">
         <button className="icon-button mobile-menu" onClick={onOpenMobile} aria-label="Mở thanh điều hướng"><Icon name="menu" /></button>
-        <div><span className="eyebrow">MetaEcom Workspace</span><strong>{currentLabel}</strong></div>
+        <div><span className="eyebrow">Meta Ecom Workspace</span><strong>{currentLabel}</strong></div>
       </div>
       <div className="topbar-actions">
         <NotificationsMenu open={openMenu === 'notifications'} onToggle={() => toggleMenu('notifications')} />
