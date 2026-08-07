@@ -5,10 +5,12 @@ Express + Prisma 7 API cho Creator Management và Dashboard metrics.
 ## Chạy local
 
 1. Sao chép `.env.example` thành `.env` và điền `DATABASE_URL`.
-2. Nếu dùng local Prisma Postgres, khởi động database bằng `npx prisma dev --detach` và đặt `DIRECT_URL` theo TCP URL được Prisma cung cấp.
+2. Nếu dùng local Prisma Postgres, khởi động database bằng `npm run db:start` và đặt `DIRECT_URL` theo TCP URL được Prisma cung cấp.
 3. Chạy migration: `npm run prisma:deploy`.
 4. Nạp dữ liệu demo: `npm run prisma:seed`.
 5. Chạy API: `npm run dev`.
+
+Với cấu hình local hiện tại, có thể khởi động database và API cùng lúc bằng `npm run dev:local`. Nếu gặp `ECONNREFUSED`, chạy `npm run db:start` trước rồi khởi động lại API.
 
 API mặc định chạy tại `http://localhost:4000`. Vite development server đã proxy `/api` tới địa chỉ này.
 

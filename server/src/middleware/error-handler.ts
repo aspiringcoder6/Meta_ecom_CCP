@@ -20,7 +20,7 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
     response.status(504).json({ error: { code: 'TRANSACTION_TIMEOUT', message: 'Giao dịch xử lý quá lâu. Không có thay đổi nào được lưu; vui lòng thử lại.' } })
     return
   }
-  if (prismaCode === 'P1001') {
+  if (prismaCode === 'P1001' || prismaCode === 'ECONNREFUSED') {
     response.status(503).json({ error: { code: 'DATABASE_UNAVAILABLE', message: 'Không thể kết nối PostgreSQL.' } })
     return
   }

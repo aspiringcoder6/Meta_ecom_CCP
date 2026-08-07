@@ -5,6 +5,9 @@
   "main": "dist/src/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:local": "prisma dev --detach && tsx watch src/server.ts",
+    "db:start": "prisma dev --detach",
+    "db:status": "prisma migrate status",
     "build": "prisma generate && tsc -p tsconfig.json",
     "start": "node dist/src/server.js",
     "test": "node --import tsx --test \"src/**/*.test.ts\"",
