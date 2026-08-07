@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import CreatorTable from './CreatorTable'
 import CreatorToolbar from './CreatorToolbar'
+import CreatorImportMenu from './CreatorImportMenu'
 import ResizeDivider from '../common/ResizeDivider'
 import Icon from '../common/Icon'
 import ImportReviewBanner from './ImportReviewBanner'
@@ -18,7 +19,7 @@ function getDensityLabel(rowHeight) {
   return 'Thoáng'
 }
 
-export default function CreatorWorkspace({ creators, filters, filterOptions, numericFilters, isFullscreen = false, canUndo = false, canRedo = false, recentlyAddedCreatorId, importReview, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onSelect, onArchive, onUpdateCreator, onDeleteCreator, onQuickAdd, onUndo, onRedo, onBeginEdit, onCommitEdit, onCancelEdit, onAcceptImport, onCancelImport, onExport, onAddCreator, onEnterFullscreen, onExitFullscreen }) {
+export default function CreatorWorkspace({ creators, filters, filterOptions, numericFilters, isFullscreen = false, canUndo = false, canRedo = false, recentlyAddedCreatorId, importReview, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onSelect, onArchive, onUpdateCreator, onDeleteCreator, onQuickAdd, onUndo, onRedo, onBeginEdit, onCommitEdit, onCancelEdit, onAcceptImport, onCancelImport, onImport, onExport, onAddCreator, onEnterFullscreen, onExitFullscreen }) {
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
   const [headerHeight, setHeaderHeight] = useState(64)
   const [toolbarHeight, setToolbarHeight] = useState(106)
@@ -41,6 +42,10 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
     window.addEventListener('keydown', handleHistoryShortcut)
     return () => window.removeEventListener('keydown', handleHistoryShortcut)
   }, [editMode, isFullscreen, onRedo, onUndo])
+
+  useEffect(() => {
+    if (isFullscreen && importReview) setEditMode(true)
+  }, [importReview, isFullscreen])
 
   const updateColumnWidth = (index, width) => setColumnWidths((current) => current.map((item, itemIndex) => itemIndex === index ? width : item))
   const resetColumnWidth = (index) => updateColumnWidth(index, DEFAULT_COLUMN_WIDTHS[index])
@@ -76,6 +81,7 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
             <div><span className="fullscreen-kicker">Creator Management</span><h2>Danh sách Creator</h2><p>{importReview ? `Xem trước import · ${importReview.fileName}` : editMode ? 'Chế độ chỉnh sửa spreadsheet' : `${creators.length} kết quả phù hợp`}</p></div>
             <div className="fullscreen-actions">
               <button className="secondary-button" onClick={onExport}><Icon name="download" />Export</button>
+              {!importReview && <CreatorImportMenu onImport={onImport} disabled={editMode} disabledReason="Hoàn tất hoặc hủy chế độ chỉnh sửa trước khi Import" />}
               {editMode && <div className="history-actions"><button disabled={!canUndo} onClick={onUndo} aria-label="Hoàn tác" title="Undo · Ctrl+Z"><Icon name="undo" size={17} /></button><button disabled={!canRedo} onClick={onRedo} aria-label="Quay lại" title="Redo · Ctrl+Y"><Icon name="redo" size={17} /></button></div>}
               {importReview ? <><button className="cancel-edit-button" onClick={cancelImport}><Icon name="close" size={15} />Hủy import</button><button className="mode-toggle-button is-editing" onClick={acceptImport}><Icon name="check" size={16} />Chấp nhận tất cả</button></> : <>{editMode ? <button className="quick-add-button" onClick={onQuickAdd}><Icon name="plus" />Thêm nhanh</button> : <button className="primary-button" onClick={onAddCreator}><Icon name="plus" />Thêm Creator</button>}{editMode && <button className="cancel-edit-button" onClick={cancelEditMode}><Icon name="close" size={15} />Hủy thay đổi</button>}<button className={`mode-toggle-button ${editMode ? 'is-editing' : ''}`} onClick={editMode ? finishEditMode : enterEditMode}><Icon name={editMode ? 'check' : 'edit'} size={16} />{editMode ? 'Hoàn tất' : 'Chỉnh sửa'}</button></>}
               <button className="fullscreen-close" onClick={exitFullscreen} aria-label="Thoát toàn màn hình"><Icon name="minimize" /></button>

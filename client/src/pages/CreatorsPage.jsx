@@ -94,6 +94,7 @@ export default function CreatorsPage() {
     onCancelEdit: cancelCreatorEditSession,
     onAcceptImport: acceptImport,
     onCancelImport: cancelImport,
+    onImport: handleImport,
     onExport: handleExport,
     onAddCreator: () => setAddOpen(true),
   }

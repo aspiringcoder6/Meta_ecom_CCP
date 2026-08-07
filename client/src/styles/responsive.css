@@ -81,7 +81,12 @@
   .numeric-filter-actions, .filter-error { grid-column: 1; }
   .fullscreen-header { align-items: flex-start; padding: 12px; }
   .creator-fullscreen-view .creator-toolbar { align-items: stretch; flex-direction: column; }
-  .fullscreen-header .secondary-button { display: none; }
+  .fullscreen-actions > .secondary-button { display: none; }
+  .fullscreen-actions .creator-import-menu { flex: 0 0 auto; }
+  .fullscreen-actions .creator-import-menu > button { width: auto; }
+  .fullscreen-actions .import-menu-popover { right: 0; left: auto; transform: translateY(-4px); }
+  .fullscreen-actions .creator-import-menu:hover .import-menu-popover,
+  .fullscreen-actions .creator-import-menu:focus-within .import-menu-popover { transform: translateY(0); }
   .fullscreen-header .primary-button { min-height: 40px; padding-inline: 11px; font-size: 9px; }
   .mode-toggle-button, .quick-add-button { min-height: 40px; padding-inline: 9px; font-size: 9px; }
   .cancel-edit-button { min-height: 40px; padding-inline: 8px; font-size: 8px; }
