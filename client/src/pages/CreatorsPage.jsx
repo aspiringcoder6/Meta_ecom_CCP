@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import AddCreatorModal from '../components/creators/AddCreatorModal'
 import CreatorDetailsDrawer from '../components/creators/CreatorDetailsDrawer'
 import CreatorSummary from '../components/creators/CreatorSummary'
@@ -7,6 +7,7 @@ import CreatorImportMenu from '../components/creators/CreatorImportMenu'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
 import { useAuth } from '../hooks/useAuth'
+import { useCreatorTour } from '../hooks/useCreatorTour'
 import { DEFAULT_CREATOR_FILTERS, matchesCreatorFilters } from '../utils/creatorFilters'
 import { exportCreatorsToCsv } from '../utils/exportCreators'
 import { parseCreatorImportFile } from '../utils/creatorImport'
@@ -23,6 +24,8 @@ export default function CreatorsPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [importReview, setImportReview] = useState(null)
   const [sortCriteria, setSortCriteria] = useState([])
+  const closeFullscreenForTour = useCallback(() => setIsFullscreen(false), [])
+  useCreatorTour({ canManage: canManageCreators, closeFullscreen: closeFullscreenForTour })
 
   const filterOptions = useMemo(() => ({
     segments: [...new Set(creators.map((creator) => creator.segment))],
@@ -107,9 +110,9 @@ export default function CreatorsPage() {
 
   return (
     <main className="page creators-page">
-      <section className="page-heading creators-heading">
+      <section className="page-heading creators-heading" data-tour="creators-heading">
         <div><p className="page-kicker">Danh sách Creator</p><h1 className='font-bold'>Creators</h1><p className='font-bold'>Tìm kiếm, sắp xếp và quản lý mạng lưới Creators một cách nhanh chóng và dễ dàng.</p></div>
-        <div className="heading-actions"><button className="secondary-button" onClick={handleExport}><Icon name="download" />Export</button>{canManageCreators && <><CreatorImportMenu onImport={handleImport} /><button className="primary-button" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></>}</div>
+        <div className="heading-actions"><button className="secondary-button" data-tour="page-export" onClick={handleExport}><Icon name="download" />Export</button>{canManageCreators && <><CreatorImportMenu tourId="page-import" onImport={handleImport} /><button className="primary-button" data-tour="page-add" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></>}</div>
       </section>
       <CreatorSummary creators={creators} onSelect={setSelectedCreatorId} />
       <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { validateCreatorValue } from '../../utils/creatorValidation'
 
-export default function EditableCreatorCell({ creatorId, field, value, options, className = '', style, note, onCommit }) {
+export default function EditableCreatorCell({ creatorId, field, value, options, className = '', style, note, dataTour, onCommit }) {
   const [draft, setDraft] = useState(String(value ?? ''))
   const [error, setError] = useState('')
 
@@ -31,7 +31,7 @@ export default function EditableCreatorCell({ creatorId, field, value, options, 
   }
 
   return (
-    <td className={`spreadsheet-cell ${error ? 'is-invalid' : ''} ${className}`} style={style} onClick={(event) => event.stopPropagation()}>
+    <td className={`spreadsheet-cell ${error ? 'is-invalid' : ''} ${className}`} data-tour={dataTour} style={style} onClick={(event) => event.stopPropagation()}>
       {options
         ? <select value={draft} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={handleKeyDown}>{options.map((option) => <option key={option} value={option}>{option}</option>)}</select>
         : <input value={draft} inputMode={['cost', 'extraCost', 'followers', 'gmvMonth'].includes(field) ? 'decimal' : undefined} onChange={(event) => setDraft(event.target.value)} onBlur={commit} onKeyDown={handleKeyDown} />}

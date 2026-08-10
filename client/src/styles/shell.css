@@ -26,11 +26,14 @@
 .nav-count { min-width: 22px; height: 20px; display: grid; place-items: center; margin-left: auto; border-radius: 10px; color: var(--navy); background: var(--blue); font-size: 11px; font-weight: 800; }
 .sidebar-bottom { display: grid; gap: 8px; margin-top: auto; }
 .help-card { display: flex; align-items: center; gap: 8px; min-height: 62px; margin: 14px 0 4px; padding: 8px 10px; border: 1px solid rgba(126,207,255,.2); border-radius: 14px; background: linear-gradient(135deg,rgba(82,186,255,.13),rgba(255,255,255,.045)); overflow: hidden; }
+button.help-card { width: 100%; color: inherit; text-align: left; cursor: pointer; transition: border-color 150ms ease,background 150ms ease,transform 150ms ease; }
+button.help-card:hover { border-color: rgba(126,207,255,.42); background: linear-gradient(135deg,rgba(82,186,255,.21),rgba(255,255,255,.075)); transform: translateY(-1px); }
 .help-icon { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; border-radius: 10px; color: var(--navy); background: var(--blue); }
 .help-mascot { width: 43px; height: 49px; flex: 0 0 43px; object-fit: contain; filter: drop-shadow(0 7px 9px rgba(0,0,0,.25)); }
 .help-card div { display: grid; white-space: nowrap; }
 .help-card strong { color: white; font-size: 12px; }
 .help-card small { margin-top: 2px; color: #86a1c4; font-size: 10px; }
+button.help-card:hover small { color: #b4d3f0; }
 .collapse-button { min-height: 42px; display: flex; align-items: center; gap: 13px; padding: 0 13px; border-radius: 11px; color: #7893b8; background: transparent; font-size: 12px; text-align: left; white-space: nowrap; }
 .collapse-button:hover { color: white; background: rgba(255,255,255,.05); }
 .sidebar-collapsed .brand-copy, .sidebar-collapsed .nav-label, .sidebar-collapsed .nav-item > span:not(.nav-count), .sidebar-collapsed .help-card > div, .sidebar-collapsed .collapse-button > span { display: none; }

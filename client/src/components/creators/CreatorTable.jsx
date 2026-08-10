@@ -35,7 +35,7 @@ function CollaborationBadge({ value }) {
   return <span className={`history-badge ${collaborated ? 'is-collaborated' : 'is-new'}`}><i />{value}</span>
 }
 
-function ColumnResizeHandle({ index, width, onResize, onReset }) {
+function ColumnResizeHandle({ index, width, dataTour, onResize, onReset }) {
   const resizeWithKeyboard = (event) => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     event.preventDefault()
@@ -43,7 +43,7 @@ function ColumnResizeHandle({ index, width, onResize, onReset }) {
     onResize(index, Math.min(480, Math.max(64, nextWidth)))
   }
 
-  return <span className="column-resize-handle" role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
+  return <span className="column-resize-handle" data-tour={dataTour} role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
 export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], sortCriteria = [], onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
@@ -55,19 +55,19 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
 
   return (
     <div className="creator-table-wrap">
-      <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${editMode ? 'is-editing' : ''}`} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
+      <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${editMode ? 'is-editing' : ''}`} data-tour={resizable ? 'fullscreen-table' : undefined} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
         {resizable && <colgroup>{columnWidths.map((width, index) => <col key={index} style={{ width: `${width}px` }} />)}</colgroup>}
         <thead><tr>{COLUMNS.map((column, index) => {
           const sortIndex = sortCriteria.findIndex((criterion) => criterion.key === column.key)
           const criterion = sortIndex >= 0 ? sortCriteria[sortIndex] : undefined
-          return <th key={column.key || 'actions'} style={index === 1 ? secondStickyStyle : undefined} aria-sort={criterion ? (criterion.direction === 'asc' ? 'ascending' : 'descending') : undefined}><CreatorSortableHeader label={column.label} sortKey={column.key} criterion={criterion} priority={sortIndex + 1} onSort={onSort} />{resizable && <ColumnResizeHandle index={index} width={columnWidths[index]} onResize={onColumnResize} onReset={onColumnReset} />}</th>
+          return <th key={column.key || 'actions'} style={index === 1 ? secondStickyStyle : undefined} aria-sort={criterion ? (criterion.direction === 'asc' ? 'ascending' : 'descending') : undefined}><CreatorSortableHeader label={column.label} sortKey={column.key} criterion={criterion} priority={sortIndex + 1} dataTour={resizable && index === 0 ? 'sort-header' : undefined} onSort={onSort} />{resizable && <ColumnResizeHandle index={index} width={columnWidths[index]} dataTour={index === 0 ? 'column-resizer' : undefined} onResize={onColumnResize} onReset={onColumnReset} />}</th>
         })}</tr></thead>
         <tbody>
           {creators.map((creator) => {
             const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
             return <tr className={highlightedCreatorIds.includes(creator.id) ? 'is-newly-added' : ''} key={creator.id} onClick={editMode ? undefined : () => onSelect(creator.id)}>
               {editMode ? editableCell(creator, 'tiktokLink', undefined, 'sticky-link-cell') : <td className="sticky-link-cell"><a className="tiktok-link" href={creator.tiktokLink} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>{creator.tiktokLink.replace('https://www.', '')}</a></td>}
-              {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
+              {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} dataTour="spreadsheet-cell" onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
               {editMode ? editableCell(creator, 'segment', CREATOR_FIELD_OPTIONS.segment) : <td><span className="segment-tag">{creator.segment}</span></td>}
               {editMode ? editableCell(creator, 'category', CREATOR_FIELD_OPTIONS.category) : <td><span className="category-tag">{creator.category}</span></td>}
               {editMode ? editableCell(creator, 'type', CREATOR_FIELD_OPTIONS.type) : <td><span className="type-tag">{creator.type}</span></td>}

@@ -1,0 +1,26 @@
+@import "driver.js/dist/driver.css";
+
+/* Interactive Creator guide */
+.driver-popover.meta-creator-tour { width: min(350px,calc(100vw - 30px)); max-width: 350px; padding: 18px; border: 1px solid #d7e5f1; border-radius: 16px; color: #41536b; background: #fff; box-shadow: 0 22px 65px rgba(1,32,82,.24); font-family: inherit; }
+.meta-creator-tour .driver-popover-title { color: var(--navy); font-size: 15px; font-weight: 800; line-height: 1.35; letter-spacing: -.015em; }
+.meta-creator-tour .driver-popover-description { margin-top: 8px; color: #63748a; font-size: 11px; line-height: 1.65; }
+.meta-creator-tour .driver-popover-footer { align-items: center; gap: 9px; margin-top: 17px; }
+.meta-creator-tour .driver-popover-progress-text { color: #8795a8; font-size: 9px; font-weight: 700; }
+.meta-creator-tour .driver-popover-navigation-btns { gap: 7px; }
+.meta-creator-tour .driver-popover-next-btn,
+.meta-creator-tour .driver-popover-prev-btn { min-height: 34px; padding: 0 13px; border: 0; border-radius: 9px; font-family: inherit; font-size: 9px; font-weight: 800; text-shadow: none; }
+.meta-creator-tour .driver-popover-next-btn { color: #fff; background: var(--navy); }
+.meta-creator-tour .driver-popover-next-btn:hover { background: #07346f; }
+.meta-creator-tour .driver-popover-prev-btn { color: #40536c; background: #edf3f8; }
+.meta-creator-tour .driver-popover-close-btn { top: 10px; right: 11px; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 9px; color: #7d8b9d; font-size: 21px; }
+.meta-creator-tour .driver-popover-close-btn:hover { color: var(--navy); background: #edf5fb; }
+.meta-creator-tour.driver-popover-arrow-side-left .driver-popover-arrow { border-left-color: #fff; }
+.meta-creator-tour.driver-popover-arrow-side-right .driver-popover-arrow { border-right-color: #fff; }
+.meta-creator-tour.driver-popover-arrow-side-top .driver-popover-arrow { border-top-color: #fff; }
+.meta-creator-tour.driver-popover-arrow-side-bottom .driver-popover-arrow { border-bottom-color: #fff; }
+.driver-active-element { scroll-margin: 110px; }
+@media (max-width: 620px) {
+  .driver-popover.meta-creator-tour { padding: 15px; border-radius: 14px; }
+  .meta-creator-tour .driver-popover-title { font-size: 13px; }
+  .meta-creator-tour .driver-popover-description { font-size: 10px; }
+}

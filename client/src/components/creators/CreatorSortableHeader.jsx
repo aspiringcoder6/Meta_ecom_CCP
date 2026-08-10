@@ -1,6 +1,6 @@
 import Icon from '../common/Icon'
 
-export default function CreatorSortableHeader({ label, sortKey, criterion, priority, onSort }) {
+export default function CreatorSortableHeader({ label, sortKey, criterion, priority, dataTour, onSort }) {
   if (!sortKey) return label
 
   const directionLabel = criterion?.direction === 'asc' ? 'tăng dần' : 'giảm dần'
@@ -13,6 +13,7 @@ export default function CreatorSortableHeader({ label, sortKey, criterion, prior
   return (
     <button
       type="button"
+      data-tour={dataTour}
       className={`sortable-column-button${criterion ? ' is-active' : ''}${criterion?.direction === 'desc' ? ' is-descending' : ''}`}
       onClick={() => onSort(sortKey)}
       title={`${nextAction}. Tiêu chí được chọn trước có mức ưu tiên cao hơn.`}

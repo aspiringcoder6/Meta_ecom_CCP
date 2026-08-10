@@ -91,7 +91,7 @@ export default function CreatorSummary({ creators, onSelect }) {
   ]
 
   return (
-    <section className={`creator-insights-panel${expanded ? ' is-expanded' : ''}`}>
+    <section className={`creator-insights-panel${expanded ? ' is-expanded' : ''}`} data-tour="creator-insights">
       <header className="creator-insights-heading">
         <div><h2>Creator Insights</h2><p>{expanded ? 'Category, Segment, Booking Expense và Creator dẫn đầu' : 'Thông tin overview quan trọng của kho Creator'}</p></div>
         <button type="button" className="creator-insights-toggle" aria-expanded={expanded} onClick={() => setExpanded((current) => !current)}>

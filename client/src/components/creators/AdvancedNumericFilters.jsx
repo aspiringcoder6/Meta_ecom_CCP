@@ -19,7 +19,7 @@ function getFilterSummary(filter) {
   return `${field.label} · ${operator.label} ${values}`
 }
 
-export default function AdvancedNumericFilters({ filters, onAdd, onRemove }) {
+export default function AdvancedNumericFilters({ filters, tourId, onAdd, onRemove }) {
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState(INITIAL_DRAFT)
   const isRange = draft.operator === 'between'
@@ -35,7 +35,7 @@ export default function AdvancedNumericFilters({ filters, onAdd, onRemove }) {
   return (
     <div className="advanced-filters">
       <div className="advanced-filter-row">
-        <button className={`add-filter-button ${isOpen ? 'is-active' : ''}`} onClick={() => setIsOpen((current) => !current)}><Icon name="plus" size={15} /> Thêm bộ lọc số</button>
+        <button className={`add-filter-button ${isOpen ? 'is-active' : ''}`} data-tour={tourId} onClick={() => setIsOpen((current) => !current)}><Icon name="plus" size={15} /> Thêm bộ lọc số</button>
         {filters.map((filter) => <span className="numeric-filter-chip" key={filter.id}>{getFilterSummary(filter)}<button onClick={() => onRemove(filter.id)} aria-label={`Xóa bộ lọc ${getFilterSummary(filter)}`}><Icon name="close" size={13} /></button></span>)}
       </div>
       {isOpen && (

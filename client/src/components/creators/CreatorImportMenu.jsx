@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import templateUrl from '../../templates/creatorFormTemplate.xlsx?url'
 import Icon from '../common/Icon'
 
-export default function CreatorImportMenu({ onImport, disabled = false, disabledReason = '' }) {
+export default function CreatorImportMenu({ onImport, disabled = false, disabledReason = '', tourId }) {
   const appendInput = useRef(null)
   const replaceInput = useRef(null)
   const [isBusy, setIsBusy] = useState(false)
@@ -20,7 +20,7 @@ export default function CreatorImportMenu({ onImport, disabled = false, disabled
   }
 
   return (
-    <div className={`creator-import-menu${disabled ? ' is-disabled' : ''}`} title={disabled ? disabledReason : undefined}>
+    <div className={`creator-import-menu${disabled ? ' is-disabled' : ''}`} data-tour={tourId} title={disabled ? disabledReason : undefined}>
       <button className="secondary-button import-trigger" disabled={isBusy || disabled}><Icon name="upload" />{isBusy ? 'Đang đọc file...' : 'Import'}</button>
       {!disabled && <div className="import-menu-popover">
         <a href={templateUrl} download="creatorFormTemplate.xlsx"><span className="import-option-icon"><Icon name="download" size={17} /></span><span><strong>Tải template form</strong><small>File Excel đúng cấu trúc để nhập dữ liệu</small></span></a>
