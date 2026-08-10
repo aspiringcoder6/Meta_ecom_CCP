@@ -40,8 +40,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
             <Icon name="settings" /><span>Cài đặt</span>
           </NavLink>}
           <div className="help-card">
-            <span className="help-icon"><Icon name="sparkles" size={18} /></span>
-            <div><strong>Cần hỗ trợ?</strong><small>Xem quick tutorial</small></div>
+            <img className="help-mascot" src="/Avatar/Meers.png" alt="Meers" />
+            <div><strong>Meers hỗ trợ</strong><small>Xem quick tutorial</small></div>
           </div>
           <button className="collapse-button" onClick={onToggleCollapse}>
             <Icon name="panel" /><span>Thu gọn sidebar</span>

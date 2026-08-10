@@ -3,7 +3,11 @@
 .app-shell.is-collapsed .app-content { margin-left: 84px; }
 
 /* Navigation */
-.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 40; width: 256px; display: flex; flex-direction: column; padding: 26px 18px 18px; color: #d6e7ff; background: var(--navy); box-shadow: 12px 0 34px rgba(1,32,82,.09); transition: width 220ms ease, transform 220ms ease; }
+.sidebar { position: fixed; inset: 0 auto 0 0; z-index: 40; width: 256px; display: flex; flex-direction: column; overflow: hidden; padding: 26px 18px 18px; color: #d6e7ff; background: linear-gradient(155deg,#011b46 0%,#012052 50%,#07397a 100%); box-shadow: 12px 0 34px rgba(1,32,82,.13); transition: width 220ms ease, transform 220ms ease; }
+.sidebar::before, .sidebar::after { position: absolute; border-radius: 50%; content: ''; pointer-events: none; }
+.sidebar::before { top: -115px; right: -155px; width: 340px; height: 340px; border: 1px solid rgba(82,186,255,.18); box-shadow: 0 0 0 45px rgba(82,186,255,.035),0 0 0 90px rgba(82,186,255,.02); }
+.sidebar::after { left: -150px; bottom: -160px; width: 360px; height: 360px; background: radial-gradient(circle,rgba(82,186,255,.2),transparent 68%); }
+.sidebar > * { position: relative; z-index: 1; }
 .sidebar-collapsed { width: 84px; padding-inline: 14px; }
 .brand-row { min-height: 44px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
 .brand { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; color: white; background: transparent; text-align: left; }
@@ -21,8 +25,9 @@
 .nav-item.active svg { color: var(--blue); }
 .nav-count { min-width: 22px; height: 20px; display: grid; place-items: center; margin-left: auto; border-radius: 10px; color: var(--navy); background: var(--blue); font-size: 11px; font-weight: 800; }
 .sidebar-bottom { display: grid; gap: 8px; margin-top: auto; }
-.help-card { display: flex; align-items: center; gap: 10px; margin: 14px 0 4px; padding: 13px; border: 1px solid rgba(82,186,255,.16); border-radius: 14px; background: rgba(82,186,255,.08); overflow: hidden; }
+.help-card { display: flex; align-items: center; gap: 8px; min-height: 62px; margin: 14px 0 4px; padding: 8px 10px; border: 1px solid rgba(126,207,255,.2); border-radius: 14px; background: linear-gradient(135deg,rgba(82,186,255,.13),rgba(255,255,255,.045)); overflow: hidden; }
 .help-icon { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; border-radius: 10px; color: var(--navy); background: var(--blue); }
+.help-mascot { width: 43px; height: 49px; flex: 0 0 43px; object-fit: contain; filter: drop-shadow(0 7px 9px rgba(0,0,0,.25)); }
 .help-card div { display: grid; white-space: nowrap; }
 .help-card strong { color: white; font-size: 12px; }
 .help-card small { margin-top: 2px; color: #86a1c4; font-size: 10px; }
@@ -33,7 +38,8 @@
 .sidebar-collapsed .nav-item, .sidebar-collapsed .collapse-button { justify-content: center; padding-inline: 0; }
 .sidebar-collapsed .nav-item.active { box-shadow: none; }
 .sidebar-collapsed .nav-count { position: absolute; translate: 13px -13px; min-width: 17px; height: 17px; font-size: 9px; }
-.sidebar-collapsed .help-card { justify-content: center; padding-inline: 0; border: 0; background: transparent; }
+.sidebar-collapsed .help-card { justify-content: center; min-height: 56px; padding-inline: 0; border: 0; background: transparent; }
+.sidebar-collapsed .help-mascot { width: 47px; height: 52px; flex-basis: 47px; }
 .sidebar-close, .mobile-menu, .sidebar-scrim { display: none; }
 
 /* Top bar */
