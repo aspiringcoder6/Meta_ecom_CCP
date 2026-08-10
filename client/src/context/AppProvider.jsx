@@ -37,11 +37,11 @@ function getCreatorBatchChanges(originalCreators, currentCreators) {
 function creatorPayloadFromForm(form) {
   const tiktokId = form.handle.trim().replace(/^@/, '')
   return {
-    name: form.name.trim(), tiktokLink: form.tiktokLink.trim() || `https://www.tiktok.com/@${tiktokId}`,
+    name: form.name.trim() || tiktokId, tiktokLink: form.tiktokLink.trim(),
     tiktokId, segment: form.segment, category: form.category, type: form.type,
     cost: Number(form.cost) || 0, extraCost: Number(form.extraCost) || 0, gmvMonth: Number(form.gmvMonth) || 0,
-    scope: form.scope.trim(), contact: form.contact.trim() || form.email.trim(),
-    historicalCampaign: form.historicalCampaign || 'Chưa hợp tác', mcnNote: form.mcnNote || '',
+    scope: form.scope.trim(), contact: form.contact.trim() || form.email.trim(), concept: form.concept.trim(), productFocus: form.productFocus.trim(),
+    historicalCampaign: form.historicalCampaign || 'Đã hợp tác', mcnNote: form.mcnNote || '',
     followers: Number(form.followers) || 0, engagement: Number(form.engagement) || 0,
     email: form.email.trim(), phone: form.phone.trim(),
   }
@@ -53,8 +53,8 @@ function createQuickCreator() {
   return {
     id, name: 'Creator mới', handle: `@${tiktokId}`, initials: 'CR', platform: 'TikTok',
     tiktokLink: `https://www.tiktok.com/@${tiktokId}`, tiktokId, segment: 'MINI', category: 'BEAUTY', type: 'VIDEO',
-    cost: 0, extraCost: 0, followers: 0, gmvMonth: 0, scope: '', contact: '',
-    historicalCampaign: 'Chưa hợp tác', mcnNote: '', engagement: 0, status: 'Available',
+    cost: 0, extraCost: 0, followers: 0, gmvMonth: 0, scope: '', contact: '', concept: '', productFocus: '',
+    historicalCampaign: 'Đã hợp tác', mcnNote: '', engagement: 0, status: 'Available',
     email: 'Chưa cung cấp', phone: 'Chưa cung cấp', bookingPrice: 0, campaigns: 0,
     color: '#dcecff', accent: '#1769aa',
   }

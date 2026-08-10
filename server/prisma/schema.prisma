@@ -76,7 +76,9 @@ model Creator {
   gmvMonth           Decimal           @default(0) @db.Decimal(18, 2)
   scope              String?
   contact            String?
-  historicalCampaign String            @default("Chưa hợp tác")
+  concept            String?
+  productFocus       String?
+  historicalCampaign String            @default("Đã hợp tác")
   mcnNote            String?
   engagement         Decimal           @default(0) @db.Decimal(8, 2)
   status             String            @default("Available")

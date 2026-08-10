@@ -34,7 +34,7 @@ export function validateCreatorValue(field, rawValue) {
   }
 
   if (NUMERIC_FIELDS.has(field)) {
-    if (text === '') return { error: 'Giá trị số không được để trống.' }
+    if (text === '') return { value: 0 }
     const normalized = text.replace(/[\s,]/g, '')
     const number = Number(normalized)
     if (!Number.isFinite(number)) return { error: 'Hãy nhập một giá trị số hợp lệ.' }

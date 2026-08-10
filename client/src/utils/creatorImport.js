@@ -14,6 +14,8 @@ const HEADER_FIELDS = [
   { field: 'gmvMonth', matches: ['gmv month', 'gmv'] },
   { field: 'scope', matches: ['scope'] },
   { field: 'contact', matches: ['contact'] },
+  { field: 'concept', matches: ['concept'] },
+  { field: 'productFocus', matches: ['product focus', 'productfocus'] },
   { field: 'historicalCampaign', matches: ['tinh trang hop tac', 'historical campaign'] },
   { field: 'mcnNote', matches: ['mcn note', 'meta ecom note'] },
 ]
@@ -94,16 +96,14 @@ function normalizeType(value) {
   return normalizeFromOptions(value, CREATOR_TYPES)
 }
 
-function extractTikTokId(link) {
-  return String(link || '').match(/tiktok\.com\/@([^/?#]+)/i)?.[1] || ''
-}
-
 function createImportedCreator(values, index) {
-  const tiktokId = String(values.tiktokId || extractTikTokId(values.tiktokLink)).trim().replace(/^@/, '')
-  const tiktokLink = String(values.tiktokLink || (tiktokId ? `https://www.tiktok.com/@${tiktokId}` : '')).trim()
+  const tiktokId = String(values.tiktokId || '').trim().replace(/^@/, '')
+  const tiktokLink = String(values.tiktokLink || '').trim()
   const errors = []
   if (!tiktokId) errors.push('Thiếu ID TikTok')
-  if (!/^https?:\/\/(www\.)?tiktok\.com\/@[^\s/]+/i.test(tiktokLink)) errors.push('Link TikTok không hợp lệ')
+  else if (!/^[\p{L}\p{N}._-]+$/u.test(tiktokId)) errors.push('ID TikTok chứa ký tự không hợp lệ')
+  if (!tiktokLink) errors.push('Thiếu Link TikTok')
+  else if (!/^https?:\/\/(www\.)?tiktok\.com\/@[^\s/]+/i.test(tiktokLink)) errors.push('Link TikTok không hợp lệ')
 
   const segment = normalizeSegment(values.segment) || 'MINI'
   const category = normalizeCategory(values.category) || 'BEAUTY'
@@ -115,7 +115,12 @@ function createImportedCreator(values, index) {
   if ([cost, extraCost, followers, gmvMonth].some((number) => !Number.isFinite(number) || number < 0)) errors.push('Có giá trị số không hợp lệ')
 
   const historicalText = normalizeText(values.historicalCampaign)
-  const historicalCampaign = historicalText.includes('da hop tac') || historicalText === 'yes' ? 'Đã hợp tác' : 'Chưa hợp tác'
+  const collaborationTrueValues = ['true', 'yes', '1', 'da hop tac']
+  const collaborationFalseValues = ['false', 'no', '0', 'chua hop tac']
+  if (historicalText && !collaborationTrueValues.includes(historicalText) && !collaborationFalseValues.includes(historicalText)) {
+    errors.push('Tình trạng hợp tác phải là true/false hoặc Đã hợp tác/Chưa hợp tác')
+  }
+  const historicalCampaign = collaborationFalseValues.includes(historicalText) ? 'Chưa hợp tác' : 'Đã hợp tác'
   const id = Date.now() + index
   return {
     errors,
@@ -123,7 +128,8 @@ function createImportedCreator(values, index) {
       id, name: tiktokId || `Creator dòng ${index + 2}`, handle: `@${tiktokId}`, initials: (tiktokId || 'CR').slice(0, 2).toUpperCase(), platform: 'TikTok',
       tiktokLink, tiktokId, segment, category, type, cost: Number.isFinite(cost) ? cost : 0, extraCost: Number.isFinite(extraCost) ? extraCost : 0,
       followers: Number.isFinite(followers) ? followers : 0, gmvMonth: Number.isFinite(gmvMonth) ? gmvMonth : 0,
-      scope: String(values.scope || ''), contact: String(values.contact || ''), historicalCampaign, mcnNote: String(values.mcnNote || ''),
+      scope: String(values.scope || ''), contact: String(values.contact || ''), concept: String(values.concept || ''), productFocus: String(values.productFocus || ''),
+      historicalCampaign, mcnNote: String(values.mcnNote || ''),
       engagement: 0, status: 'Available', email: 'Chưa cung cấp', phone: 'Chưa cung cấp', bookingPrice: Number.isFinite(cost) ? cost : 0,
       campaigns: 0, color: '#dcecff', accent: '#1769aa',
     },
@@ -134,6 +140,7 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
   const headerIndex = rows.findIndex((row) => row.some((cell) => normalizeText(cell) === 'id tiktok'))
   if (headerIndex < 0) throw new Error('Không tìm thấy cột “ID Tiktok” trong file.')
   const headers = rows[headerIndex].map(getHeaderField)
+  if (!headers.includes('tiktokLink')) throw new Error('Không tìm thấy cột “Link Tiktok” trong file.')
   const existingIds = new Set(existingCreators.map((creator) => normalizeTikTokId(creator.tiktokId)))
   const importedIds = new Set()
   const creators = []
@@ -148,7 +155,9 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
       const cellValue = row[columnIndex]
       if ((values[field] === undefined || values[field] === '') && cellValue !== null && cellValue !== undefined && cellValue !== '') values[field] = cellValue
     })
-    if (normalizeText(values.tiktokId) === 'text' && normalizeText(values.tiktokLink) === 'link') return
+    const instructionId = normalizeText(values.tiktokId)
+    const instructionLink = normalizeText(values.tiktokLink)
+    if ((instructionId === 'text' && instructionLink === 'link') || instructionId.startsWith('bat buoc') || instructionLink.startsWith('bat buoc')) return
     const parsed = createImportedCreator(values, rowIndex)
     const normalizedId = normalizeTikTokId(parsed.creator.tiktokId)
     if (normalizedId && (importedIds.has(normalizedId) || (mode === 'append' && existingIds.has(normalizedId)))) {

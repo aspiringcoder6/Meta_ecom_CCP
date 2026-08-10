@@ -19,6 +19,8 @@ export interface CreatorInput {
   gmvMonth: number
   scope: string | null
   contact: string | null
+  concept: string | null
+  productFocus: string | null
   historicalCampaign: string
   mcnNote: string | null
   engagement: number
@@ -59,6 +61,17 @@ function optionValue(value: unknown, field: string, options: readonly string[], 
   return result
 }
 
+function collaborationValue(value: unknown, errors: FieldErrors) {
+  if (value === undefined || value === null || text(value) === '') return 'Đã hợp tác'
+  if (value === true) return 'Đã hợp tác'
+  if (value === false) return 'Chưa hợp tác'
+  const normalized = text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase()
+  if (['true', 'yes', '1', 'da hop tac'].includes(normalized)) return 'Đã hợp tác'
+  if (['false', 'no', '0', 'chua hop tac'].includes(normalized)) return 'Chưa hợp tác'
+  errors.historicalCampaign = 'Giá trị phải là Đã hợp tác/Chưa hợp tác hoặc true/false.'
+  return 'Đã hợp tác'
+}
+
 export function validateCreatorInput(value: unknown, partial = false): CreatorUpdate {
   const input = asObject(value)
   const errors: FieldErrors = {}
@@ -74,35 +87,38 @@ export function validateCreatorInput(value: unknown, partial = false): CreatorUp
 
   if (!partial || has('name')) {
     const name = text(input.name) || output.tiktokId || ''
-    if (!name) errors.name = 'Tên Creator không được để trống.'
     output.name = name
   }
 
-  if (!partial || has('tiktokLink') || has('tiktokId')) {
-    const tiktokLink = text(input.tiktokLink) || (output.tiktokId ? `https://www.tiktok.com/@${output.tiktokId}` : '')
-    try {
-      const url = new URL(tiktokLink)
-      if (!/(^|\.)tiktok\.com$/i.test(url.hostname) || !url.pathname.startsWith('/@')) errors.tiktokLink = 'Hãy nhập Link TikTok có dạng https://www.tiktok.com/@id.'
-    } catch {
-      errors.tiktokLink = 'Link TikTok không đúng định dạng URL.'
+  if (!partial || has('tiktokLink')) {
+    const tiktokLink = text(input.tiktokLink)
+    if (!tiktokLink) errors.tiktokLink = 'Link TikTok không được để trống.'
+    else {
+      try {
+        const url = new URL(tiktokLink)
+        if (!/(^|\.)tiktok\.com$/i.test(url.hostname) || !url.pathname.startsWith('/@')) errors.tiktokLink = 'Hãy nhập Link TikTok có dạng https://www.tiktok.com/@id.'
+      } catch {
+        errors.tiktokLink = 'Link TikTok không đúng định dạng URL.'
+      }
     }
     output.tiktokLink = tiktokLink
   }
 
   const optionFields = [
     ['segment', CREATOR_SEGMENTS, 'MINI'], ['category', CREATOR_CATEGORIES, 'BEAUTY'], ['type', CREATOR_TYPES, 'VIDEO'],
-    ['historicalCampaign', HISTORICAL_CAMPAIGNS, 'Chưa hợp tác'], ['status', CREATOR_STATUSES, 'Available'],
+    ['status', CREATOR_STATUSES, 'Available'],
   ] as const
   for (const [field, options, fallback] of optionFields) {
     if (!partial || has(field)) output[field] = optionValue(input[field], field, options, fallback, errors)
   }
+  if (!partial || has('historicalCampaign')) output.historicalCampaign = collaborationValue(input.historicalCampaign, errors)
 
   const numericFields = [['cost', false], ['extraCost', false], ['followers', true], ['gmvMonth', false], ['engagement', false]] as const
   for (const [field, integer] of numericFields) {
     if (!partial || has(field)) output[field] = numberValue(input[field], field, errors, integer)
   }
 
-  for (const field of ['scope', 'contact', 'mcnNote', 'email', 'phone'] as const) {
+  for (const field of ['scope', 'contact', 'concept', 'productFocus', 'mcnNote', 'email', 'phone'] as const) {
     if (!partial || has(field)) output[field] = nullableText(input[field])
   }
   if (output.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(output.email)) errors.email = 'Email không đúng định dạng.'

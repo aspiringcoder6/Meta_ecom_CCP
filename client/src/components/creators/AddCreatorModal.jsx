@@ -8,7 +8,7 @@ import Icon from '../common/Icon'
 const EMPTY_FORM = {
   name: '', handle: '', tiktokLink: '', segment: 'MINI', category: 'BEAUTY', type: 'VIDEO',
   cost: '', extraCost: '', followers: '', gmvMonth: '', scope: '', contact: '',
-  historicalCampaign: 'Chưa hợp tác', mcnNote: '', engagement: '', email: '', phone: '',
+  concept: '', productFocus: '', historicalCampaign: 'Đã hợp tác', mcnNote: '', engagement: '', email: '', phone: '',
 }
 
 function getInitialForm(creator) {
@@ -18,20 +18,18 @@ function getInitialForm(creator) {
     segment: creator.segment || 'MINI', category: creator.category || 'BEAUTY', type: creator.type || 'VIDEO',
     cost: creator.cost ?? '', extraCost: creator.extraCost ?? '', followers: creator.followers ?? '', gmvMonth: creator.gmvMonth ?? '',
     scope: creator.scope || '', contact: creator.contact === 'Chưa cung cấp' ? '' : creator.contact || '',
-    historicalCampaign: creator.historicalCampaign || 'Chưa hợp tác', mcnNote: creator.mcnNote || '', engagement: creator.engagement ?? '',
+    concept: creator.concept || '', productFocus: creator.productFocus || '', historicalCampaign: creator.historicalCampaign || 'Đã hợp tác',
+    mcnNote: creator.mcnNote || '', engagement: creator.engagement ?? '',
     email: creator.email === 'Chưa cung cấp' ? '' : creator.email || '', phone: creator.phone === 'Chưa cung cấp' ? '' : creator.phone || '',
   }
 }
 
 function validateForm(form) {
   const errors = {}
-  if (!form.name.trim()) errors.name = 'Tên Creator không được để trống.'
   const idResult = validateCreatorValue('tiktokId', form.handle)
   if (idResult.error) errors.handle = idResult.error
-  if (form.tiktokLink.trim()) {
-    const linkResult = validateCreatorValue('tiktokLink', form.tiktokLink)
-    if (linkResult.error) errors.tiktokLink = linkResult.error
-  }
+  const linkResult = validateCreatorValue('tiktokLink', form.tiktokLink)
+  if (linkResult.error) errors.tiktokLink = linkResult.error
   return errors
 }
 
@@ -83,9 +81,9 @@ export default function AddCreatorModal({ creator, onClose, onSubmit }) {
         {submitError && <div className="form-submit-error" role="alert"><Icon name="warning" size={16} /><span>{submitError}</span></div>}
 
         <div className="form-grid">
-          <label className={`field full-field ${fieldErrors.name ? 'has-error' : ''}`}><span>Tên Creator <b>*</b></span><input autoFocus value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="VD: Ngọc Anh" /><FieldError message={fieldErrors.name} /></label>
+          <label className="field full-field"><span>Tên Creator</span><input autoFocus value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="Để trống sẽ dùng ID TikTok" /></label>
           <label className={`field ${fieldErrors.handle ? 'has-error' : ''}`}><span>ID TikTok <b>*</b></span><input value={form.handle} onChange={(event) => update('handle', event.target.value)} placeholder="vickiee.bae" /><FieldError message={fieldErrors.handle} /></label>
-          <label className={`field ${fieldErrors.tiktokLink ? 'has-error' : ''}`}><span>Link TikTok</span><input value={form.tiktokLink} onChange={(event) => update('tiktokLink', event.target.value)} placeholder="https://www.tiktok.com/@..." /><FieldError message={fieldErrors.tiktokLink} /></label>
+          <label className={`field ${fieldErrors.tiktokLink ? 'has-error' : ''}`}><span>Link TikTok <b>*</b></span><input value={form.tiktokLink} onChange={(event) => update('tiktokLink', event.target.value)} placeholder="https://www.tiktok.com/@..." /><FieldError message={fieldErrors.tiktokLink} /></label>
           <label className="field"><span>Segment</span><select value={form.segment} onChange={(event) => update('segment', event.target.value)}>{CREATOR_SEGMENTS.map((value) => <option key={value}>{value}</option>)}</select></label>
           <label className="field"><span>Category</span><select value={form.category} onChange={(event) => update('category', event.target.value)}>{CREATOR_CATEGORIES.map((value) => <option key={value}>{value}</option>)}</select></label>
           <label className="field"><span>Type</span><select value={form.type} onChange={(event) => update('type', event.target.value)}>{CREATOR_TYPES.map((value) => <option key={value}>{value}</option>)}</select></label>
@@ -96,6 +94,8 @@ export default function AddCreatorModal({ creator, onClose, onSubmit }) {
           <label className="field"><span>GMV / Month</span><input type="number" min="0" value={form.gmvMonth} onChange={(event) => update('gmvMonth', event.target.value)} placeholder="0" /></label>
           <label className="field full-field"><span>Scope</span><input value={form.scope} onChange={(event) => update('scope', event.target.value)} placeholder="Phạm vi công việc" /></label>
           <label className="field full-field"><span>Contact</span><input value={form.contact} onChange={(event) => update('contact', event.target.value)} placeholder="Email, SĐT, TikTok, ..." /></label>
+          <label className="field full-field"><span>Concept</span><input value={form.concept} onChange={(event) => update('concept', event.target.value)} placeholder="Ý tưởng nội dung chính" /></label>
+          <label className="field full-field"><span>Product Focus</span><input value={form.productFocus} onChange={(event) => update('productFocus', event.target.value)} placeholder="Sản phẩm hoặc điểm nhấn cần tập trung" /></label>
           <label className="field"><span>Tình trạng hợp tác</span><select value={form.historicalCampaign} onChange={(event) => update('historicalCampaign', event.target.value)}><option>Chưa hợp tác</option><option>Đã hợp tác</option></select></label>
           <label className="field"><span>MCN note</span><input value={form.mcnNote} onChange={(event) => update('mcnNote', event.target.value)} placeholder="Để trống nếu chưa có ghi chú" /></label>
           <label className="field"><span>Tỷ lệ engagement</span><div className="input-suffix"><input type="number" min="0" step="0.1" value={form.engagement} onChange={(event) => update('engagement', event.target.value)} placeholder="0.0" /><span>%</span></div></label>

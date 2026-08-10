@@ -13,7 +13,7 @@ export const list: RequestHandler = async (request, response) => {
   })
   if (request.auth?.user.role === 'VIEWER') {
     creators = creators.map((creator) => ({
-      ...creator, contact: '', scope: '', mcnNote: '', email: '', phone: '', tiktokLink: '', historicalCampaign: '',
+      ...creator, contact: '', scope: '', concept: '', productFocus: '', mcnNote: '', email: '', phone: '', tiktokLink: '', historicalCampaign: '',
     }))
   }
   response.json({ data: creators, meta: { total: creators.length } })
