@@ -7,10 +7,15 @@ function queryText(value: unknown) {
 }
 
 export const list: RequestHandler = async (request, response) => {
-  const creators = await creatorService.listCreators({
+  let creators = await creatorService.listCreators({
     search: queryText(request.query.search), segment: queryText(request.query.segment), category: queryText(request.query.category),
     type: queryText(request.query.type), status: queryText(request.query.status),
   })
+  if (request.auth?.user.role === 'VIEWER') {
+    creators = creators.map((creator) => ({
+      ...creator, contact: '', scope: '', mcnNote: '', email: '', phone: '', tiktokLink: '', historicalCampaign: '',
+    }))
+  }
   response.json({ data: creators, meta: { total: creators.length } })
 }
 

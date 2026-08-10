@@ -6,12 +6,14 @@ import CreatorWorkspace from '../components/creators/CreatorWorkspace'
 import CreatorImportMenu from '../components/creators/CreatorImportMenu'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
+import { useAuth } from '../hooks/useAuth'
 import { DEFAULT_CREATOR_FILTERS, matchesCreatorFilters } from '../utils/creatorFilters'
 import { exportCreatorsToCsv } from '../utils/exportCreators'
 import { parseCreatorImportFile } from '../utils/creatorImport'
 import { cycleCreatorSort, sortCreators } from '../utils/creatorSorting'
 
 export default function CreatorsPage() {
+  const { canManageCreators } = useAuth()
   const { creators, recentlyAddedCreatorId, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
   const [filters, setFilters] = useState(DEFAULT_CREATOR_FILTERS)
   const [numericFilters, setNumericFilters] = useState([])
@@ -80,7 +82,7 @@ export default function CreatorsPage() {
     setImportReview(null)
   }
   const workspaceProps = {
-    creators: displayedCreators, filters, filterOptions, numericFilters, sortCriteria, canUndo, canRedo, recentlyAddedCreatorId, importReview,
+    creators: displayedCreators, filters, filterOptions, numericFilters, sortCriteria, canUndo, canRedo, recentlyAddedCreatorId, importReview, canManage: canManageCreators,
     onFilterChange: updateFilter,
     onAddNumericFilter: (filter) => setNumericFilters((current) => [...current, filter]),
     onRemoveNumericFilter: (filterId) => setNumericFilters((current) => current.filter((filter) => filter.id !== filterId)),
@@ -107,14 +109,14 @@ export default function CreatorsPage() {
     <main className="page creators-page">
       <section className="page-heading creators-heading">
         <div><p className="page-kicker">Danh sách Creator</p><h1 className='font-bold'>Creators</h1><p className='font-bold'>Tìm kiếm, sắp xếp và quản lý mạng lưới Creators một cách nhanh chóng và dễ dàng.</p></div>
-        <div className="heading-actions"><button className="secondary-button" onClick={handleExport}><Icon name="download" />Export</button><CreatorImportMenu onImport={handleImport} /><button className="primary-button" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></div>
+        <div className="heading-actions"><button className="secondary-button" onClick={handleExport}><Icon name="download" />Export</button>{canManageCreators && <><CreatorImportMenu onImport={handleImport} /><button className="primary-button" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></>}</div>
       </section>
       <CreatorSummary creators={creators} onSelect={setSelectedCreatorId} />
       <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />
       {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
-      <CreatorDetailsDrawer creator={selectedCreator} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />
-      {addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}
-      {editingCreator && <AddCreatorModal creator={editingCreator} onClose={() => setEditingCreatorId(null)} onSubmit={handleEdit} />}
+      <CreatorDetailsDrawer creator={selectedCreator} canManage={canManageCreators} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />
+      {canManageCreators && addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}
+      {canManageCreators && editingCreator && <AddCreatorModal creator={editingCreator} onClose={() => setEditingCreatorId(null)} onSubmit={handleEdit} />}
     </main>
   )
 }

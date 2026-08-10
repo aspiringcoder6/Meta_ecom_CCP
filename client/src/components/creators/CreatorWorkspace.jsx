@@ -19,12 +19,12 @@ function getDensityLabel(rowHeight) {
   return 'Thoáng'
 }
 
-export default function CreatorWorkspace({ creators, filters, filterOptions, numericFilters, sortCriteria, isFullscreen = false, canUndo = false, canRedo = false, recentlyAddedCreatorId, importReview, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onSort, onSelect, onArchive, onUpdateCreator, onDeleteCreator, onQuickAdd, onUndo, onRedo, onBeginEdit, onCommitEdit, onCancelEdit, onAcceptImport, onCancelImport, onImport, onExport, onAddCreator, onEnterFullscreen, onExitFullscreen }) {
+export default function CreatorWorkspace({ creators, filters, filterOptions, numericFilters, sortCriteria, isFullscreen = false, canManage = false, canUndo = false, canRedo = false, recentlyAddedCreatorId, importReview, onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onSort, onSelect, onArchive, onUpdateCreator, onDeleteCreator, onQuickAdd, onUndo, onRedo, onBeginEdit, onCommitEdit, onCancelEdit, onAcceptImport, onCancelImport, onImport, onExport, onAddCreator, onEnterFullscreen, onExitFullscreen }) {
   const [columnWidths, setColumnWidths] = useState(DEFAULT_COLUMN_WIDTHS)
   const [headerHeight, setHeaderHeight] = useState(64)
   const [toolbarHeight, setToolbarHeight] = useState(106)
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT)
-  const [editMode, setEditMode] = useState(Boolean(importReview))
+  const [editMode, setEditMode] = useState(Boolean(importReview) && canManage)
 
   useEffect(() => {
     if (!isFullscreen || !editMode) return undefined
@@ -81,9 +81,9 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
             <div><span className="fullscreen-kicker">Creator Management</span><h2>Danh sách Creator</h2><p>{importReview ? `Xem trước import · ${importReview.fileName}` : editMode ? 'Chế độ chỉnh sửa spreadsheet' : `${creators.length} kết quả phù hợp`}</p></div>
             <div className="fullscreen-actions">
               <button className="secondary-button" onClick={onExport}><Icon name="download" />Export</button>
-              {!importReview && <CreatorImportMenu onImport={onImport} disabled={editMode} disabledReason="Hoàn tất hoặc hủy chế độ chỉnh sửa trước khi Import" />}
+              {canManage && !importReview && <CreatorImportMenu onImport={onImport} disabled={editMode} disabledReason="Hoàn tất hoặc hủy chế độ chỉnh sửa trước khi Import" />}
               {editMode && <div className="history-actions"><button disabled={!canUndo} onClick={onUndo} aria-label="Hoàn tác" title="Undo · Ctrl+Z"><Icon name="undo" size={17} /></button><button disabled={!canRedo} onClick={onRedo} aria-label="Quay lại" title="Redo · Ctrl+Y"><Icon name="redo" size={17} /></button></div>}
-              {importReview ? <><button className="cancel-edit-button" onClick={cancelImport}><Icon name="close" size={15} />Hủy import</button><button className="mode-toggle-button is-editing" onClick={acceptImport}><Icon name="check" size={16} />Chấp nhận tất cả</button></> : <>{editMode ? <button className="quick-add-button" onClick={onQuickAdd}><Icon name="plus" />Thêm nhanh</button> : <button className="primary-button" onClick={onAddCreator}><Icon name="plus" />Thêm Creator</button>}{editMode && <button className="cancel-edit-button" onClick={cancelEditMode}><Icon name="close" size={15} />Hủy thay đổi</button>}<button className={`mode-toggle-button ${editMode ? 'is-editing' : ''}`} onClick={editMode ? finishEditMode : enterEditMode}><Icon name={editMode ? 'check' : 'edit'} size={16} />{editMode ? 'Hoàn tất' : 'Chỉnh sửa'}</button></>}
+              {canManage && (importReview ? <><button className="cancel-edit-button" onClick={cancelImport}><Icon name="close" size={15} />Hủy import</button><button className="mode-toggle-button is-editing" onClick={acceptImport}><Icon name="check" size={16} />Chấp nhận tất cả</button></> : <>{editMode ? <button className="quick-add-button" onClick={onQuickAdd}><Icon name="plus" />Thêm nhanh</button> : <button className="primary-button" onClick={onAddCreator}><Icon name="plus" />Thêm Creator</button>}{editMode && <button className="cancel-edit-button" onClick={cancelEditMode}><Icon name="close" size={15} />Hủy thay đổi</button>}<button className={`mode-toggle-button ${editMode ? 'is-editing' : ''}`} onClick={editMode ? finishEditMode : enterEditMode}><Icon name={editMode ? 'check' : 'edit'} size={16} />{editMode ? 'Hoàn tất' : 'Chỉnh sửa'}</button></>)}
               <button className="fullscreen-close" onClick={exitFullscreen} aria-label="Thoát toàn màn hình"><Icon name="minimize" /></button>
             </div>
           </header>
@@ -95,7 +95,7 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
       {!isFullscreen && toolbar}
       {importReview && isFullscreen && <ImportReviewBanner review={importReview} />}
       <div className="table-meta"><span><strong>{creators.length}</strong> Creator</span><span>{importReview ? 'Dòng xanh: dữ liệu hợp lệ, dòng lỗi được liệt kê màu đỏ phía trên' : editMode ? 'Bấm vào ô để sửa · Enter để lưu · Esc để hủy nội dung đang nhập' : isFullscreen ? 'Bấm header để sort nhiều tiêu chí · Kéo mép cột để chỉnh độ rộng' : 'Bấm header để sort nhiều tiêu chí · Cuộn ngang để xem toàn bộ thông tin'}</span></div>
-      <CreatorTable creators={creators} highlightedCreatorIds={importReview?.importedIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} sortCriteria={sortCriteria} onSort={onSort} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
+      <CreatorTable creators={creators} canManage={canManage} highlightedCreatorIds={importReview?.importedIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} sortCriteria={sortCriteria} onSort={onSort} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
       <div className="pagination">
         <span>Hiển thị 1–{creators.length} trên {creators.length}</span>
         {isFullscreen && <div className="row-density-controls"><span>Mật độ: <strong>{getDensityLabel(rowHeight)}</strong></span><button disabled={rowHeight === MIN_ROW_HEIGHT} onClick={() => changeRowHeight(-ROW_HEIGHT_STEP)} aria-label="Giảm chiều cao hàng để xem nhiều Creator hơn" title="Xem nhiều hàng hơn"><Icon name="minus" size={14} /></button><button className="density-value" onClick={() => setRowHeight(DEFAULT_ROW_HEIGHT)} title="Đặt lại chiều cao hàng">{rowHeight}px</button><button disabled={rowHeight === MAX_ROW_HEIGHT} onClick={() => changeRowHeight(ROW_HEIGHT_STEP)} aria-label="Tăng chiều cao hàng" title="Tăng chiều cao hàng"><Icon name="plus" size={14} /></button></div>}

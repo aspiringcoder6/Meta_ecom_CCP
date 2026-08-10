@@ -3,5 +3,6 @@
 @import "./styles/dashboard.css";
 @import "./styles/creators.css";
 @import "./styles/overlays.css";
+@import "./styles/auth.css";
+@import "./styles/users.css";
 @import "./styles/responsive.css";
-

@@ -6,11 +6,13 @@ import GmvCategoryPanel from '../components/dashboard/GmvCategoryPanel'
 import MetricCard from '../components/dashboard/MetricCard'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
+import { useAuth } from '../hooks/useAuth'
 import { formatAudience, formatCompactCurrency } from '../utils/formatters'
 import { getCreatorInsights } from '../utils/creatorInsights'
 
 export default function DashboardPage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { creators } = useApp()
   const creatorInsights = getCreatorInsights(creators)
   const availableCreators = creatorInsights.availableCreators
@@ -26,7 +28,7 @@ export default function DashboardPage() {
     <main className="page dashboard-page">
       <section className="page-heading dashboard-heading">
         <div><p className="page-kicker">{today}</p><h1 className='font-bold'>Tổng quan Creator</h1><p className='font-bold'>Theo dõi quy mô của mạng lưới Creators, GMV và Booking Expense theo tháng</p></div>
-        <button className="primary-button" onClick={() => navigate('/creators')}><Icon name="users" />Quản lý Creator</button>
+        {user.role !== 'VIEWER' && <button className="primary-button" onClick={() => navigate('/creators')}><Icon name="users" />Quản lý Creator</button>}
       </section>
       <section className="metrics-grid">
         <MetricCard icon="users" label="Tổng số Creator" value={String(creators.length)} trend={`${availableCreators.length} khả dụng`} trendLabel={`${creators.length - availableCreators.length} Creator đang lưu trữ`} />

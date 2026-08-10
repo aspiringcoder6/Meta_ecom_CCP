@@ -21,13 +21,44 @@ enum Role {
   CLIENT
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  SUSPENDED
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+}
+
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
-  password      String
-  role          Role
-  createdAt     DateTime       @default(now())
-  notifications Notification[]
+  id              String         @id @default(uuid())
+  email           String         @unique
+  username        String?        @unique
+  name            String
+  passwordHash    String?        @map("password")
+  role            Role?
+  status          UserStatus     @default(PENDING)
+  provider        AuthProvider   @default(LOCAL)
+  googleSubject   String?        @unique
+  avatarUrl       String?
+  department      String?
+  emailVerified   Boolean        @default(false)
+  rejectionReason String?
+  tokenVersion    Int            @default(0)
+  lastLoginAt     DateTime?
+  reviewedAt      DateTime?
+  reviewedById    String?
+  reviewedBy      User?          @relation("UserReviews", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewedUsers   User[]         @relation("UserReviews")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  notifications   Notification[]
+
+  @@index([status])
+  @@index([role])
 }
 
 model Creator {

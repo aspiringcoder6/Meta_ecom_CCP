@@ -46,7 +46,7 @@ function ColumnResizeHandle({ index, width, onResize, onReset }) {
   return <span className="column-resize-handle" role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
-export default function CreatorTable({ creators, highlightedCreatorIds = [], sortCriteria = [], onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
+export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], sortCriteria = [], onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
   if (!creators.length) return <EmptyResults />
 
   const tableWidth = resizable ? columnWidths.reduce((total, width) => total + width, 0) : undefined
@@ -81,7 +81,7 @@ export default function CreatorTable({ creators, highlightedCreatorIds = [], sor
               {editMode ? editableCell(creator, 'contact') : <td className="long-text-cell">{creator.contact || '—'}</td>}
               {editMode ? editableCell(creator, 'historicalCampaign', CREATOR_FIELD_OPTIONS.historicalCampaign) : <td><CollaborationBadge value={creator.historicalCampaign} /></td>}
               {editMode ? editableCell(creator, 'mcnNote') : <td className="long-text-cell mcn-note-cell">{creator.mcnNote || <span className="empty-value">Để trống</span>}</td>}
-              <td className="sticky-action-cell"><div className="row-actions">{editMode ? <button className="delete-row-button" onClick={(event) => { event.stopPropagation(); onDelete(creator.id) }} aria-label={`Xóa ${creator.tiktokId}`} title="Xóa nhanh; có thể Undo"><Icon name="trash" size={16} /></button> : <><button className="subtle-icon" onClick={(event) => { event.stopPropagation(); onSelect(creator.id) }} aria-label={`Xem ${creator.name}`}><Icon name="chevronRight" size={18} /></button><button className="subtle-icon" onClick={(event) => { event.stopPropagation(); onArchive(creator.id) }} aria-label={`${creator.status === 'Archived' ? 'Khôi phục' : 'Lưu trữ'} ${creator.name}`}><Icon name="more" size={18} /></button></>}</div></td>
+              <td className="sticky-action-cell"><div className="row-actions">{editMode ? <button className="delete-row-button" onClick={(event) => { event.stopPropagation(); onDelete(creator.id) }} aria-label={`Xóa ${creator.tiktokId}`} title="Xóa nhanh; có thể Undo"><Icon name="trash" size={16} /></button> : <><button className="subtle-icon" onClick={(event) => { event.stopPropagation(); onSelect(creator.id) }} aria-label={`Xem ${creator.name}`}><Icon name="chevronRight" size={18} /></button>{canManage && <button className="subtle-icon" onClick={(event) => { event.stopPropagation(); onArchive(creator.id) }} aria-label={`${creator.status === 'Archived' ? 'Khôi phục' : 'Lưu trữ'} ${creator.name}`}><Icon name="more" size={18} /></button>}</>}</div></td>
             </tr>
           })}
         </tbody>

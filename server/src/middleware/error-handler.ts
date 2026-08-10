@@ -9,7 +9,9 @@ export const errorHandler: ErrorRequestHandler = (error, _request, response, _ne
 
   const prismaCode = typeof error === 'object' && error && 'code' in error ? String(error.code) : ''
   if (prismaCode === 'P2002') {
-    response.status(409).json({ error: { code: 'DUPLICATE_TIKTOK_ID', message: 'TikTok ID đã tồn tại trong hệ thống.' } })
+    const target = typeof error === 'object' && error && 'meta' in error ? String((error.meta as { target?: unknown })?.target || '') : ''
+    const isUserIdentity = /email|username|googleSubject/i.test(target)
+    response.status(409).json({ error: { code: isUserIdentity ? 'ACCOUNT_EXISTS' : 'DUPLICATE_TIKTOK_ID', message: isUserIdentity ? 'Email hoặc username đã tồn tại trong hệ thống.' : 'TikTok ID đã tồn tại trong hệ thống.' } })
     return
   }
   if (prismaCode === 'P2025') {
