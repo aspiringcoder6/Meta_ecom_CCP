@@ -22,7 +22,7 @@ export function toCreatorDto(creator: Record<string, unknown>) {
   const count = creator._count as { campaigns?: number } | undefined
   return {
     id: creator.id, name, handle: tiktokId.startsWith('@') ? tiktokId : `@${tiktokId}`, initials: initials(name), platform: 'TikTok',
-    tiktokLink: creator.tiktokLink, tiktokId, segment: creator.segment || 'MINI', category: stringList(creator.category, 'BEAUTY'), type: stringList(creator.type, 'VIDEO'),
+    tiktokLink: creator.tiktokLink, tiktokId, segment: creator.segment || 'MINI', category: stringList(creator.category, 'OTHER'), type: stringList(creator.type, 'VIDEO'),
     cost, extraCost: Number(creator.extraCost || 0), followers: Number(creator.followers || 0), gmvMonth: Number(creator.gmvMonth || 0),
     scope: creator.scope || '', contact: creator.contact || '', concept: creator.concept || '', productFocus: creator.productFocus || '',
     historicalCampaign: creator.historicalCampaign || 'Đã hợp tác', mcnNote: creator.mcnNote || '',
@@ -34,18 +34,18 @@ export function toCreatorDto(creator: Record<string, unknown>) {
 
 export interface CreatorFilters {
   search?: string
-  segment?: string
-  category?: string
-  type?: string
+  segment?: string[]
+  category?: string[]
+  type?: string[]
   status?: string
 }
 
 export async function listCreators(filters: CreatorFilters = {}) {
   const where = {
     ...(filters.search ? { OR: [{ name: { contains: filters.search, mode: 'insensitive' as const } }, { tiktokId: { contains: filters.search, mode: 'insensitive' as const } }, { tiktokLink: { contains: filters.search, mode: 'insensitive' as const } }] } : {}),
-    ...(filters.segment ? { segment: filters.segment } : {}),
-    ...(filters.category ? { category: { has: filters.category } } : {}),
-    ...(filters.type ? { type: { has: filters.type } } : {}),
+    ...(filters.segment?.length ? { segment: { in: filters.segment } } : {}),
+    ...(filters.category?.length ? { category: { hasSome: filters.category } } : {}),
+    ...(filters.type?.length ? { type: { hasSome: filters.type } } : {}),
     ...(filters.status ? { status: filters.status } : {}),
   }
   const creators = await prisma.creator.findMany({ where, include: creatorInclude, orderBy: { createdAt: 'desc' } })
@@ -84,7 +84,7 @@ export async function getCreatorMetrics() {
   let totalGmv = 0
   let totalBookingExpense = 0
   for (const creator of creators) {
-    const categories = creator.category.length ? creator.category : ['Chưa phân loại']
+    const categories = creator.category.length ? creator.category : ['OTHER']
     for (const category of categories) categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1)
     totalFollowers += creator.followers
     totalGmv += Number(creator.gmvMonth)

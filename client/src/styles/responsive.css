@@ -96,8 +96,8 @@
   .cancel-edit-button { min-height: 40px; padding-inline: 8px; font-size: 8px; }
   .history-actions { height: 40px; }
   .fullscreen-header h2 { font-size: 17px; }
-  .select-wrap { flex: 1; }
-  .select-wrap select { width: 100%; }
+  .select-wrap, .multi-filter { flex: 1; }
+  .select-wrap select, .multi-filter-trigger { width: 100%; max-width: none; }
   .search-box kbd, .table-meta span:last-child { display: none; }
   .pagination { justify-content: flex-start; padding-inline: 12px; }
   .pagination-summary > span, .pagination-pages { display: none; }

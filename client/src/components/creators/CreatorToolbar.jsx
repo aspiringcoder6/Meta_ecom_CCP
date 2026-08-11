@@ -1,20 +1,9 @@
 import Icon from '../common/Icon'
 import AdvancedNumericFilters from './AdvancedNumericFilters'
-
-function FilterSelect({ value, onChange, options }) {
-  return (
-    <label className="select-wrap">
-      <select value={value} onChange={(event) => onChange(event.target.value)}>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
-      <Icon name="chevronDown" size={15} />
-    </label>
-  )
-}
+import CreatorMultiFilter from './CreatorMultiFilter'
 
 export default function CreatorToolbar({ filters, options, numericFilters, tourScope = 'page', onFilterChange, onAddNumericFilter, onRemoveNumericFilter, onReset, onEnterFullscreen }) {
-  const hasFilters = filters.search || filters.segment !== 'all' || filters.category !== 'all' || filters.type !== 'all' || numericFilters.length > 0
-  const segmentOptions = [{ value: 'all', label: 'Tất cả Segment' }, ...options.segments.map((value) => ({ value, label: value }))]
-  const categoryOptions = [{ value: 'all', label: 'Tất cả Category' }, ...options.categories.map((value) => ({ value, label: value }))]
-  const typeOptions = [{ value: 'all', label: 'Tất cả Type' }, ...options.types.map((value) => ({ value, label: value }))]
+  const hasFilters = filters.search || filters.segment.length > 0 || filters.category.length > 0 || filters.type.length > 0 || numericFilters.length > 0
 
   return (
     <div className="creator-toolbar-shell" data-tour={`${tourScope}-toolbar`}>
@@ -22,9 +11,9 @@ export default function CreatorToolbar({ filters, options, numericFilters, tourS
         <label className="search-box"><Icon name="search" size={19} /><input value={filters.search} onChange={(event) => onFilterChange('search', event.target.value)} placeholder="Tìm theo tên, ID TikTok, Category..." /><kbd>⌘ K</kbd></label>
         <div className="filter-group">
           <span className="filter-label"><Icon name="filter" size={17} /> Bộ lọc</span>
-          <FilterSelect value={filters.segment} onChange={(value) => onFilterChange('segment', value)} options={segmentOptions} />
-          <FilterSelect value={filters.category} onChange={(value) => onFilterChange('category', value)} options={categoryOptions} />
-          <FilterSelect value={filters.type} onChange={(value) => onFilterChange('type', value)} options={typeOptions} />
+          <CreatorMultiFilter label="Segment" values={filters.segment} options={options.segments} onChange={(values) => onFilterChange('segment', values)} />
+          <CreatorMultiFilter label="Category" values={filters.category} options={options.categories} onChange={(values) => onFilterChange('category', values)} />
+          <CreatorMultiFilter label="Type" values={filters.type} options={options.types} onChange={(values) => onFilterChange('type', values)} />
           {hasFilters && <button className="clear-filter" onClick={onReset}>Xóa lọc</button>}
           {onEnterFullscreen && <button className="fullscreen-button" data-tour="page-fullscreen" onClick={onEnterFullscreen}><Icon name="maximize" size={16} /> Toàn màn hình</button>}
         </div>

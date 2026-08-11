@@ -1,0 +1,2 @@
+ALTER TABLE "Creator"
+ALTER COLUMN "category" SET DEFAULT ARRAY['OTHER']::TEXT[];

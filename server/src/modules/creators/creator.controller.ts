@@ -6,10 +6,16 @@ function queryText(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
+function queryList(value: unknown) {
+  const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : []
+  const normalized = values.map((item) => typeof item === 'string' ? item.trim() : '').filter(Boolean)
+  return normalized.length ? [...new Set(normalized)] : undefined
+}
+
 export const list: RequestHandler = async (request, response) => {
   let creators = await creatorService.listCreators({
-    search: queryText(request.query.search), segment: queryText(request.query.segment), category: queryText(request.query.category),
-    type: queryText(request.query.type), status: queryText(request.query.status),
+    search: queryText(request.query.search), segment: queryList(request.query.segment), category: queryList(request.query.category),
+    type: queryList(request.query.type), status: queryText(request.query.status),
   })
   if (request.auth?.user.role === 'VIEWER') {
     creators = creators.map((creator) => ({

@@ -68,7 +68,7 @@ model Creator {
   tiktokId           String            @unique
   segment            String?
   tier               String?
-  category           String[]          @default(["BEAUTY"])
+  category           String[]          @default(["OTHER"])
   type               String[]          @default(["VIDEO"])
   cost               Decimal           @default(0) @db.Decimal(18, 2)
   extraCost          Decimal           @default(0) @db.Decimal(18, 2)

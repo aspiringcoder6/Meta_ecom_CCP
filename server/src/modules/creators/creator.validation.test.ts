@@ -29,3 +29,8 @@ test('only requires TikTok ID and TikTok Link to be non-empty', () => {
     return true
   })
 })
+
+test('defaults an empty category to OTHER', () => {
+  const creator = validateCreatorInput({ tiktokId: 'creator.other', tiktokLink: 'creator-link', category: '' })
+  assert.deepEqual(creator.category, ['OTHER'])
+})

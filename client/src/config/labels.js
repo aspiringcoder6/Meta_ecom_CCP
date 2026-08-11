@@ -9,7 +9,7 @@ export const CREATOR_SEGMENTS = ['MINI', 'TOP', 'MASSIVE', 'FREECAST']
 
 export const CREATOR_CATEGORIES = [
   'BEAUTY', 'MOM&BABY', 'SKINCARE', 'LIFESTYLE', 'CHUYÊN GIA/DƯỢC SĨ',
-  'HỘ SINH', 'FASHION', 'FOOD', 'TECH',
+  'HỘ SINH', 'FASHION', 'FOOD', 'TECH', 'OTHER',
 ]
 
 export const CREATOR_TYPES = ['VIDEO', 'LIVESTREAM']

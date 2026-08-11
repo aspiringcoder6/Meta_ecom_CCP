@@ -84,13 +84,14 @@ function normalizeSegment(value) {
 function normalizeCategory(value) {
   return normalizeFromOptions(value, CREATOR_CATEGORIES, {
     beauty: 'BEAUTY', skincare: 'SKINCARE', lifestyle: 'LIFESTYLE', fashion: 'FASHION', food: 'FOOD', tech: 'TECH',
+    other: 'OTHER',
     'mom baby': 'MOM&BABY', 'mom and baby': 'MOM&BABY',
   })
 }
 
 function normalizeCategoryList(value) {
   const values = String(value ?? '').split(/[,;|\n]+/).map(normalizeCategory).filter(Boolean)
-  return [...new Set(values.length ? values : ['BEAUTY'])]
+  return [...new Set(values.length ? values : ['OTHER'])]
 }
 
 function normalizeType(value) {

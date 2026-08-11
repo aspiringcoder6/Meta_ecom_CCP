@@ -1,7 +1,7 @@
 import { ApiError } from '../../utils/api-error.js'
 
 export const CREATOR_SEGMENTS = ['MINI', 'TOP', 'MASSIVE', 'FREECAST'] as const
-export const CREATOR_CATEGORIES = ['BEAUTY', 'MOM&BABY', 'SKINCARE', 'LIFESTYLE', 'CHUYÊN GIA/DƯỢC SĨ', 'HỘ SINH', 'FASHION', 'FOOD', 'TECH'] as const
+export const CREATOR_CATEGORIES = ['BEAUTY', 'MOM&BABY', 'SKINCARE', 'LIFESTYLE', 'CHUYÊN GIA/DƯỢC SĨ', 'HỘ SINH', 'FASHION', 'FOOD', 'TECH', 'OTHER'] as const
 export const CREATOR_TYPES = ['VIDEO', 'LIVESTREAM'] as const
 export const CREATOR_STATUSES = ['Active', 'In campaign', 'Available', 'Archived'] as const
 export const HISTORICAL_CAMPAIGNS = ['Chưa hợp tác', 'Đã hợp tác'] as const
@@ -114,7 +114,7 @@ export function validateCreatorInput(value: unknown, partial = false): CreatorUp
   for (const [field, options, fallback] of optionFields) {
     if (!partial || has(field)) output[field] = optionValue(input[field], field, options, fallback, errors)
   }
-  if (!partial || has('category')) output.category = multiOptionValue(input.category, 'category', CREATOR_CATEGORIES, 'BEAUTY', errors)
+  if (!partial || has('category')) output.category = multiOptionValue(input.category, 'category', CREATOR_CATEGORIES, 'OTHER', errors)
   if (!partial || has('type')) output.type = multiOptionValue(input.type, 'type', CREATOR_TYPES, 'VIDEO', errors)
   if (!partial || has('historicalCampaign')) output.historicalCampaign = collaborationValue(input.historicalCampaign, errors)
 
