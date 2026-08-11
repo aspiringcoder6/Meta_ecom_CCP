@@ -18,7 +18,6 @@ export function validateCreatorValue(field, rawValue) {
   if (field === 'tiktokId') {
     const normalized = text.replace(/^@/, '')
     if (!normalized) return { error: 'ID TikTok không được để trống.' }
-    if (!/^[\p{L}\p{N}._-]+$/u.test(normalized)) return { error: 'ID chỉ được chứa chữ, số, dấu chấm, gạch dưới hoặc gạch ngang.' }
     return { value: normalized }
   }
 
@@ -26,7 +25,6 @@ export function validateCreatorValue(field, rawValue) {
     if (!text) return { error: 'Link TikTok không được để trống.' }
     try {
       const url = new URL(text)
-      if (!url.hostname.toLowerCase().includes('tiktok.com')) return { error: 'Hãy nhập một đường dẫn TikTok hợp lệ.' }
       return { value: text }
     } catch {
       return { error: 'Đường dẫn không đúng định dạng URL.' }
