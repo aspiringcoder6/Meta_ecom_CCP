@@ -11,8 +11,8 @@ export default function AuthLayout() {
   return (
     <div className="auth-shell">
       <aside className="auth-brand-panel">
-        <Link className="auth-brand" to="/login"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><span><strong>Meta Ecom</strong><small>Creator Campaign Platform</small></span></Link>
-        <div className="auth-brand-copy"><span className="auth-eyebrow">CREATOR CAMPAIGN PLATFORM</span><h1>Quản lý Content Creators,<br />Theo dõi campaigns.</h1><p>Một công cụ hỗ trợ workflow end-to-end để có thể hỗ trợ các quy trình quản lý và theo dõi content creators và campaigns một cách bảo mật, tiện lợi và nhanh chóng</p></div>
+        <Link className="auth-brand" to="/login"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><span><strong>Meta Ecom</strong><small>Campaign Management Platform</small></span></Link>
+        <div className="auth-brand-copy"><span className="auth-eyebrow">CAMPAIGN MANAGEMENT PLATFORM</span><h1>Quản lý Content Creators,<br />Theo dõi campaigns.</h1><p>Một công cụ hỗ trợ workflow end-to-end để có thể hỗ trợ các quy trình quản lý và theo dõi content creators và campaigns một cách bảo mật, tiện lợi và nhanh chóng</p></div>
         <div className="auth-benefit-list">
           {BENEFITS.map((benefit) => <div key={benefit.title}><span><Icon name={benefit.icon} size={19} /></span><div><strong>{benefit.title}</strong><small>{benefit.text}</small></div></div>)}
         </div>
