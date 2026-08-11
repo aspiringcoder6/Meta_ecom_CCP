@@ -29,7 +29,7 @@ export function useCreatorTour({ canManage, closeFullscreen }) {
 
     let tour
     const pageSteps = [
-      step('[data-tour="creators-heading"]', 'Chào mừng đến Creator Management', 'Guide này giới thiệu các thao tác chính, sau đó đưa bạn vào fullscreen để làm việc với bảng. Bạn có thể nhấn Esc hoặc nút × để thoát bất kỳ lúc nào.', 'bottom', 'start'),
+      step('[data-tour="creators-heading"]', 'Chào mừng đến Campaign Management Platform', 'Guide này giới thiệu các thao tác chính, sau đó đưa bạn vào fullscreen để làm việc với bảng. Bạn có thể nhấn Esc hoặc nút × để thoát bất kỳ lúc nào.', 'bottom', 'start'),
       step('[data-tour="creator-insights"]', 'Creator Insights', 'Xem nhanh tổng Creator, Category lớn nhất, Booking Expense và Creator dẫn đầu. Nút “Xem chi tiết” mở phân bổ sâu theo Category và Segment.'),
       step('[data-tour="page-export"]', 'Export dữ liệu', 'Tải danh sách Creator đang hiển thị thành file CSV. Search, filter và sorting hiện tại sẽ quyết định thứ tự dữ liệu export.', 'bottom', 'end'),
       ...(canManage ? [

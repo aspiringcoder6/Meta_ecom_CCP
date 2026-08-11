@@ -9,9 +9,9 @@ export default function ImportReviewBanner({ review }) {
     <div className="import-review-banner">
       <div className={`import-review-summary ${showPreview ? '' : 'is-collapsed'}`}>
         <span className="import-review-icon"><Icon name="fileSpreadsheet" /></span>
-        <div><strong>Xem preview: {review.fileName}</strong>{showPreview && <p>{review.mode === 'append' ? `Sẽ thêm ${review.importedCount} Creator vào danh sách hiện tại.` : `Sẽ thay toàn bộ danh sách bằng ${review.importedCount} Creator từ file.`}</p>}</div>
+        <div><strong>Xem preview: {review.fileName}</strong>{showPreview && <p>{review.mode === 'append' ? `Sẽ thêm ${review.createdCount} Creator mới và cập nhật ${review.updatedCount} Creator hiện có.` : `Sẽ thay toàn bộ danh sách bằng ${review.importedCount} Creator từ file.`}</p>}</div>
         <div className="import-review-actions">
-          {showPreview && <div className="import-review-stats"><span><strong>{review.importedCount}</strong> hợp lệ</span><span className={review.duplicateCount ? 'has-warning' : ''}><strong>{review.duplicateCount}</strong> trùng lặp</span><span className={review.errorCount ? 'has-error' : ''}><strong>{review.errorCount}</strong> lỗi</span></div>}
+          {showPreview && <div className="import-review-stats"><span className="has-created"><strong>{review.createdCount}</strong> mới</span><span className="has-updated"><strong>{review.updatedCount}</strong> cập nhật</span><span><strong>{review.unchangedCount}</strong> không đổi</span><span className={review.duplicateCount ? 'has-warning' : ''}><strong>{review.duplicateCount}</strong> trùng trong file</span><span className={review.errorCount ? 'has-error' : ''}><strong>{review.errorCount}</strong> lỗi</span></div>}
           <button className="section-visibility-toggle" onClick={() => setShowPreview((visible) => !visible)} aria-expanded={showPreview}><Icon name="chevronDown" size={14} />{showPreview ? 'Ẩn preview' : 'Hiện preview'}</button>
         </div>
       </div>

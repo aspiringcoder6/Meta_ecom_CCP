@@ -61,15 +61,18 @@ export default function CreatorsPage() {
     try {
       const result = await parseCreatorImportFile(file, creators, mode)
       if (!result.creators.length) {
-        showToast(`Không có Creator hợp lệ để import. ${result.duplicateCount} dòng trùng, ${result.errors.length} dòng lỗi.`)
+        showToast(`Không có thay đổi để import. ${result.unchangedCount} Creator không đổi, ${result.duplicateCount} dòng trùng trong file, ${result.errors.length} dòng lỗi.`)
         return
       }
       resetFilters()
+      setSortCriteria([])
       beginCreatorEditSession()
-      applyCreatorImport(result.creators, mode)
+      applyCreatorImport(result.creators, mode, result)
       setImportReview({
-        mode, fileName: file.name, importedCount: result.creators.length, duplicateCount: result.duplicateCount,
-        errorCount: result.errors.length, errors: result.errors, importedIds: result.creators.map((creator) => creator.id),
+        mode, fileName: file.name, importedCount: result.creators.length,
+        createdCount: result.createdCount, updatedCount: result.updatedCount, unchangedCount: result.unchangedCount,
+        duplicateCount: result.duplicateCount, errorCount: result.errors.length, errors: result.errors,
+        createdIds: result.createdIds, updatedIds: result.updatedIds,
       })
       setIsFullscreen(true)
     } catch (error) {
@@ -78,7 +81,7 @@ export default function CreatorsPage() {
   }
   const acceptImport = () => {
     commitCreatorEditSession()
-    showToast(`Đã chấp nhận ${importReview?.importedCount || 0} Creator từ file import`)
+    showToast(`Đã áp dụng ${importReview?.createdCount || 0} Creator mới và ${importReview?.updatedCount || 0} Creator cập nhật`)
     setImportReview(null)
   }
   const cancelImport = () => {

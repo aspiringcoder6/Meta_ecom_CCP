@@ -147,16 +147,46 @@ function createImportedCreator(values, index) {
   }
 }
 
+const MERGEABLE_FIELDS = [
+  'tiktokLink', 'tiktokId', 'segment', 'cost', 'extraCost', 'followers', 'gmvMonth',
+  'scope', 'contact', 'concept', 'productFocus', 'historicalCampaign', 'mcnNote',
+]
+
+function unionLists(currentValues, importedValues) {
+  const current = Array.isArray(currentValues) ? currentValues : [currentValues].filter(Boolean)
+  return [...new Set([...current, ...importedValues])]
+}
+
+function mergeImportedCreator(existing, imported, values) {
+  const merged = { ...existing }
+  MERGEABLE_FIELDS.forEach((field) => {
+    if (Object.hasOwn(values, field)) merged[field] = imported[field]
+  })
+  if (Object.hasOwn(values, 'category')) merged.category = unionLists(existing.category, imported.category)
+  if (Object.hasOwn(values, 'type')) merged.type = unionLists(existing.type, imported.type)
+  if (Object.hasOwn(values, 'tiktokId')) merged.handle = imported.handle
+  if (Object.hasOwn(values, 'cost')) merged.bookingPrice = imported.cost
+  return merged
+}
+
+function replaceImportedCreator(existing, imported) {
+  if (!existing) return imported
+  return { ...imported, id: existing.id, name: existing.name || imported.name, initials: existing.initials || imported.initials }
+}
+
 export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
   const headerIndex = rows.findIndex((row) => row.some((cell) => normalizeText(cell) === 'id tiktok'))
   if (headerIndex < 0) throw new Error('Không tìm thấy cột “ID Tiktok” trong file.')
   const headers = rows[headerIndex].map(getHeaderField)
   if (!headers.includes('tiktokLink')) throw new Error('Không tìm thấy cột “Link Tiktok” trong file.')
-  const existingIds = new Set(existingCreators.map((creator) => normalizeTikTokId(creator.tiktokId)))
+  const existingById = new Map(existingCreators.map((creator) => [normalizeTikTokId(creator.tiktokId), creator]))
   const importedIds = new Set()
   const creators = []
+  const createdIds = []
+  const updatedIds = []
   const errors = []
   let duplicateCount = 0
+  let unchangedCount = 0
 
   rows.slice(headerIndex + 1).forEach((row, rowIndex) => {
     if (!row.some((cell) => String(cell ?? '').trim())) return
@@ -171,7 +201,7 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
     if ((instructionId === 'text' && instructionLink === 'link') || instructionId.startsWith('bat buoc') || instructionLink.startsWith('bat buoc')) return
     const parsed = createImportedCreator(values, rowIndex)
     const normalizedId = normalizeTikTokId(parsed.creator.tiktokId)
-    if (normalizedId && (importedIds.has(normalizedId) || (mode === 'append' && existingIds.has(normalizedId)))) {
+    if (normalizedId && importedIds.has(normalizedId)) {
       duplicateCount += 1
       return
     }
@@ -184,10 +214,35 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
       return
     }
     importedIds.add(normalizedId)
-    creators.push(parsed.creator)
+    const existing = existingById.get(normalizedId)
+    if (mode === 'append' && existing) {
+      const merged = mergeImportedCreator(existing, parsed.creator, values)
+      if (JSON.stringify(merged) === JSON.stringify(existing)) {
+        unchangedCount += 1
+        return
+      }
+      creators.push(merged)
+      updatedIds.push(existing.id)
+      return
+    }
+
+    const importedCreator = mode === 'replace' ? replaceImportedCreator(existing, parsed.creator) : parsed.creator
+    creators.push(importedCreator)
+    if (existing) updatedIds.push(importedCreator.id)
+    else createdIds.push(importedCreator.id)
   })
 
-  return { creators, duplicateCount, errors, sourceRows: rows.length - headerIndex - 1 }
+  return {
+    creators,
+    createdIds,
+    updatedIds,
+    createdCount: createdIds.length,
+    updatedCount: updatedIds.length,
+    unchangedCount,
+    duplicateCount,
+    errors,
+    sourceRows: rows.length - headerIndex - 1,
+  }
 }
 
 function parseCsvFile(file) {

@@ -139,9 +139,21 @@ export default function AppProvider({ children }) {
     return creator
   }
 
-  const applyCreatorImport = (importedCreators, mode) => {
-    dispatchCreators({ type: 'apply', update: (current) => mode === 'replace' ? importedCreators : [...importedCreators, ...current] })
-    showToast(mode === 'replace' ? `Đang xem trước ${importedCreators.length} Creator thay thế` : `Đang xem trước ${importedCreators.length} Creator mới`)
+  const applyCreatorImport = (importedCreators, mode, summary = {}) => {
+    dispatchCreators({
+      type: 'apply',
+      update: (current) => {
+        if (mode === 'replace') return importedCreators
+        const importedById = new Map(importedCreators.map((creator) => [creator.id, creator]))
+        const created = importedCreators.filter((creator) => !current.some((currentCreator) => currentCreator.id === creator.id))
+        const updated = current.filter((creator) => importedById.has(creator.id)).map((creator) => importedById.get(creator.id))
+        const unchanged = current.filter((creator) => !importedById.has(creator.id))
+        return [...created, ...updated, ...unchanged]
+      },
+    })
+    showToast(mode === 'replace'
+      ? `Đang xem trước ${importedCreators.length} Creator thay thế`
+      : `Preview: ${summary.createdCount || 0} mới · ${summary.updatedCount || 0} cập nhật`)
   }
 
   const updateCreator = (creatorId, changes) => {

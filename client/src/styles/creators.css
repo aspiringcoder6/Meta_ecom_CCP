@@ -102,6 +102,9 @@
 .import-review-stats { display: flex; align-items: center; gap: 7px; }
 .import-review-stats span { padding: 6px 8px; border-radius: 8px; color: #527162; background: rgba(255,255,255,.72); font-size: 8px; white-space: nowrap; }
 .import-review-stats span strong { color: #176f50; }
+.import-review-stats .has-created { color: #176f50; background: #e3f6ea; }
+.import-review-stats .has-updated { color: #1769aa; background: #e6f4ff; }
+.import-review-stats .has-updated strong { color: #1769aa; }
 .import-review-stats .has-warning { color: #8b681f; background: #fff8e5; }
 .import-review-stats .has-warning strong { color: #8b681f; }
 .import-review-stats .has-error { color: #9d3547; background: #fff0f2; }
@@ -203,6 +206,10 @@
 .creator-table tbody tr.is-newly-added td:first-child { box-shadow: inset 4px 0 0 #55b77b; }
 .creator-table tbody tr.is-newly-added .spreadsheet-cell input, .creator-table tbody tr.is-newly-added .spreadsheet-cell select { background: rgba(255,255,255,.58); }
 @keyframes new-creator-highlight { from { background-color: #ccefd9; } to { background-color: #edfaf2; } }
+.creator-table tbody tr.is-import-updated td, .creator-table tbody tr.is-import-updated:hover td { background: #eaf5ff !important; animation: updated-creator-highlight 700ms ease-out; }
+.creator-table tbody tr.is-import-updated td:first-child { box-shadow: inset 4px 0 0 #379ee0; }
+.creator-table tbody tr.is-import-updated .spreadsheet-cell input, .creator-table tbody tr.is-import-updated .spreadsheet-cell select { background: rgba(255,255,255,.62); }
+@keyframes updated-creator-highlight { from { background-color: #cce9ff; } to { background-color: #eaf5ff; } }
 .creator-table thead th:nth-child(1), .sticky-link-cell { position: sticky; left: 0; z-index: 4; }
 .creator-table thead th:nth-child(2), .sticky-id-cell { position: sticky; left: 180px; z-index: 4; box-shadow: 8px 0 16px -14px rgba(1,32,82,.55); }
 .creator-table thead th:nth-child(16), .sticky-action-cell { position: sticky; right: 0; z-index: 4; box-shadow: -8px 0 16px -14px rgba(1,32,82,.55); }

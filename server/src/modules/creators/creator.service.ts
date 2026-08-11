@@ -106,23 +106,40 @@ export async function importCreators(value: unknown, mode: 'append' | 'replace')
   if (new Set(ids).size !== ids.length) throw new ApiError(422, 'File import chứa TikTok ID trùng lặp.', 'DUPLICATE_IMPORT_IDS')
 
   return prisma.$transaction(async (tx) => {
-    const existing = await tx.creator.findMany({ where: { tiktokId: { in: ids } }, select: { tiktokId: true } })
+    const existing = await tx.creator.findMany({ where: { tiktokId: { in: ids } }, select: { tiktokId: true, category: true, type: true } })
+    const existingById = new Map(existing.map((creator) => [creator.tiktokId, creator]))
     const existingIds = new Set(existing.map((creator) => creator.tiktokId))
-    const accepted = mode === 'append' ? creators.filter((creator) => !existingIds.has(creator.tiktokId)) : creators
+    const newCreators = creators.filter((creator) => !existingIds.has(creator.tiktokId))
+    const existingCreators = creators.filter((creator) => existingIds.has(creator.tiktokId))
 
     if (mode === 'replace') {
-      const newCreators = accepted.filter((creator) => !existingIds.has(creator.tiktokId))
-      const existingCreators = accepted.filter((creator) => existingIds.has(creator.tiktokId))
       if (newCreators.length) await tx.creator.createMany({ data: newCreators, skipDuplicates: true })
       for (const creator of existingCreators) await tx.creator.update({ where: { tiktokId: creator.tiktokId }, data: creator })
       await tx.creator.deleteMany({ where: { tiktokId: { notIn: ids }, campaigns: { none: {} } } })
       await tx.creator.updateMany({ where: { tiktokId: { notIn: ids }, campaigns: { some: {} } }, data: { status: 'Archived' } })
-    } else if (accepted.length) {
-      await tx.creator.createMany({ data: accepted, skipDuplicates: true })
+    } else {
+      if (newCreators.length) await tx.creator.createMany({ data: newCreators, skipDuplicates: true })
+      for (const creator of existingCreators) {
+        const current = existingById.get(creator.tiktokId)
+        await tx.creator.update({
+          where: { tiktokId: creator.tiktokId },
+          data: {
+            ...creator,
+            category: [...new Set([...(current?.category || []), ...creator.category])],
+            type: [...new Set([...(current?.type || []), ...creator.type])],
+          },
+        })
+      }
     }
 
     const result = await tx.creator.findMany({ include: creatorInclude, orderBy: { createdAt: 'desc' } })
-    return { creators: result.map((creator) => toCreatorDto(creator as unknown as Record<string, unknown>)), importedCount: accepted.length, duplicateCount: creators.length - accepted.length }
+    return {
+      creators: result.map((creator) => toCreatorDto(creator as unknown as Record<string, unknown>)),
+      importedCount: creators.length,
+      createdCount: newCreators.length,
+      updatedCount: existingCreators.length,
+      duplicateCount: 0,
+    }
   }, { maxWait: 10_000, timeout: 60_000 })
 }
 
@@ -145,12 +162,23 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
       await tx.creator.updateMany({ where: { id: { in: [...linkedIds] } }, data: { status: 'Archived' } })
     }
     if (creates.length) {
-      const existingCreators = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { tiktokId: true } })
+      const existingCreators = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { tiktokId: true, category: true, type: true } })
+      const existingById = new Map(existingCreators.map((creator) => [creator.tiktokId, creator]))
       const existingIds = new Set(existingCreators.map((creator) => creator.tiktokId))
       const newCreators = creates.filter((creator) => !existingIds.has(creator.tiktokId))
       if (newCreators.length) await tx.creator.createMany({ data: newCreators, skipDuplicates: true })
       for (const creator of creates) {
-        if (existingIds.has(creator.tiktokId)) await tx.creator.update({ where: { tiktokId: creator.tiktokId }, data: creator })
+        if (existingIds.has(creator.tiktokId)) {
+          const current = existingById.get(creator.tiktokId)
+          await tx.creator.update({
+            where: { tiktokId: creator.tiktokId },
+            data: {
+              ...creator,
+              category: [...new Set([...(current?.category || []), ...creator.category])],
+              type: [...new Set([...(current?.type || []), ...creator.type])],
+            },
+          })
+        }
       }
     }
     for (const update of updates) {
