@@ -36,7 +36,7 @@
   .creator-mobile-card { position: relative; min-height: 80px; display: grid; grid-template-columns: 40px minmax(100px,1fr) auto 18px; align-items: center; gap: 10px; padding: 12px 2px; border-bottom: 1px solid var(--line); background: white; text-align: left; }
   .creator-mobile-card > svg { grid-column: 4; grid-row: 1; color: #9ba6b5; }
   .mobile-card-stats { grid-column: 2 / -1; display: flex; gap: 14px; margin-top: -7px; color: #8995a6; font-size: 8px; }
-  .creator-fullscreen-view .pagination > span { display: none; }
+  .creator-fullscreen-view .pagination-summary > span { display: none; }
   .creator-insight-details { grid-template-columns: minmax(0,1fr); }
 }
 
@@ -99,9 +99,11 @@
   .select-wrap { flex: 1; }
   .select-wrap select { width: 100%; }
   .search-box kbd, .table-meta span:last-child { display: none; }
-  .pagination > span { display: none; }
-  .pagination { justify-content: center; }
-  .creator-fullscreen-view .pagination-pages { display: none; }
+  .pagination { justify-content: flex-start; padding-inline: 12px; }
+  .pagination-summary > span, .pagination-pages { display: none; }
+  .pagination-navigation { margin-left: auto; }
+  .pagination-jump label { font-size: 0; }
+  .pagination-jump label input { font-size: 8px; }
   .import-review-summary { grid-template-columns: 34px 1fr; padding-inline: 12px; }
   .import-review-icon { width: 34px; height: 34px; }
   .import-review-actions { grid-column: 1 / -1; justify-content: center; flex-wrap: wrap; }

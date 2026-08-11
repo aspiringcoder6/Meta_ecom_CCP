@@ -6,6 +6,7 @@ import Avatar from '../common/Avatar'
 import Icon from '../common/Icon'
 import EditableCreatorCell from './EditableCreatorCell'
 import CreatorSortableHeader from './CreatorSortableHeader'
+import { formatCreatorList, toCreatorList } from '../../utils/creatorLists'
 
 const COLUMNS = [
   { key: 'tiktokLink', label: <span>Link TikTok</span> },
@@ -33,6 +34,11 @@ function EmptyResults() {
 function CollaborationBadge({ value }) {
   const collaborated = value === 'Đã hợp tác'
   return <span className={`history-badge ${collaborated ? 'is-collaborated' : 'is-new'}`}><i />{value}</span>
+}
+
+function TagList({ values, className }) {
+  const items = toCreatorList(values)
+  return <div className="multi-tag-list">{items.map((item) => <span className={className} key={item}>{item}</span>)}</div>
 }
 
 function ColumnResizeHandle({ index, width, dataTour, onResize, onReset }) {
@@ -66,11 +72,11 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
           {creators.map((creator) => {
             const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
             return <tr className={highlightedCreatorIds.includes(creator.id) ? 'is-newly-added' : ''} key={creator.id} onClick={editMode ? undefined : () => onSelect(creator.id)}>
-              {editMode ? editableCell(creator, 'tiktokLink', undefined, 'sticky-link-cell') : <td className="sticky-link-cell"><a className="tiktok-link" href={creator.tiktokLink} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>{creator.tiktokLink.replace('https://www.', '')}</a></td>}
+              {editMode ? editableCell(creator, 'tiktokLink', undefined, 'sticky-link-cell') : <td className="sticky-link-cell">{/^https?:\/\//i.test(creator.tiktokLink) ? <a className="tiktok-link" href={creator.tiktokLink} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>{creator.tiktokLink.replace('https://www.', '')}</a> : <span className="tiktok-link is-plain">{creator.tiktokLink}</span>}</td>}
               {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} dataTour="spreadsheet-cell" onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
               {editMode ? editableCell(creator, 'segment', CREATOR_FIELD_OPTIONS.segment) : <td><span className="segment-tag">{creator.segment}</span></td>}
-              {editMode ? editableCell(creator, 'category', CREATOR_FIELD_OPTIONS.category) : <td><span className="category-tag">{creator.category}</span></td>}
-              {editMode ? editableCell(creator, 'type', CREATOR_FIELD_OPTIONS.type) : <td><span className="type-tag">{creator.type}</span></td>}
+              {editMode ? editableCell(creator, 'category', CREATOR_FIELD_OPTIONS.category) : <td><TagList values={creator.category} className="category-tag" /></td>}
+              {editMode ? editableCell(creator, 'type', CREATOR_FIELD_OPTIONS.type) : <td><TagList values={creator.type} className="type-tag" /></td>}
               {editMode ? editableCell(creator, 'cost') : <td className="number-cell">{formatCurrency(creator.cost)}</td>}
               {editMode ? editableCell(creator, 'extraCost') : <td className="number-cell">{formatCurrency(creator.extraCost)}</td>}
               <td className={`number-cell calculated-cell ${editMode ? 'spreadsheet-readonly-cell' : ''}`} title={editMode ? 'Tự động tính từ Cost và Extra/FOC' : undefined}>{formatCurrency(pricing.totalCast)}</td>
@@ -88,7 +94,7 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
       </table>
 
       <div className="creator-cards">
-        {creators.map((creator) => <button className="creator-mobile-card" key={creator.id} onClick={() => onSelect(creator.id)}><Avatar creator={creator} /><span className="creator-primary"><strong>{creator.tiktokId}</strong><small>{creator.name} · {creator.category}</small></span><span className="segment-tag">{creator.segment}</span><span className="mobile-card-stats"><span>{formatNumber(creator.followers)} followers</span><span>{formatCurrency(creator.cost)}</span></span><Icon name="chevronRight" /></button>)}
+        {creators.map((creator) => <button className="creator-mobile-card" key={creator.id} onClick={() => onSelect(creator.id)}><Avatar creator={creator} /><span className="creator-primary"><strong>{creator.tiktokId}</strong><small>{creator.name} · {formatCreatorList(creator.category, ' · ')}</small></span><span className="segment-tag">{creator.segment}</span><span className="mobile-card-stats"><span>{formatNumber(creator.followers)} followers</span><span>{formatCurrency(creator.cost)}</span></span><Icon name="chevronRight" /></button>)}
       </div>
     </div>
   )

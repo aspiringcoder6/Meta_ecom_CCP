@@ -1,11 +1,16 @@
 import { formatCompactCurrency } from '../../utils/formatters'
+import { toCreatorList } from '../../utils/creatorLists'
 
 export default function GmvCategoryPanel({ creators }) {
   const allCategories = Object.values(creators.reduce((result, creator) => {
-    const current = result[creator.category] || { label: creator.category, gmv: 0, creators: 0 }
-    current.gmv += creator.gmvMonth
-    current.creators += 1
-    result[creator.category] = current
+    const categories = toCreatorList(creator.category, ['Chưa phân loại'])
+    const allocatedGmv = creator.gmvMonth / categories.length
+    categories.forEach((category) => {
+      const current = result[category] || { label: category, gmv: 0, creators: 0 }
+      current.gmv += allocatedGmv
+      current.creators += 1
+      result[category] = current
+    })
     return result
   }, {})).sort((a, b) => b.gmv - a.gmv)
   const totalGmv = allCategories.reduce((total, category) => total + category.gmv, 0)

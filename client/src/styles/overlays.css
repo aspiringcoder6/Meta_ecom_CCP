@@ -50,6 +50,14 @@
 .form-submit-error + .form-grid { margin-top: 16px; }
 .modal-footer button:disabled { opacity: .58; cursor: wait; transform: none; }
 .full-field { grid-column: 1 / -1; }
+.multi-choice-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.multi-choice-field legend { margin-bottom: 8px; color: #4a596e; font-size: 9px; font-weight: 650; }
+.multi-choice-field > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.multi-choice-field label { min-height: 31px; display: inline-flex; align-items: center; padding: 0 10px; border: 1px solid #dce4ed; border-radius: 9px; color: #627187; background: #fbfcfe; cursor: pointer; font-size: 8px; font-weight: 700; transition: 120ms ease; }
+.multi-choice-field label:hover { border-color: #9acdeb; color: #176fa9; background: #f4fbff; }
+.multi-choice-field label.is-selected { border-color: #52baff; color: #075f98; background: #e5f5ff; box-shadow: inset 0 0 0 1px rgba(82,186,255,.18); }
+.multi-choice-field input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.multi-choice-field > small { color: #8b98a9; font-size: 8px; }
 .input-suffix { position: relative; }
 .input-suffix input { padding-right: 32px; }
 .input-suffix span { position: absolute; top: 0; right: 12px; height: 100%; display: grid; place-items: center; color: #7f8b9d; font-size: 10px; }

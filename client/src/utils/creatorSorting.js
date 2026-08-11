@@ -1,4 +1,5 @@
 import { calculateBookingPricing } from './pricing'
+import { formatCreatorList } from './creatorLists'
 
 const NUMBER_FIELDS = new Set(['cost', 'extraCost', 'totalCast', 'bookingExpense', 'followers', 'gmvMonth'])
 const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' })
@@ -7,6 +8,7 @@ function getSortValue(creator, key) {
   if (key === 'totalCast' || key === 'bookingExpense') {
     return calculateBookingPricing(creator.cost, creator.extraCost)[key]
   }
+  if (key === 'category' || key === 'type') return formatCreatorList(creator[key])
   return creator[key]
 }
 

@@ -18,7 +18,12 @@ const creators = [
 ]
 
 for (const creator of creators) {
-  await prisma.creator.upsert({ where: { tiktokId: creator.tiktokId }, update: creator, create: creator })
+  const data = {
+    ...creator,
+    category: [creator.category],
+    type: creator.type === 'VIDEO / LIVESTREAM' ? ['VIDEO', 'LIVESTREAM'] : [creator.type],
+  }
+  await prisma.creator.upsert({ where: { tiktokId: creator.tiktokId }, update: data, create: data })
 }
 
 console.log(`Seeded ${creators.length} creators.`)

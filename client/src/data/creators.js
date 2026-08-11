@@ -1,7 +1,7 @@
 export const INITIAL_CREATORS = [
   {
     id: 1, name: 'Linh Ngô', handle: '@linhngo.daily', initials: 'LN', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@linhngo.daily', tiktokId: 'linhngo.daily', segment: 'MASSIVE', category: 'LIFESTYLE', type: 'VIDEO',
+    tiktokLink: 'https://www.tiktok.com/@linhngo.daily', tiktokId: 'linhngo.daily', segment: 'MASSIVE', category: ['LIFESTYLE', 'BEAUTY'], type: ['VIDEO'],
     cost: 42000000, extraCost: 2000000,
     followers: 845000, gmvMonth: 1250000000, scope: '01 TikTok video review sản phẩm',
     contact: 'linh.ngo@example.com · 0912 345 682', historicalCampaign: 'Đã hợp tác', mcnNote: 'Phản hồi nhanh, đúng deadline.',
@@ -10,7 +10,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 2, name: 'Minh Anh', handle: '@minhanh.review', initials: 'MA', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@minhanh.review', tiktokId: 'minhanh.review', segment: 'TOP', category: 'BEAUTY', type: 'VIDEO / LIVESTREAM',
+    tiktokLink: 'https://www.tiktok.com/@minhanh.review', tiktokId: 'minhanh.review', segment: 'TOP', category: ['BEAUTY', 'SKINCARE'], type: ['VIDEO', 'LIVESTREAM'],
     cost: 28000000, extraCost: 3000000,
     followers: 286000, gmvMonth: 780000000, scope: '01 video review + 01 phiên livestream',
     contact: 'minhanh@example.com · 0938 122 909', historicalCampaign: 'Đã hợp tác', mcnNote: 'Ưu tiên booking trước 14 ngày.',
@@ -19,7 +19,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 3, name: 'Tuấn Kiệt', handle: '@tuan.travel', initials: 'TK', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@tuan.travel', tiktokId: 'tuan.travel', segment: 'MASSIVE', category: 'LIFESTYLE', type: 'VIDEO',
+    tiktokLink: 'https://www.tiktok.com/@tuan.travel', tiktokId: 'tuan.travel', segment: 'MASSIVE', category: ['LIFESTYLE'], type: ['VIDEO'],
     cost: 46000000, extraCost: 5000000,
     followers: 654000, gmvMonth: 920000000, scope: '01 video trải nghiệm thực tế',
     contact: 'tuan.kiet@example.com · 0904 771 126', historicalCampaign: 'Đã hợp tác', mcnNote: '',
@@ -28,7 +28,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 4, name: 'Gia Hân', handle: '@han.eats', initials: 'GH', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@han.eats', tiktokId: 'han.eats', segment: 'MINI', category: 'FOOD', type: 'VIDEO',
+    tiktokLink: 'https://www.tiktok.com/@han.eats', tiktokId: 'han.eats', segment: 'MINI', category: ['FOOD', 'LIFESTYLE'], type: ['VIDEO'],
     cost: 12500000, extraCost: 500000,
     followers: 92000, gmvMonth: 345000000, scope: '01 video review món ăn',
     contact: 'giahan@example.com · 0979 308 441', historicalCampaign: 'Chưa hợp tác', mcnNote: 'Có thể hỗ trợ quay tại TP.HCM.',
@@ -37,7 +37,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 5, name: 'Hoàng Nam', handle: '@namtech', initials: 'HN', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@namtech', tiktokId: 'namtech', segment: 'TOP', category: 'TECH', type: 'VIDEO / LIVESTREAM',
+    tiktokLink: 'https://www.tiktok.com/@namtech', tiktokId: 'namtech', segment: 'TOP', category: ['TECH'], type: ['VIDEO', 'LIVESTREAM'],
     cost: 32000000, extraCost: 4000000,
     followers: 318000, gmvMonth: 1680000000, scope: '01 video unbox + 01 livestream 60 phút',
     contact: 'hoangnam@example.com · 0913 662 187', historicalCampaign: 'Đã hợp tác', mcnNote: 'Cần gửi sản phẩm test trước 7 ngày.',
@@ -46,7 +46,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 6, name: 'Mai Phương', handle: '@maiphuong.home', initials: 'MP', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@maiphuong.home', tiktokId: 'maiphuong.home', segment: 'MINI', category: 'MOM&BABY', type: 'VIDEO',
+    tiktokLink: 'https://www.tiktok.com/@maiphuong.home', tiktokId: 'maiphuong.home', segment: 'MINI', category: ['MOM&BABY', 'LIFESTYLE'], type: ['VIDEO'],
     cost: 10500000, extraCost: 1000000,
     followers: 76000, gmvMonth: 285000000, scope: '01 video chia sẻ trải nghiệm mẹ và bé',
     contact: 'maiphuong@example.com · 0907 115 924', historicalCampaign: 'Chưa hợp tác', mcnNote: '',
@@ -55,7 +55,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 7, name: 'Bảo Trâm', handle: '@baotram.fit', initials: 'BT', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@baotram.fit', tiktokId: 'baotram.fit', segment: 'MINI', category: 'LIFESTYLE', type: 'LIVESTREAM',
+    tiktokLink: 'https://www.tiktok.com/@baotram.fit', tiktokId: 'baotram.fit', segment: 'MINI', category: ['LIFESTYLE'], type: ['LIVESTREAM'],
     cost: 7500000, extraCost: 0,
     followers: 38000, gmvMonth: 190000000, scope: '01 livestream 90 phút',
     contact: 'baotram@example.com · 0889 443 762', historicalCampaign: 'Đã hợp tác', mcnNote: 'Khung giờ tốt: 20:00–22:00.',
@@ -64,7 +64,7 @@ export const INITIAL_CREATORS = [
   },
   {
     id: 8, name: 'Đức Thịnh', handle: '@thinh.gaming', initials: 'ĐT', platform: 'TikTok',
-    tiktokLink: 'https://www.tiktok.com/@thinh.gaming', tiktokId: 'thinh.gaming', segment: 'TOP', category: 'TECH', type: 'LIVESTREAM',
+    tiktokLink: 'https://www.tiktok.com/@thinh.gaming', tiktokId: 'thinh.gaming', segment: 'TOP', category: ['TECH'], type: ['LIVESTREAM'],
     cost: 35000000, extraCost: 5000000,
     followers: 415000, gmvMonth: 2100000000, scope: '02 livestream, mỗi phiên 120 phút',
     contact: 'ducthinh@example.com · 0901 247 553', historicalCampaign: 'Đã hợp tác', mcnNote: 'Tạm ngưng nhận booking trong tháng.',

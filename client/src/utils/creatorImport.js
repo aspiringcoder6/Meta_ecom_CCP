@@ -25,7 +25,7 @@ function normalizeText(value) {
 }
 
 function normalizeTikTokId(value) {
-  return String(value ?? '').trim().replace(/^@/, '').toLowerCase()
+  return String(value ?? '').trim().toLowerCase()
 }
 
 function getHeaderField(header) {
@@ -88,26 +88,37 @@ function normalizeCategory(value) {
   })
 }
 
+function normalizeCategoryList(value) {
+  const values = String(value ?? '').split(/[,;|\n]+/).map(normalizeCategory).filter(Boolean)
+  return [...new Set(values.length ? values : ['BEAUTY'])]
+}
+
 function normalizeType(value) {
   const normalized = normalizeText(value)
-  if (normalized.includes('video') && (normalized.includes('live') || normalized.includes('livestream'))) return 'VIDEO / LIVESTREAM'
+  if (normalized.includes('video') && (normalized.includes('live') || normalized.includes('livestream'))) return ['VIDEO', 'LIVESTREAM']
   if (normalized.includes('live')) return 'LIVESTREAM'
   if (normalized.includes('video')) return 'VIDEO'
   return normalizeFromOptions(value, CREATOR_TYPES)
 }
 
+function normalizeTypeList(value) {
+  const values = String(value ?? '').split(/[,;|\n]+/).flatMap((item) => {
+    const normalized = normalizeType(item)
+    return Array.isArray(normalized) ? normalized : normalized ? [normalized] : []
+  })
+  return [...new Set(values.length ? values : ['VIDEO'])]
+}
+
 function createImportedCreator(values, index) {
-  const tiktokId = String(values.tiktokId || '').trim().replace(/^@/, '')
+  const tiktokId = String(values.tiktokId || '').trim()
   const tiktokLink = String(values.tiktokLink || '').trim()
   const errors = []
   if (!tiktokId) errors.push('Thiếu ID TikTok')
-  else if (!/^[\p{L}\p{N}._-]+$/u.test(tiktokId)) errors.push('ID TikTok chứa ký tự không hợp lệ')
   if (!tiktokLink) errors.push('Thiếu Link TikTok')
-  else if (!/^https?:\/\/(www\.)?tiktok\.com\/@[^\s/]+/i.test(tiktokLink)) errors.push('Link TikTok không hợp lệ')
 
   const segment = normalizeSegment(values.segment) || 'MINI'
-  const category = normalizeCategory(values.category) || 'BEAUTY'
-  const type = normalizeType(values.type) || 'VIDEO'
+  const category = normalizeCategoryList(values.category)
+  const type = normalizeTypeList(values.type)
   const cost = parseLocalizedNumber(values.cost)
   const extraCost = parseLocalizedNumber(values.extraCost)
   const followers = parseLocalizedNumber(values.followers)
@@ -125,7 +136,7 @@ function createImportedCreator(values, index) {
   return {
     errors,
     creator: {
-      id, name: tiktokId || `Creator dòng ${index + 2}`, handle: `@${tiktokId}`, initials: (tiktokId || 'CR').slice(0, 2).toUpperCase(), platform: 'TikTok',
+      id, name: tiktokId || `Creator dòng ${index + 2}`, handle: tiktokId.startsWith('@') ? tiktokId : `@${tiktokId}`, initials: (tiktokId || 'CR').slice(0, 2).toUpperCase(), platform: 'TikTok',
       tiktokLink, tiktokId, segment, category, type, cost: Number.isFinite(cost) ? cost : 0, extraCost: Number.isFinite(extraCost) ? extraCost : 0,
       followers: Number.isFinite(followers) ? followers : 0, gmvMonth: Number.isFinite(gmvMonth) ? gmvMonth : 0,
       scope: String(values.scope || ''), contact: String(values.contact || ''), concept: String(values.concept || ''), productFocus: String(values.productFocus || ''),

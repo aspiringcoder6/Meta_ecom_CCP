@@ -35,10 +35,10 @@ function getCreatorBatchChanges(originalCreators, currentCreators) {
 }
 
 function creatorPayloadFromForm(form) {
-  const tiktokId = form.handle.trim().replace(/^@/, '')
+  const tiktokId = form.handle.trim()
   return {
     name: form.name.trim() || tiktokId, tiktokLink: form.tiktokLink.trim(),
-    tiktokId, segment: form.segment, category: form.category, type: form.type,
+    tiktokId, segment: form.segment, category: form.category.length ? form.category : ['BEAUTY'], type: form.type.length ? form.type : ['VIDEO'],
     cost: Number(form.cost) || 0, extraCost: Number(form.extraCost) || 0, gmvMonth: Number(form.gmvMonth) || 0,
     scope: form.scope.trim(), contact: form.contact.trim() || form.email.trim(), concept: form.concept.trim(), productFocus: form.productFocus.trim(),
     historicalCampaign: form.historicalCampaign || 'Đã hợp tác', mcnNote: form.mcnNote || '',
@@ -52,7 +52,7 @@ function createQuickCreator() {
   const tiktokId = `creator_${String(id).slice(-6)}`
   return {
     id, name: 'Creator mới', handle: `@${tiktokId}`, initials: 'CR', platform: 'TikTok',
-    tiktokLink: `https://www.tiktok.com/@${tiktokId}`, tiktokId, segment: 'MINI', category: 'BEAUTY', type: 'VIDEO',
+    tiktokLink: `https://www.tiktok.com/@${tiktokId}`, tiktokId, segment: 'MINI', category: ['BEAUTY'], type: ['VIDEO'],
     cost: 0, extraCost: 0, followers: 0, gmvMonth: 0, scope: '', contact: '', concept: '', productFocus: '',
     historicalCampaign: 'Đã hợp tác', mcnNote: '', engagement: 0, status: 'Available',
     email: 'Chưa cung cấp', phone: 'Chưa cung cấp', bookingPrice: 0, campaigns: 0,
@@ -146,7 +146,7 @@ export default function AppProvider({ children }) {
 
   const updateCreator = (creatorId, changes) => {
     const normalizedChanges = { ...changes }
-    if (changes.tiktokId) normalizedChanges.handle = `@${changes.tiktokId}`
+    if (changes.tiktokId) normalizedChanges.handle = changes.tiktokId.startsWith('@') ? changes.tiktokId : `@${changes.tiktokId}`
     if (Object.hasOwn(changes, 'cost')) normalizedChanges.bookingPrice = changes.cost
     dispatchCreators({ type: 'apply', update: (current) => current.map((creator) => creator.id === creatorId ? { ...creator, ...normalizedChanges } : creator) })
   }

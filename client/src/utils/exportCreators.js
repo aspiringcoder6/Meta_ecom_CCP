@@ -1,4 +1,5 @@
 import { calculateBookingPricing } from './pricing'
+import { formatCreatorList } from './creatorLists'
 
 export function exportCreatorsToCsv(creators) {
   const headers = [
@@ -9,7 +10,7 @@ export function exportCreatorsToCsv(creators) {
   const rows = creators.map((creator) => {
     const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
     return [
-      creator.tiktokLink, creator.tiktokId, creator.segment, creator.category, creator.type, creator.cost,
+      creator.tiktokLink, creator.tiktokId, creator.segment, formatCreatorList(creator.category), formatCreatorList(creator.type), creator.cost,
       creator.extraCost, pricing.totalCast, pricing.bookingExpense, creator.followers, creator.gmvMonth,
       creator.scope, creator.contact, creator.concept, creator.productFocus, creator.historicalCampaign, creator.mcnNote,
     ]

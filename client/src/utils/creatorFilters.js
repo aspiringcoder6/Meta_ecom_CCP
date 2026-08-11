@@ -1,4 +1,5 @@
 import { calculateBookingPricing } from './pricing'
+import { toCreatorList } from './creatorLists'
 
 export const DEFAULT_CREATOR_FILTERS = { search: '', segment: 'all', category: 'all', type: 'all' }
 
@@ -39,11 +40,13 @@ function matchesNumericFilter(creator, filter) {
 
 export function matchesCreatorFilters(creator, filters, numericFilters = []) {
   const query = filters.search.toLowerCase().trim()
-  const searchableValues = [creator.name, creator.tiktokId, creator.category, creator.scope, creator.contact]
+  const categories = toCreatorList(creator.category)
+  const types = toCreatorList(creator.type)
+  const searchableValues = [creator.name, creator.tiktokId, ...categories, ...types, creator.scope, creator.contact]
   const matchesSearch = !query || searchableValues.some((value) => String(value || '').toLowerCase().includes(query))
   return matchesSearch
     && (filters.segment === 'all' || creator.segment === filters.segment)
-    && (filters.category === 'all' || creator.category === filters.category)
-    && (filters.type === 'all' || creator.type === filters.type)
+    && (filters.category === 'all' || categories.includes(filters.category))
+    && (filters.type === 'all' || types.includes(filters.type))
     && numericFilters.every((filter) => matchesNumericFilter(creator, filter))
 }

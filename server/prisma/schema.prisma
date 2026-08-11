@@ -68,8 +68,8 @@ model Creator {
   tiktokId           String            @unique
   segment            String?
   tier               String?
-  category           String?
-  type               String?
+  category           String[]          @default(["BEAUTY"])
+  type               String[]          @default(["VIDEO"])
   cost               Decimal           @default(0) @db.Decimal(18, 2)
   extraCost          Decimal           @default(0) @db.Decimal(18, 2)
   followers          Int               @default(0)
@@ -89,7 +89,8 @@ model Creator {
   updatedAt          DateTime          @updatedAt
   campaigns          CampaignCreator[]
 
-  @@index([category])
+  @@index([category], type: Gin)
+  @@index([type], type: Gin)
   @@index([segment])
   @@index([status])
 }

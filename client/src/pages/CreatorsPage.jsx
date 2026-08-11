@@ -12,6 +12,7 @@ import { DEFAULT_CREATOR_FILTERS, matchesCreatorFilters } from '../utils/creator
 import { exportCreatorsToCsv } from '../utils/exportCreators'
 import { parseCreatorImportFile } from '../utils/creatorImport'
 import { cycleCreatorSort, sortCreators } from '../utils/creatorSorting'
+import { toCreatorList } from '../utils/creatorLists'
 
 export default function CreatorsPage() {
   const { canManageCreators } = useAuth()
@@ -29,8 +30,8 @@ export default function CreatorsPage() {
 
   const filterOptions = useMemo(() => ({
     segments: [...new Set(creators.map((creator) => creator.segment))],
-    categories: [...new Set(creators.map((creator) => creator.category))],
-    types: [...new Set(creators.map((creator) => creator.type))],
+    categories: [...new Set(creators.flatMap((creator) => toCreatorList(creator.category)))],
+    types: [...new Set(creators.flatMap((creator) => toCreatorList(creator.type)))],
   }), [creators])
   const filteredCreators = useMemo(() => creators.filter((creator) => matchesCreatorFilters(creator, filters, numericFilters)), [creators, filters, numericFilters])
   const displayedCreators = useMemo(() => sortCreators(filteredCreators, sortCriteria), [filteredCreators, sortCriteria])

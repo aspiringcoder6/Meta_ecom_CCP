@@ -3,6 +3,7 @@ import Avatar from '../common/Avatar'
 import Icon from '../common/Icon'
 import { formatCompactCurrency } from '../../utils/formatters'
 import { getCreatorInsights } from '../../utils/creatorInsights'
+import { formatCreatorHandle, formatCreatorList } from '../../utils/creatorLists'
 
 const SEGMENTS = ['MASSIVE', 'TOP', 'MINI', 'FREECAST']
 
@@ -66,8 +67,8 @@ function LeadingCreators({ creators, onSelect }) {
           <button type="button" className="mini-table-row" key={creator.id} onClick={() => onSelect?.(creator.id)}>
             <span className="rank">{String(index + 1).padStart(2, '0')}</span>
             <Avatar creator={creator} />
-            <span className="creator-primary"><strong>{creator.name}</strong><small>@{creator.tiktokId}</small></span>
-            <span className="category-tag">{creator.category}</span>
+            <span className="creator-primary"><strong>{creator.name}</strong><small>{formatCreatorHandle(creator.tiktokId)}</small></span>
+            <span className="category-tag" title={formatCreatorList(creator.category)}>{formatCreatorList(creator.category, ' · ')}</span>
             <span className="financial-value"><strong>{formatCompactCurrency(creator.gmvMonth)}</strong><small>GMV</small></span>
             <span className="financial-value expense"><strong>{formatCompactCurrency(bookingExpense)}</strong><small>Booking</small></span>
           </button>
@@ -87,7 +88,7 @@ export default function CreatorSummary({ creators, onSelect }) {
     { icon: 'users', value: insights.totalCreators, label: 'Tổng số Creator', detail: `${insights.availableCount} khả dụng · ${insights.archivedCount} lưu trữ` },
     { icon: 'tag', value: topCategory?.label || '—', label: 'Category lớn nhất', detail: topCategory ? `${topCategory.count} Creator · ${topCategory.percent}% tổng số creators` : 'Chưa có dữ liệu Category' },
     { icon: 'briefcase', value: formatCompactCurrency(insights.totalBookingExpense), label: 'Booking Expense dự kiến', detail: `${formatCompactCurrency(insights.averageBookingExpense)} trung bình / Creator` },
-    { icon: 'sparkles', value: leader ? `@${leader.tiktokId}` : '—', label: 'Creator dẫn đầu', detail: leader ? `${formatCompactCurrency(leader.gmvMonth)} GMV · ${leader.category}` : 'Chưa có dữ liệu GMV' },
+    { icon: 'sparkles', value: leader ? formatCreatorHandle(leader.tiktokId) : '—', label: 'Creator dẫn đầu', detail: leader ? `${formatCompactCurrency(leader.gmvMonth)} GMV · ${formatCreatorList(leader.category, ' · ')}` : 'Chưa có dữ liệu GMV' },
   ]
 
   return (

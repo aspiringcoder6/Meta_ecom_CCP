@@ -12,4 +12,4 @@ export const CREATOR_CATEGORIES = [
   'HỘ SINH', 'FASHION', 'FOOD', 'TECH',
 ]
 
-export const CREATOR_TYPES = ['VIDEO', 'LIVESTREAM', 'VIDEO / LIVESTREAM']
+export const CREATOR_TYPES = ['VIDEO', 'LIVESTREAM']

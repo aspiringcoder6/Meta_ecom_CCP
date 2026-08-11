@@ -5,6 +5,7 @@ import CreatorImportMenu from './CreatorImportMenu'
 import ResizeDivider from '../common/ResizeDivider'
 import Icon from '../common/Icon'
 import ImportReviewBanner from './ImportReviewBanner'
+import CreatorPagination from './CreatorPagination'
 
 const DEFAULT_COLUMN_WIDTHS = [180, 190, 90, 145, 145, 125, 190, 150, 150, 105, 145, 220, 220, 145, 220, 72]
 const DEFAULT_ROW_HEIGHT = 64
@@ -25,6 +26,10 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
   const [toolbarHeight, setToolbarHeight] = useState(106)
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT)
   const [editMode, setEditMode] = useState(Boolean(importReview) && canManage)
+  const [pageSize, setPageSize] = useState(isFullscreen ? 25 : 10)
+  const [currentPage, setCurrentPage] = useState(1)
+  const totalPages = Math.max(1, Math.ceil(creators.length / pageSize))
+  const visibleCreators = creators.slice((currentPage - 1) * pageSize, currentPage * pageSize)
 
   useEffect(() => {
     if (!isFullscreen || !editMode) return undefined
@@ -46,6 +51,18 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
   useEffect(() => {
     if (isFullscreen && importReview) setEditMode(true)
   }, [importReview, isFullscreen])
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [filters.search, filters.segment, filters.category, filters.type, numericFilters, sortCriteria, pageSize])
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages))
+  }, [totalPages])
+
+  useEffect(() => {
+    if (recentlyAddedCreatorId || importReview) setCurrentPage(1)
+  }, [importReview, recentlyAddedCreatorId])
 
   const updateColumnWidth = (index, width) => setColumnWidths((current) => current.map((item, itemIndex) => itemIndex === index ? width : item))
   const resetColumnWidth = (index) => updateColumnWidth(index, DEFAULT_COLUMN_WIDTHS[index])
@@ -95,12 +112,10 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
       {!isFullscreen && toolbar}
       {importReview && isFullscreen && <ImportReviewBanner review={importReview} />}
       <div className="table-meta"><span><strong>{creators.length}</strong> Creator</span><span>{importReview ? 'Dòng xanh: dữ liệu hợp lệ, dòng lỗi được liệt kê màu đỏ phía trên' : editMode ? 'Bấm vào ô để sửa · Enter để lưu · Esc để hủy nội dung đang nhập' : isFullscreen ? 'Bấm header để sort nhiều tiêu chí · Kéo mép cột để chỉnh độ rộng' : 'Bấm header để sort nhiều tiêu chí · Cuộn ngang để xem toàn bộ thông tin'}</span></div>
-      <CreatorTable creators={creators} canManage={canManage} highlightedCreatorIds={importReview?.importedIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} sortCriteria={sortCriteria} onSort={onSort} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
-      <div className="pagination">
-        <span>Hiển thị 1–{creators.length} trên {creators.length}</span>
+      <CreatorTable creators={visibleCreators} canManage={canManage} highlightedCreatorIds={importReview?.importedIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} sortCriteria={sortCriteria} onSort={onSort} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
+      <CreatorPagination currentPage={currentPage} totalItems={creators.length} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize}>
         {isFullscreen && <div className="row-density-controls" data-tour="row-density"><span>Mật độ: <strong>{getDensityLabel(rowHeight)}</strong></span><button disabled={rowHeight === MIN_ROW_HEIGHT} onClick={() => changeRowHeight(-ROW_HEIGHT_STEP)} aria-label="Giảm chiều cao hàng để xem nhiều Creator hơn" title="Xem nhiều hàng hơn"><Icon name="minus" size={14} /></button><button className="density-value" onClick={() => setRowHeight(DEFAULT_ROW_HEIGHT)} title="Đặt lại chiều cao hàng">{rowHeight}px</button><button disabled={rowHeight === MAX_ROW_HEIGHT} onClick={() => changeRowHeight(ROW_HEIGHT_STEP)} aria-label="Tăng chiều cao hàng" title="Tăng chiều cao hàng"><Icon name="plus" size={14} /></button></div>}
-        <div className="pagination-pages"><button disabled>Trước</button><button className="page-active">1</button><button disabled>Sau</button></div>
-      </div>
+      </CreatorPagination>
     </section>
   )
 }

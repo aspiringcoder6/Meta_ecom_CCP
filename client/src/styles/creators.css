@@ -210,6 +210,7 @@
 .creator-table thead th:nth-child(1), .creator-table thead th:nth-child(2), .creator-table thead th:nth-child(16) { z-index: 6; }
 .tiktok-link { display: block; max-width: 155px; overflow: hidden; color: #137fc8; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
 .tiktok-link:hover { color: var(--navy); text-decoration: underline; }
+.tiktok-link.is-plain { color: #526077; cursor: default; }
 .creator-cell { min-width: 0; display: flex; align-items: center; gap: 10px; }
 .creator-cell > div { min-width: 0; display: grid; }
 .creator-id-copy { gap: 0; }
@@ -229,6 +230,7 @@
 .delete-row-button { width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; color: #bc3b50; background: #fff0f2; }
 .delete-row-button:hover { color: #962438; background: #ffe1e6; }
 .segment-tag, .category-tag, .type-tag { width: fit-content; display: inline-flex; padding: 5px 8px; border-radius: 8px; font-size: 8px; font-weight: 750; white-space: nowrap; }
+.multi-tag-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .segment-tag { color: #0c6da9; background: #dff2ff; }
 .category-tag { color: #5a487c; background: #eee9fa; }
 .type-tag { color: #4e5d72; background: #eef2f6; }
@@ -247,11 +249,23 @@
 .status-active { color: #177657; background: #e4f5ef; } .status-in-campaign { color: #0e70b2; background: #e2f2fd; } .status-available { color: #705a29; background: #fff4dc; } .status-archived { color: #6e7888; background: #eef1f4; }
 .row-actions { display: flex; align-items: center; justify-content: flex-end; gap: 1px; }
 .creator-cards { display: none; }
-.pagination { min-height: 58px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; border-top: 1px solid var(--line); color: #8995a6; font-size: 9px; }
+.pagination { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 7px 20px; overflow-x: auto; border-top: 1px solid var(--line); color: #8995a6; background: white; font-size: 9px; scrollbar-width: thin; }
 .pagination > div { display: flex; align-items: center; gap: 5px; }
 .pagination button { height: 30px; padding: 0 9px; border: 1px solid #e1e7ef; border-radius: 7px; color: #768296; background: white; font-size: 8px; }
 .pagination button:disabled { opacity: .45; cursor: default; }
 .pagination .page-active { border-color: var(--navy); color: white; background: var(--navy); }
+.pagination-summary { flex: 0 0 auto; gap: 12px !important; }
+.pagination-summary strong { color: #40516a; }
+.pagination-summary label, .pagination-jump label { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.pagination-summary select, .pagination-jump input { height: 30px; border: 1px solid #dce5ee; border-radius: 7px; outline: 0; color: #40516a; background: white; font-size: 8px; }
+.pagination-summary select { padding: 0 24px 0 8px; }
+.pagination-navigation { flex: 0 0 auto; }
+.pagination-pages { display: flex; align-items: center; gap: 4px; }
+.pagination-page-slot { display: inline-flex; align-items: center; gap: 4px; }
+.pagination-page-slot i { color: #9ca7b5; font-style: normal; }
+.pagination-jump { display: flex; align-items: center; gap: 5px; margin-left: 5px; }
+.pagination-jump input { width: 48px; padding: 0 6px; text-align: center; }
+.pagination-jump > span { white-space: nowrap; }
 .row-density-controls { min-width: 245px; justify-content: center; padding: 4px 8px; border: 1px solid #e0e8f0; border-radius: 10px; background: #f8fbfe; }
 .row-density-controls > span { margin-right: 5px; color: #708096; font-size: 8px; white-space: nowrap; }
 .row-density-controls > span strong { color: #28435f; }

@@ -2,7 +2,7 @@ import { ApiError } from '../../utils/api-error.js'
 
 export const CREATOR_SEGMENTS = ['MINI', 'TOP', 'MASSIVE', 'FREECAST'] as const
 export const CREATOR_CATEGORIES = ['BEAUTY', 'MOM&BABY', 'SKINCARE', 'LIFESTYLE', 'CHUYÊN GIA/DƯỢC SĨ', 'HỘ SINH', 'FASHION', 'FOOD', 'TECH'] as const
-export const CREATOR_TYPES = ['VIDEO', 'LIVESTREAM', 'VIDEO / LIVESTREAM'] as const
+export const CREATOR_TYPES = ['VIDEO', 'LIVESTREAM'] as const
 export const CREATOR_STATUSES = ['Active', 'In campaign', 'Available', 'Archived'] as const
 export const HISTORICAL_CAMPAIGNS = ['Chưa hợp tác', 'Đã hợp tác'] as const
 
@@ -11,8 +11,8 @@ export interface CreatorInput {
   tiktokLink: string
   tiktokId: string
   segment: string
-  category: string
-  type: string
+  category: string[]
+  type: string[]
   cost: number
   extraCost: number
   followers: number
@@ -61,6 +61,19 @@ function optionValue(value: unknown, field: string, options: readonly string[], 
   return result
 }
 
+function multiOptionValue(value: unknown, field: string, options: readonly string[], fallback: string, errors: FieldErrors) {
+  const rawItems = Array.isArray(value)
+    ? value.flatMap((item) => text(item).split(/[,;|\n]+/))
+    : text(value).split(/[,;|\n]+/)
+  const expandedItems = field === 'type'
+    ? rawItems.flatMap((item) => text(item) === 'VIDEO / LIVESTREAM' ? ['VIDEO', 'LIVESTREAM'] : [item])
+    : rawItems
+  const result = [...new Set(expandedItems.map((item) => text(item)).filter(Boolean))]
+  const values = result.length ? result : [fallback]
+  if (values.some((item) => !options.includes(item))) errors[field] = 'Có giá trị không nằm trong danh sách cho phép.'
+  return values
+}
+
 function collaborationValue(value: unknown, errors: FieldErrors) {
   if (value === undefined || value === null || text(value) === '') return 'Đã hợp tác'
   if (value === true) return 'Đã hợp tác'
@@ -79,9 +92,8 @@ export function validateCreatorInput(value: unknown, partial = false): CreatorUp
   const has = (field: string) => Object.hasOwn(input, field)
 
   if (!partial || has('tiktokId')) {
-    const tiktokId = text(input.tiktokId).replace(/^@/, '').toLowerCase()
+    const tiktokId = text(input.tiktokId)
     if (!tiktokId) errors.tiktokId = 'ID TikTok không được để trống.'
-    else if (!/^[\p{L}\p{N}._-]+$/u.test(tiktokId)) errors.tiktokId = 'ID TikTok chỉ được chứa chữ, số, dấu chấm, gạch dưới hoặc gạch ngang.'
     output.tiktokId = tiktokId
   }
 
@@ -93,24 +105,17 @@ export function validateCreatorInput(value: unknown, partial = false): CreatorUp
   if (!partial || has('tiktokLink')) {
     const tiktokLink = text(input.tiktokLink)
     if (!tiktokLink) errors.tiktokLink = 'Link TikTok không được để trống.'
-    else {
-      try {
-        const url = new URL(tiktokLink)
-        if (!/(^|\.)tiktok\.com$/i.test(url.hostname) || !url.pathname.startsWith('/@')) errors.tiktokLink = 'Hãy nhập Link TikTok có dạng https://www.tiktok.com/@id.'
-      } catch {
-        errors.tiktokLink = 'Link TikTok không đúng định dạng URL.'
-      }
-    }
     output.tiktokLink = tiktokLink
   }
 
   const optionFields = [
-    ['segment', CREATOR_SEGMENTS, 'MINI'], ['category', CREATOR_CATEGORIES, 'BEAUTY'], ['type', CREATOR_TYPES, 'VIDEO'],
-    ['status', CREATOR_STATUSES, 'Available'],
+    ['segment', CREATOR_SEGMENTS, 'MINI'], ['status', CREATOR_STATUSES, 'Available'],
   ] as const
   for (const [field, options, fallback] of optionFields) {
     if (!partial || has(field)) output[field] = optionValue(input[field], field, options, fallback, errors)
   }
+  if (!partial || has('category')) output.category = multiOptionValue(input.category, 'category', CREATOR_CATEGORIES, 'BEAUTY', errors)
+  if (!partial || has('type')) output.type = multiOptionValue(input.type, 'type', CREATOR_TYPES, 'VIDEO', errors)
   if (!partial || has('historicalCampaign')) output.historicalCampaign = collaborationValue(input.historicalCampaign, errors)
 
   const numericFields = [['cost', false], ['extraCost', false], ['followers', true], ['gmvMonth', false], ['engagement', false]] as const

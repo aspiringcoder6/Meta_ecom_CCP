@@ -1,4 +1,5 @@
 import { CREATOR_CATEGORIES, CREATOR_SEGMENTS, CREATOR_TYPES } from '../config/labels'
+import { toCreatorList } from './creatorLists'
 
 export const HISTORICAL_CAMPAIGN_OPTIONS = ['Chưa hợp tác', 'Đã hợp tác']
 
@@ -16,19 +17,13 @@ export function validateCreatorValue(field, rawValue) {
   const text = String(rawValue ?? '').trim()
 
   if (field === 'tiktokId') {
-    const normalized = text.replace(/^@/, '')
-    if (!normalized) return { error: 'ID TikTok không được để trống.' }
-    return { value: normalized }
+    if (!text) return { error: 'ID TikTok không được để trống.' }
+    return { value: text }
   }
 
   if (field === 'tiktokLink') {
     if (!text) return { error: 'Link TikTok không được để trống.' }
-    try {
-      const url = new URL(text)
-      return { value: text }
-    } catch {
-      return { error: 'Đường dẫn không đúng định dạng URL.' }
-    }
+    return { value: text }
   }
 
   if (NUMERIC_FIELDS.has(field)) {
@@ -39,6 +34,14 @@ export function validateCreatorValue(field, rawValue) {
     if (number < 0) return { error: 'Giá trị không được nhỏ hơn 0.' }
     if (INTEGER_FIELDS.has(field) && !Number.isInteger(number)) return { error: 'Giá trị phải là số nguyên.' }
     return { value: number }
+  }
+
+  if (field === 'category' || field === 'type') {
+    const fallback = field === 'category' ? ['BEAUTY'] : ['VIDEO']
+    const values = toCreatorList(rawValue, fallback)
+    const options = CREATOR_FIELD_OPTIONS[field]
+    if (values.some((value) => !options.includes(value))) return { error: 'Có giá trị không nằm trong danh sách cho phép.' }
+    return { value: values }
   }
 
   const options = CREATOR_FIELD_OPTIONS[field]
