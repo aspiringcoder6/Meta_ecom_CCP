@@ -80,7 +80,7 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
   useEffect(() => {
     if (!isFullscreen) return undefined
     const handleEscape = (event) => {
-      if (event.key !== 'Escape' || event.target.matches('input, select')) return
+      if (event.key !== 'Escape' || event.defaultPrevented || event.target.matches('input, select') || event.target.closest('.multi-filter, .advanced-filters')) return
       if (importReview) onCancelImport()
       else if (editMode) onCommitEdit()
       onExitFullscreen()

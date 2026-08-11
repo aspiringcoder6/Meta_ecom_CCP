@@ -19,6 +19,8 @@ export default function CreatorMultiFilter({ label, values, options, onChange })
     }
     const closeOnEscape = (event) => {
       if (event.key !== 'Escape') return
+      event.preventDefault()
+      event.stopPropagation()
       setIsOpen(false)
       triggerRef.current?.focus()
     }
@@ -37,7 +39,7 @@ export default function CreatorMultiFilter({ label, values, options, onChange })
   }
 
   return (
-    <div className={`multi-filter ${isOpen ? 'is-open' : ''}`} ref={containerRef}>
+    <div className={`multi-filter ${isOpen ? 'is-open' : ''}`} ref={containerRef} onClick={(event) => event.stopPropagation()}>
       <button ref={triggerRef} className={`multi-filter-trigger ${selectedValues.length ? 'has-value' : ''}`} type="button" aria-haspopup="listbox" aria-expanded={isOpen} onClick={() => setIsOpen((open) => !open)}>
         <span>{triggerLabel}</span>
         {selectedValues.length > 1 && <strong>{selectedValues.length}</strong>}

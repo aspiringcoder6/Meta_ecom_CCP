@@ -119,7 +119,7 @@ export default function CreatorsPage() {
         <div className="heading-actions"><button className="secondary-button" data-tour="page-export" onClick={handleExport}><Icon name="download" />Export</button>{canManageCreators && <><CreatorImportMenu tourId="page-import" onImport={handleImport} /><button className="primary-button" data-tour="page-add" onClick={() => setAddOpen(true)}><Icon name="plus" />Thêm Creator</button></>}</div>
       </section>
       <CreatorSummary creators={creators} onSelect={setSelectedCreatorId} />
-      <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />
+      {!isFullscreen && <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />}
       {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
       <CreatorDetailsDrawer creator={selectedCreator} canManage={canManageCreators} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />
       {canManageCreators && addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}

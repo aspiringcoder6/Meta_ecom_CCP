@@ -94,8 +94,8 @@
 .multi-filter-option.is-selected > span { border-color: #1686d3; color: white; background: #1686d3; }
 .multi-filter-menu > footer { display: flex; justify-content: flex-end; padding: 6px 5px 1px; border-top: 1px solid #edf1f5; }
 .multi-filter-menu > footer button { padding: 5px; color: #1686d3; background: transparent; font-size: 8px; font-weight: 750; }
-.creators-panel:has(.multi-filter.is-open) { position: relative; z-index: 30; overflow: visible; }
-.creator-fullscreen-view .fullscreen-toolbar-region:has(.multi-filter.is-open) { position: relative; z-index: 30; overflow: visible; }
+.creators-panel:not(.creator-fullscreen-view):has(.multi-filter.is-open) { position: relative; z-index: 30; overflow: visible; }
+.creator-fullscreen-view .fullscreen-toolbar-region:has(.multi-filter.is-open, .advanced-filters.is-open) { position: relative; z-index: 30; overflow: visible; }
 .clear-filter { padding: 8px; color: #1686d3; background: transparent; font-size: 9px; font-weight: 700; }
 .fullscreen-button, .add-filter-button { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 11px; border: 1px solid #cfe0ef; border-radius: 9px; color: #235071; background: #f7fbff; font-size: 9px; font-weight: 700; white-space: nowrap; }
 .fullscreen-button:hover, .add-filter-button:hover, .add-filter-button.is-active { border-color: #8ec9f0; color: var(--navy); background: #eaf7ff; }
