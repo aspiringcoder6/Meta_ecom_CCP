@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Avatar from '../common/Avatar'
 import Icon from '../common/Icon'
+import CategoryPathRibbons from './CategoryPathRibbons'
 import { formatCompactCurrency } from '../../utils/formatters'
 import { getCreatorInsights } from '../../utils/creatorInsights'
 import { formatCreatorHandle, formatCreatorList } from '../../utils/creatorLists'
@@ -68,7 +69,7 @@ function LeadingCreators({ creators, onSelect }) {
             <span className="rank">{String(index + 1).padStart(2, '0')}</span>
             <Avatar creator={creator} />
             <span className="creator-primary"><strong>{creator.name}</strong><small>{formatCreatorHandle(creator.tiktokId)}</small></span>
-            <span className="category-tag" title={formatCreatorList(creator.category)}>{formatCreatorList(creator.category, ' · ')}</span>
+            <div className="insight-category-ribbons"><CategoryPathRibbons values={creator.category} level={3} /></div>
             <span className="financial-value"><strong>{formatCompactCurrency(creator.gmvMonth)}</strong><small>GMV</small></span>
             <span className="financial-value expense"><strong>{formatCompactCurrency(bookingExpense)}</strong><small>Booking</small></span>
           </button>

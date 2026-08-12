@@ -42,10 +42,15 @@
 .category-segment-card > footer { margin-top: 10px; color: #8290a2; font-size: 9px; text-align: right; }
 .category-segment-card > footer strong { color: var(--navy); font-size: 11px; }
 .insight-leaders-card { overflow: hidden; }
-.creator-insight-leaders-table { overflow-x: auto; scrollbar-width: thin; }
-.creator-insight-leaders-table .financial-mini-header { min-width: 650px; grid-template-columns: minmax(174px,1fr) 100px 110px 110px; }
-.creator-insight-leaders-table .mini-table-row { min-width: 650px; grid-template-columns: 24px 40px minmax(110px,1fr) 100px 110px 110px; }
-.creator-insight-leaders-table .mini-table-row .category-tag { justify-self: start; }
+.creator-insight-leaders-table { width: 100%; overflow-x: auto; scrollbar-color: #b8c8db #eef3f8; scrollbar-width: thin; }
+.creator-insight-leaders-table .financial-mini-header { min-width: 820px; grid-template-columns: minmax(180px,1fr) minmax(280px,1.35fr) 105px 110px; padding-left: 78px; padding-right: 4px; }
+.creator-insight-leaders-table .mini-table-row { min-width: 820px; min-height: 96px; grid-template-columns: 24px 40px minmax(150px,1fr) minmax(280px,1.35fr) 105px 110px; align-items: center; }
+.creator-insight-leaders-table .mini-table-row > * { min-width: 0; }
+.insight-category-ribbons { width: 100%; min-width: 0; overflow: hidden; }
+.insight-category-ribbons .category-path-ribbons { width: 100%; max-height: 73px; overflow-x: hidden; overflow-y: auto; padding: 1px 11px 1px 0; }
+.insight-category-ribbons .category-path-ribbon { width: fit-content; max-width: calc(100% - 10px); }
+.insight-category-ribbons .category-path-segment { max-width: 104px; }
+.creator-insight-leaders-table .financial-value { position: relative; z-index: 1; align-self: center; padding-left: 4px; background: #fbfdff; }
 .segment-booking-card .booking-total { margin-top: 0; }
 .insight-empty { grid-column: 1 / -1; margin: 10px 0; color: #8997a8; font-size: 9px; text-align: center; }
 .creators-panel { overflow: hidden; }

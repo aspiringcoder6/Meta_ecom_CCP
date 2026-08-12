@@ -66,8 +66,9 @@
   .mini-table-row .platform-pill { display: none; }
   .financial-creators-table .financial-mini-header { display: none; }
   .financial-creators-table .mini-table-row { grid-template-columns: 22px 34px minmax(105px,1fr) 90px 52px; }
-  .creator-insight-leaders-table .mini-table-row { min-width: 0; grid-template-columns: 22px 34px minmax(105px,1fr) 90px; }
-  .financial-creators-table .mini-table-row .category-tag, .financial-creators-table .financial-value.expense { display: none; }
+  .creator-insight-leaders-table .mini-table-row { min-width: 660px; grid-template-columns: 22px 34px minmax(125px,1fr) minmax(220px,1.25fr) 90px 82px; }
+  .creator-insight-leaders-table .insight-category-ribbons { display: block; }
+  .creator-insight-leaders-table .financial-value.expense { display: grid; }
   .financial-bar-row { grid-template-columns: 105px minmax(90px,1fr) 78px; gap: 9px; }
   .creator-summary-strip { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0; padding: 6px; }
   .creator-summary-strip .summary-icon { display: none; }
