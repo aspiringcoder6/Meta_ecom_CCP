@@ -3,7 +3,8 @@ import { calculateBookingPricing } from '../../utils/pricing'
 import { formatCompactCurrency } from '../../utils/formatters'
 import Avatar from '../common/Avatar'
 import Icon from '../common/Icon'
-import { formatCreatorHandle, formatCreatorList } from '../../utils/creatorLists'
+import { formatCreatorHandle } from '../../utils/creatorLists'
+import { formatCategoryPaths } from '../../utils/creatorCategoryPaths'
 
 export default function CreatorsToWatch({ creators }) {
   const navigate = useNavigate()
@@ -17,7 +18,7 @@ export default function CreatorsToWatch({ creators }) {
         {topCreators.map((creator, index) => {
           const bookingExpense = calculateBookingPricing(creator.cost, creator.extraCost).bookingExpense
           const efficiency = bookingExpense ? creator.gmvMonth / bookingExpense : 0
-          return <button className="mini-table-row" key={creator.id} onClick={() => navigate('/creators')}><span className="rank">{String(index + 1).padStart(2, '0')}</span><Avatar creator={creator} /><span className="creator-primary"><strong>{creator.name}</strong><small>{formatCreatorHandle(creator.tiktokId)}</small></span><span className="category-tag" title={formatCreatorList(creator.category)}>{formatCreatorList(creator.category, ' · ')}</span><span className="financial-value"><strong>{formatCompactCurrency(creator.gmvMonth)}</strong><small>GMV</small></span><span className="financial-value expense"><strong>{formatCompactCurrency(bookingExpense)}</strong><small>Booking</small></span><span className="efficiency-pill">{efficiency.toFixed(1)}x</span></button>
+        return <button className="mini-table-row" key={creator.id} onClick={() => navigate('/creators')}><span className="rank">{String(index + 1).padStart(2, '0')}</span><Avatar creator={creator} /><span className="creator-primary"><strong>{creator.name}</strong><small>{formatCreatorHandle(creator.tiktokId)}</small></span><span className="category-tag" title={formatCategoryPaths(creator.category, ', ', 2)}>{formatCategoryPaths(creator.category, ' · ', 2)}</span><span className="financial-value"><strong>{formatCompactCurrency(creator.gmvMonth)}</strong><small>GMV</small></span><span className="financial-value expense"><strong>{formatCompactCurrency(bookingExpense)}</strong><small>Booking</small></span><span className="efficiency-pill">{efficiency.toFixed(1)}x</span></button>
         })}
       </div>
     </article>

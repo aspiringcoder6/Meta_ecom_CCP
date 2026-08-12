@@ -96,11 +96,12 @@ function categoryPathValue(value: unknown, errors: FieldErrors) {
     const parts = tokenParts.length === 1 && previousParts.length > 1 ? [...previousParts.slice(0, -1), tokenHead] : tokenParts
     const firstPart = parts[0] ?? tokenHead
     const root = rootsByKey.get(categoryKey(firstPart)) || firstPart.replace(/\s+/g, ' ').trim()
-    if (parts.length > 10 || parts.some((part) => part.length > 80)) {
-      errors.category = 'Mỗi nhánh Category tối đa 10 layer và 80 ký tự cho mỗi layer.'
+    const retainedParts = parts.slice(0, 2)
+    if (retainedParts.some((part) => part.length > 80)) {
+      errors.category = 'Main Category và Subcategory tối đa 80 ký tự cho mỗi cấp.'
       continue
     }
-    const normalizedParts = [root, ...parts.slice(1).map((part) => part.replace(/\s+/g, ' ').trim())]
+    const normalizedParts = [root, ...retainedParts.slice(1).map((part) => part.replace(/\s+/g, ' ').trim())]
     const path = normalizedParts.join(' > ')
     const key = normalizedParts.map(categoryKey).join('>')
     if (!seen.has(key)) {

@@ -28,7 +28,7 @@ export function normalizeCategoryPath(value) {
   const parts = splitCategoryPath(value)
   const root = normalizeRoot(parts[0])
   if (!root) return null
-  const descendants = parts.slice(1).map((part) => part.replace(/\s+/g, ' ').trim()).filter(Boolean)
+  const descendants = parts.slice(1, 2).map((part) => part.replace(/\s+/g, ' ').trim()).filter(Boolean)
   return [root, ...descendants].join(CATEGORY_PATH_SEPARATOR)
 }
 

@@ -67,15 +67,15 @@ export function useCreatorTour({ canManage, closeFullscreen }) {
 
     const pageSteps = [
       step('[data-tour="creators-heading"]', 'Bắt đầu với kho Creator', 'Guide sẽ hướng dẫn bạn cách xem insight, import, lọc và thao tác với bảng; sau đó chuyển sang workspace toàn màn hình để dễ thao tác. Nhấn Esc hoặc nút × để thoát bất kỳ lúc nào.', 'bottom', 'start'),
-      step('[data-tour="creator-insights"]', 'Insight tổng quan và chi tiết', 'Phần thu gọn cho biết tổng Creator, Category lớn nhất, Booking Expense và Creator dẫn đầu. Chọn “Xem chi tiết” để mở phân bổ Category theo Segment cùng bảng xếp hạng.'),
+      step('[data-tour="creator-insights"]', 'Insight tổng quan và phân bổ KOC', 'Phần overview cho biết tổng Creator, Category lớn nhất, Creator dẫn đầu và top 3 Category có nhiều KOC nhất. Chọn “Xem chi tiết” để mở toàn bộ Category; bấm một dòng Category để xem top 5 KOC theo GMV rồi Followers.'),
       step('[data-tour="page-export"]', 'Export dữ liệu từ hệ thống', 'Định dạng file tải xuống sẽ là file csv, giữ nguyên định dạng như bạn nhìn thấy trên bảng', 'bottom', 'end'),
       ...(canManage ? [
         step('[data-tour="page-import"]', 'Import và đối chiếu Creator', 'Di chuột vào để hiện menu tải template, thêm/cập nhật hoặc thay thế dữ liệu. TikTok ID trùng sẽ được cập nhật và gộp thêm Category, Type; preview cho biết số dòng mới, cập nhật và lỗi trước khi bạn chấp nhận.'),
-        step('[data-tour="page-add"]', 'Thêm Creator thủ công', 'Form đầy đủ nhất để nhập dữ liệu. Category có thể đặt tự do như “abc > cde”; Cost và Extra/FOC tự tính Total Cast cùng Booking Expense.'),
+        step('[data-tour="page-add"]', 'Thêm Creator thủ công', 'Form đầy đủ nhất để nhập dữ liệu. Category có thể đặt tự do với hai cấp như “Main Category > Subcategory”; Cost và Extra/FOC tự tính Total Cast cùng Booking Expense.'),
       ] : []),
       step('[data-tour="page-search"]', 'Tìm nhanh trong kho', 'Tìm theo tên, TikTok ID, Link hoặc Category. Kết quả ở các trang sẽ cập nhật khi bạn thay đổi search', 'bottom', 'start'),
       step('[data-tour="page-filters"]', 'Bộ lọc nhiều lựa chọn', 'Có thể chọn đồng thời nhiều Segment, Category và Type. Trong Category tree, hover để mở các subcategory, chọn cấp cha sẽ bao gồm toàn bộ các nhánh con.'),
-      step('[data-tour="page-category-layers"]', 'Chọn độ sâu Category', 'Layer 1 chỉ hiện Category gốc; Layer 2 thêm L2; Layer 3 hiển thị tối đa ba cấp', 'bottom'),
+      step('[data-tour="page-category-layers"]', 'Chọn độ sâu Category', 'Layer 1 chỉ hiện Main Category; Layer 2 hiển thị thêm Subcategory', 'bottom'),
       step('[data-tour="page-numeric-filter"]', 'Bộ lọc số linh hoạt', 'Thêm điều kiện min, max hoặc range cho Followers, GMV, Cost, Booking Expense và các trường số khác.', 'top', 'start'),
       step('[data-tour="page-sort-header"]', 'Sorting nhiều tiêu chí', 'Bấm một header để sort tăng dần, bấm lần nữa để giảm dần và lần ba để bỏ. Chọn thêm header khác để tạo thứ tự ưu tiên nhiều tiêu chí.', 'bottom', 'start'),
       step('[data-tour="page-pagination"]', 'Điều hướng danh sách', 'Chọn số hàng trên mỗi trang, chuyển bằng các nút trang hoặc nhập thẳng số trang muốn đến.', 'top'),
@@ -97,7 +97,7 @@ export function useCreatorTour({ canManage, closeFullscreen }) {
       step('[data-tour="fullscreen-header"]', 'Workspace toàn màn hình', 'Bảng là vùng làm việc chính. Thanh đầu giữ Export, Import, thêm Creator, chuyển chế độ chỉnh sửa và nút thoát fullscreen.', 'bottom', 'start', { waitForElement: 5000 }),
       ...(canManage ? [step('[data-tour="fullscreen-import"]', 'Import ngay trong fullscreen', 'Bạn có thể bắt đầu một lần import mới tại đây. Hệ thống sẽ mở preview, tô xanh lá dòng mới, xanh dương dòng cập nhật và liệt kê lỗi màu đỏ.', 'bottom', 'end', { skipMissingElement: true })] : []),
       step('[data-tour="fullscreen-toolbar"]', 'Search và filter luôn sẵn sàng', 'Các lựa chọn Search, multi-filter và Layer được giữ đồng bộ với trang thường, thao tác tương tự', 'bottom'),
-      step('[data-tour="fullscreen-category-layers"]', 'Layer trong fullscreen', 'Chọn Layer 1, 2 hoặc 3 để chọn số lớp tối đa hiển thị', 'bottom'),
+      step('[data-tour="fullscreen-category-layers"]', 'Layer trong fullscreen', 'Chọn Layer 1 để chỉ xem Main Category hoặc Layer 2 để xem thêm Subcategory', 'bottom'),
       step('[data-tour="header-height-resizer"]', 'Điều chỉnh chiều cao thanh đầu', 'Kéo thanh phân cách này để dành thêm hoặc bớt không gian cho nhóm nút thao tác.', 'bottom'),
       step('[data-tour="workspace-height-resizer"]', 'Điều chỉnh chiều cao bộ lọc', 'Kéo để thay đổi chiều cao vùng Search và filter. Phần bảng sẽ tự nhận toàn bộ không gian còn lại.', 'bottom'),
       step('[data-tour="fullscreen-sort-header"]', 'Sorting trong bảng lớn', 'Bấm nhiều header để sort theo nhiều tiêu chí. Badge 1 là ưu tiên cao nhất, sau đó là 2, 3…', 'bottom', 'start'),

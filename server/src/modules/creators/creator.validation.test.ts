@@ -35,13 +35,13 @@ test('defaults an empty category to OTHER', () => {
   assert.deepEqual(creator.category, ['OTHER'])
 })
 
-test('accepts hierarchical category paths and comma shorthand', () => {
+test('keeps only main category and subcategory', () => {
   const creator = validateCreatorInput({
     tiktokId: 'creator.fashion',
     tiktokLink: 'creator-link',
     category: 'Fashion > Female > Purse, Hat, Fashion > Male > Shoes',
   })
-  assert.deepEqual(creator.category, ['FASHION > Female > Purse', 'FASHION > Female > Hat', 'FASHION > Male > Shoes'])
+  assert.deepEqual(creator.category, ['FASHION > Female', 'FASHION > Hat', 'FASHION > Male'])
 })
 
 test('accepts arbitrary category roots and keeps their hierarchy', () => {

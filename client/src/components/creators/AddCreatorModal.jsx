@@ -5,7 +5,7 @@ import { calculateBookingPricing } from '../../utils/pricing'
 import { validateCreatorValue } from '../../utils/creatorValidation'
 import Icon from '../common/Icon'
 import { toCreatorList } from '../../utils/creatorLists'
-import { mergeCategoryPaths, parseCategoryPaths } from '../../utils/creatorCategoryPaths'
+import { mergeCategoryPaths, parseCategoryPaths, projectCategoryPaths } from '../../utils/creatorCategoryPaths'
 
 const EMPTY_FORM = {
   name: '', handle: '', tiktokLink: '', segment: 'MINI', category: [], type: ['VIDEO'],
@@ -17,7 +17,7 @@ function getInitialForm(creator) {
   if (!creator) return EMPTY_FORM
   return {
     name: creator.name || '', handle: creator.tiktokId || '', tiktokLink: creator.tiktokLink || '',
-    segment: creator.segment || 'MINI', category: toCreatorList(creator.category, ['OTHER']), type: toCreatorList(creator.type, ['VIDEO']),
+    segment: creator.segment || 'MINI', category: projectCategoryPaths(toCreatorList(creator.category, ['OTHER']), 2), type: toCreatorList(creator.type, ['VIDEO']),
     cost: creator.cost ?? '', extraCost: creator.extraCost ?? '', followers: creator.followers ?? '', gmvMonth: creator.gmvMonth ?? '',
     scope: creator.scope || '', contact: creator.contact === 'Chưa cung cấp' ? '' : creator.contact || '',
     concept: creator.concept || '', productFocus: creator.productFocus || '', historicalCampaign: creator.historicalCampaign || 'Đã hợp tác',
@@ -70,7 +70,7 @@ function CategoryPathField({ values, onChange }) {
       <div className="category-path-values">{values.map((path) => <span key={path}>{path}<button type="button" aria-label={`Xóa ${path}`} onClick={() => onChange(values.filter((value) => value !== path))}><Icon name="close" size={12} /></button></span>)}</div>
       <div className={`category-path-input ${error ? 'has-error' : ''}`}><input value={draft} onChange={(event) => { setDraft(event.target.value); setError('') }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addDraft() } }} placeholder="abc > cde, fgh" /><button type="button" onClick={addDraft}><Icon name="plus" size={14} />Thêm nhánh</button></div>
       {error && <small className="form-field-error" role="alert">{error}</small>}
-      <small>Category được tạo tự do. Dùng dấu &gt; cho layer và dấu phẩy cho nhánh cùng cấp.</small>
+      <small>Category được tạo tự do với tối đa 2 cấp: Main Category &gt; Subcategory. Dùng dấu phẩy để thêm nhiều nhánh.</small>
     </fieldset>
   )
 }

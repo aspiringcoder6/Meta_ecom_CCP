@@ -1,7 +1,6 @@
 const CATEGORY_LAYERS = [
   { value: 1, label: 'Layer 1', title: 'Chỉ hiển thị Category cấp cao nhất' },
   { value: 2, label: 'Layer 2', title: 'Hiển thị Category và Subcategory cấp 2' },
-  { value: 3, label: 'Layer 3', title: 'Hiển thị chi tiết Category đến cấp 3' },
 ]
 
 export default function CategoryLayerSelector({ value = 1, onChange, tourId }) {

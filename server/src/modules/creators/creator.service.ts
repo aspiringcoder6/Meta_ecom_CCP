@@ -19,6 +19,16 @@ function categoryPathKey(value: unknown) {
   return String(value || '').split(/\s*>\s*/).map((part) => part.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().trim()).filter(Boolean).join('>')
 }
 
+function normalizeCategoryList(values: unknown) {
+  const seen = new Set<string>()
+  return stringList(values, 'OTHER').map((value) => value.split(/\s*>\s*/).map((part) => part.trim()).filter(Boolean).slice(0, 2).join(' > ')).filter((value) => {
+    const key = categoryPathKey(value)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 function categoryPathMatches(candidate: unknown, selected: unknown) {
   const candidateKey = categoryPathKey(candidate)
   const selectedKey = categoryPathKey(selected)
@@ -26,14 +36,7 @@ function categoryPathMatches(candidate: unknown, selected: unknown) {
 }
 
 function mergeCategoryLists(current: string[], imported: string[]) {
-  const values = [...current, ...imported]
-  const seen = new Set<string>()
-  return values.filter((value) => {
-    const key = categoryPathKey(value)
-    if (!key || seen.has(key)) return false
-    seen.add(key)
-    return true
-  })
+  return normalizeCategoryList([...current, ...imported])
 }
 
 export function toCreatorDto(creator: Record<string, unknown>) {
@@ -43,7 +46,7 @@ export function toCreatorDto(creator: Record<string, unknown>) {
   const count = creator._count as { campaigns?: number } | undefined
   return {
     id: creator.id, name, handle: tiktokId.startsWith('@') ? tiktokId : `@${tiktokId}`, initials: initials(name), platform: 'TikTok',
-    tiktokLink: creator.tiktokLink, tiktokId, segment: creator.segment || 'MINI', category: stringList(creator.category, 'OTHER'), type: stringList(creator.type, 'VIDEO'),
+    tiktokLink: creator.tiktokLink, tiktokId, segment: creator.segment || 'MINI', category: normalizeCategoryList(creator.category), type: stringList(creator.type, 'VIDEO'),
     cost, extraCost: Number(creator.extraCost || 0), followers: Number(creator.followers || 0), gmvMonth: Number(creator.gmvMonth || 0),
     scope: creator.scope || '', contact: creator.contact || '', concept: creator.concept || '', productFocus: creator.productFocus || '',
     historicalCampaign: creator.historicalCampaign || 'Đã hợp tác', mcnNote: creator.mcnNote || '',
