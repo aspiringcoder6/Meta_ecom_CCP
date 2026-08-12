@@ -74,6 +74,46 @@ function multiOptionValue(value: unknown, field: string, options: readonly strin
   return values
 }
 
+function categoryKey(value: unknown) {
+  return text(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+function categoryPathValue(value: unknown, errors: FieldErrors) {
+  const rawValues = Array.isArray(value) ? value : [value]
+  const tokens = rawValues.flatMap((item) => text(item).split(/[,;|\n]+/)).map((item) => text(item)).filter(Boolean)
+  if (!tokens.length) return ['OTHER']
+  const rootsByKey = new Map(CREATOR_CATEGORIES.map((category) => [categoryKey(category), category]))
+  rootsByKey.set('mom baby', 'MOM&BABY')
+  rootsByKey.set('mom and baby', 'MOM&BABY')
+  const paths: string[] = []
+  const seen = new Set<string>()
+  let previousParts: string[] = []
+
+  for (const token of tokens) {
+    const tokenParts = token.split(/\s*>\s*/).map((part) => text(part)).filter(Boolean)
+    const tokenHead = tokenParts[0]
+    if (!tokenHead) continue
+    const parts = tokenParts.length === 1 && previousParts.length > 1 ? [...previousParts.slice(0, -1), tokenHead] : tokenParts
+    const firstPart = parts[0] ?? tokenHead
+    const root = rootsByKey.get(categoryKey(firstPart)) || firstPart.replace(/\s+/g, ' ').trim()
+    if (parts.length > 10 || parts.some((part) => part.length > 80)) {
+      errors.category = 'Mỗi nhánh Category tối đa 10 layer và 80 ký tự cho mỗi layer.'
+      continue
+    }
+    const normalizedParts = [root, ...parts.slice(1).map((part) => part.replace(/\s+/g, ' ').trim())]
+    const path = normalizedParts.join(' > ')
+    const key = normalizedParts.map(categoryKey).join('>')
+    if (!seen.has(key)) {
+      seen.add(key)
+      paths.push(path)
+    }
+    previousParts = normalizedParts
+  }
+
+  if (!paths.length && !errors.category) errors.category = 'Category không hợp lệ.'
+  return paths.length ? paths : ['OTHER']
+}
+
 function collaborationValue(value: unknown, errors: FieldErrors) {
   if (value === undefined || value === null || text(value) === '') return 'Đã hợp tác'
   if (value === true) return 'Đã hợp tác'
@@ -114,7 +154,7 @@ export function validateCreatorInput(value: unknown, partial = false): CreatorUp
   for (const [field, options, fallback] of optionFields) {
     if (!partial || has(field)) output[field] = optionValue(input[field], field, options, fallback, errors)
   }
-  if (!partial || has('category')) output.category = multiOptionValue(input.category, 'category', CREATOR_CATEGORIES, 'OTHER', errors)
+  if (!partial || has('category')) output.category = categoryPathValue(input.category, errors)
   if (!partial || has('type')) output.type = multiOptionValue(input.type, 'type', CREATOR_TYPES, 'VIDEO', errors)
   if (!partial || has('historicalCampaign')) output.historicalCampaign = collaborationValue(input.historicalCampaign, errors)
 

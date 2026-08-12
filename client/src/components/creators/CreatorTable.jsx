@@ -5,8 +5,10 @@ import { CREATOR_FIELD_OPTIONS } from '../../utils/creatorValidation'
 import Avatar from '../common/Avatar'
 import Icon from '../common/Icon'
 import EditableCreatorCell from './EditableCreatorCell'
+import CategoryPathRibbons from './CategoryPathRibbons'
 import CreatorSortableHeader from './CreatorSortableHeader'
-import { formatCreatorList, toCreatorList } from '../../utils/creatorLists'
+import { toCreatorList } from '../../utils/creatorLists'
+import { formatCategoryPaths } from '../../utils/creatorCategoryPaths'
 
 const COLUMNS = [
   { key: 'tiktokLink', label: <span>Link TikTok</span> },
@@ -38,7 +40,7 @@ function CollaborationBadge({ value }) {
 
 function TagList({ values, className }) {
   const items = toCreatorList(values)
-  return <div className="multi-tag-list">{items.map((item) => <span className={className} key={item}>{item}</span>)}</div>
+  return <div className="multi-tag-list">{items.map((item) => <span className={className} title={item} key={item}>{item}</span>)}</div>
 }
 
 function ColumnResizeHandle({ index, width, dataTour, onResize, onReset }) {
@@ -52,7 +54,7 @@ function ColumnResizeHandle({ index, width, dataTour, onResize, onReset }) {
   return <span className="column-resize-handle" data-tour={dataTour} role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
-export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], updatedCreatorIds = [], sortCriteria = [], onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
+export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], updatedCreatorIds = [], sortCriteria = [], categoryDisplayLevel = 1, onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
   if (!creators.length) return <EmptyResults />
 
   const tableWidth = resizable ? columnWidths.reduce((total, width) => total + width, 0) : undefined
@@ -61,12 +63,12 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
 
   return (
     <div className="creator-table-wrap">
-      <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${editMode ? 'is-editing' : ''}`} data-tour={resizable ? 'fullscreen-table' : undefined} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
+      <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${editMode ? 'is-editing' : ''}`} data-tour={resizable ? 'fullscreen-table' : 'page-table'} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
         {resizable && <colgroup>{columnWidths.map((width, index) => <col key={index} style={{ width: `${width}px` }} />)}</colgroup>}
         <thead><tr>{COLUMNS.map((column, index) => {
           const sortIndex = sortCriteria.findIndex((criterion) => criterion.key === column.key)
           const criterion = sortIndex >= 0 ? sortCriteria[sortIndex] : undefined
-          return <th key={column.key || 'actions'} style={index === 1 ? secondStickyStyle : undefined} aria-sort={criterion ? (criterion.direction === 'asc' ? 'ascending' : 'descending') : undefined}><CreatorSortableHeader label={column.label} sortKey={column.key} criterion={criterion} priority={sortIndex + 1} dataTour={resizable && index === 0 ? 'sort-header' : undefined} onSort={onSort} />{resizable && <ColumnResizeHandle index={index} width={columnWidths[index]} dataTour={index === 0 ? 'column-resizer' : undefined} onResize={onColumnResize} onReset={onColumnReset} />}</th>
+          return <th key={column.key || 'actions'} style={index === 1 ? secondStickyStyle : undefined} aria-sort={criterion ? (criterion.direction === 'asc' ? 'ascending' : 'descending') : undefined}><CreatorSortableHeader label={column.label} sortKey={column.key} criterion={criterion} priority={sortIndex + 1} dataTour={index === 0 ? (resizable ? 'fullscreen-sort-header' : 'page-sort-header') : undefined} onSort={onSort} />{resizable && <ColumnResizeHandle index={index} width={columnWidths[index]} dataTour={index === 0 ? 'column-resizer' : undefined} onResize={onColumnResize} onReset={onColumnReset} />}</th>
         })}</tr></thead>
         <tbody>
           {creators.map((creator) => {
@@ -76,7 +78,7 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
               {editMode ? editableCell(creator, 'tiktokLink', undefined, 'sticky-link-cell') : <td className="sticky-link-cell">{/^https?:\/\//i.test(creator.tiktokLink) ? <a className="tiktok-link" href={creator.tiktokLink} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>{creator.tiktokLink.replace('https://www.', '')}</a> : <span className="tiktok-link is-plain">{creator.tiktokLink}</span>}</td>}
               {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} dataTour="spreadsheet-cell" onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
               {editMode ? editableCell(creator, 'segment', CREATOR_FIELD_OPTIONS.segment) : <td><span className="segment-tag">{creator.segment}</span></td>}
-              {editMode ? editableCell(creator, 'category', CREATOR_FIELD_OPTIONS.category) : <td><TagList values={creator.category} className="category-tag" /></td>}
+              {editMode ? editableCell(creator, 'category', CREATOR_FIELD_OPTIONS.category) : <td className="category-path-cell"><CategoryPathRibbons values={creator.category} level={categoryDisplayLevel} /></td>}
               {editMode ? editableCell(creator, 'type', CREATOR_FIELD_OPTIONS.type) : <td><TagList values={creator.type} className="type-tag" /></td>}
               {editMode ? editableCell(creator, 'cost') : <td className="number-cell">{formatCurrency(creator.cost)}</td>}
               {editMode ? editableCell(creator, 'extraCost') : <td className="number-cell">{formatCurrency(creator.extraCost)}</td>}
@@ -95,7 +97,7 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
       </table>
 
       <div className="creator-cards">
-        {creators.map((creator) => <button className="creator-mobile-card" key={creator.id} onClick={() => onSelect(creator.id)}><Avatar creator={creator} /><span className="creator-primary"><strong>{creator.tiktokId}</strong><small>{creator.name} · {formatCreatorList(creator.category, ' · ')}</small></span><span className="segment-tag">{creator.segment}</span><span className="mobile-card-stats"><span>{formatNumber(creator.followers)} followers</span><span>{formatCurrency(creator.cost)}</span></span><Icon name="chevronRight" /></button>)}
+        {creators.map((creator) => <button className="creator-mobile-card" key={creator.id} onClick={() => onSelect(creator.id)}><Avatar creator={creator} /><span className="creator-primary"><strong>{creator.tiktokId}</strong><small>{creator.name} · {formatCategoryPaths(creator.category, ' · ', categoryDisplayLevel)}</small></span><span className="segment-tag">{creator.segment}</span><span className="mobile-card-stats"><span>{formatNumber(creator.followers)} followers</span><span>{formatCurrency(creator.cost)}</span></span><Icon name="chevronRight" /></button>)}
       </div>
     </div>
   )

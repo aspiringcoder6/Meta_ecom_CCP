@@ -1,6 +1,7 @@
 import Papa from 'papaparse'
 import readXlsxFile from 'read-excel-file/browser'
-import { CREATOR_CATEGORIES, CREATOR_SEGMENTS, CREATOR_TYPES } from '../config/labels'
+import { CREATOR_SEGMENTS, CREATOR_TYPES } from '../config/labels'
+import { mergeCategoryPaths, parseCategoryPaths } from './creatorCategoryPaths'
 
 const HEADER_FIELDS = [
   { field: 'tiktokLink', matches: ['link tiktok', 'tiktok link'] },
@@ -81,19 +82,6 @@ function normalizeSegment(value) {
   return normalizeFromOptions(value, CREATOR_SEGMENTS)
 }
 
-function normalizeCategory(value) {
-  return normalizeFromOptions(value, CREATOR_CATEGORIES, {
-    beauty: 'BEAUTY', skincare: 'SKINCARE', lifestyle: 'LIFESTYLE', fashion: 'FASHION', food: 'FOOD', tech: 'TECH',
-    other: 'OTHER',
-    'mom baby': 'MOM&BABY', 'mom and baby': 'MOM&BABY',
-  })
-}
-
-function normalizeCategoryList(value) {
-  const values = String(value ?? '').split(/[,;|\n]+/).map(normalizeCategory).filter(Boolean)
-  return [...new Set(values.length ? values : ['OTHER'])]
-}
-
 function normalizeType(value) {
   const normalized = normalizeText(value)
   if (normalized.includes('video') && (normalized.includes('live') || normalized.includes('livestream'))) return ['VIDEO', 'LIVESTREAM']
@@ -118,7 +106,7 @@ function createImportedCreator(values, index) {
   if (!tiktokLink) errors.push('Thiếu Link TikTok')
 
   const segment = normalizeSegment(values.segment) || 'MINI'
-  const category = normalizeCategoryList(values.category)
+  const category = parseCategoryPaths(values.category)
   const type = normalizeTypeList(values.type)
   const cost = parseLocalizedNumber(values.cost)
   const extraCost = parseLocalizedNumber(values.extraCost)
@@ -163,7 +151,7 @@ function mergeImportedCreator(existing, imported, values) {
   MERGEABLE_FIELDS.forEach((field) => {
     if (Object.hasOwn(values, field)) merged[field] = imported[field]
   })
-  if (Object.hasOwn(values, 'category')) merged.category = unionLists(existing.category, imported.category)
+  if (Object.hasOwn(values, 'category')) merged.category = mergeCategoryPaths(existing.category, imported.category)
   if (Object.hasOwn(values, 'type')) merged.type = unionLists(existing.type, imported.type)
   if (Object.hasOwn(values, 'tiktokId')) merged.handle = imported.handle
   if (Object.hasOwn(values, 'cost')) merged.bookingPrice = imported.cost

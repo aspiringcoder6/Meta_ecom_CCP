@@ -34,3 +34,21 @@ test('defaults an empty category to OTHER', () => {
   const creator = validateCreatorInput({ tiktokId: 'creator.other', tiktokLink: 'creator-link', category: '' })
   assert.deepEqual(creator.category, ['OTHER'])
 })
+
+test('accepts hierarchical category paths and comma shorthand', () => {
+  const creator = validateCreatorInput({
+    tiktokId: 'creator.fashion',
+    tiktokLink: 'creator-link',
+    category: 'Fashion > Female > Purse, Hat, Fashion > Male > Shoes',
+  })
+  assert.deepEqual(creator.category, ['FASHION > Female > Purse', 'FASHION > Female > Hat', 'FASHION > Male > Shoes'])
+})
+
+test('accepts arbitrary category roots and keeps their hierarchy', () => {
+  const creator = validateCreatorInput({
+    tiktokId: 'creator.dynamic',
+    tiktokLink: 'creator-link',
+    category: 'abc > cde, fgh, Newborns & Maternity > Baby Product',
+  })
+  assert.deepEqual(creator.category, ['abc > cde', 'abc > fgh', 'Newborns & Maternity > Baby Product'])
+})

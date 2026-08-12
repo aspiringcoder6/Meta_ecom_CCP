@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { CREATOR_CATEGORIES, CREATOR_SEGMENTS, CREATOR_TYPES } from '../../config/labels'
+import { CREATOR_SEGMENTS, CREATOR_TYPES } from '../../config/labels'
 import { formatCurrency } from '../../utils/formatters'
 import { calculateBookingPricing } from '../../utils/pricing'
 import { validateCreatorValue } from '../../utils/creatorValidation'
 import Icon from '../common/Icon'
 import { toCreatorList } from '../../utils/creatorLists'
+import { mergeCategoryPaths, parseCategoryPaths } from '../../utils/creatorCategoryPaths'
 
 const EMPTY_FORM = {
-  name: '', handle: '', tiktokLink: '', segment: 'MINI', category: ['BEAUTY'], type: ['VIDEO'],
+  name: '', handle: '', tiktokLink: '', segment: 'MINI', category: [], type: ['VIDEO'],
   cost: '', extraCost: '', followers: '', gmvMonth: '', scope: '', contact: '',
   concept: '', productFocus: '', historicalCampaign: 'Đã hợp tác', mcnNote: '', engagement: '', email: '', phone: '',
 }
@@ -16,7 +17,7 @@ function getInitialForm(creator) {
   if (!creator) return EMPTY_FORM
   return {
     name: creator.name || '', handle: creator.tiktokId || '', tiktokLink: creator.tiktokLink || '',
-    segment: creator.segment || 'MINI', category: toCreatorList(creator.category, ['BEAUTY']), type: toCreatorList(creator.type, ['VIDEO']),
+    segment: creator.segment || 'MINI', category: toCreatorList(creator.category, ['OTHER']), type: toCreatorList(creator.type, ['VIDEO']),
     cost: creator.cost ?? '', extraCost: creator.extraCost ?? '', followers: creator.followers ?? '', gmvMonth: creator.gmvMonth ?? '',
     scope: creator.scope || '', contact: creator.contact === 'Chưa cung cấp' ? '' : creator.contact || '',
     concept: creator.concept || '', productFocus: creator.productFocus || '', historicalCampaign: creator.historicalCampaign || 'Đã hợp tác',
@@ -45,6 +46,31 @@ function MultiChoiceField({ label, values, options, onChange }) {
       <legend>{label}</legend>
       <div>{options.map((option) => <label className={values.includes(option) ? 'is-selected' : ''} key={option}><input type="checkbox" checked={values.includes(option)} onChange={() => toggleValue(option)} /><span>{option}</span></label>)}</div>
       <small>Có thể chọn nhiều giá trị. Để trống sẽ dùng giá trị mặc định.</small>
+    </fieldset>
+  )
+}
+
+function CategoryPathField({ values, onChange }) {
+  const [draft, setDraft] = useState('')
+  const [error, setError] = useState('')
+  const addDraft = () => {
+    if (!draft.trim()) return
+    const paths = parseCategoryPaths(draft, [])
+    if (!paths.length) {
+      setError('Category không được để trống.')
+      return
+    }
+    onChange(mergeCategoryPaths(values, paths))
+    setDraft('')
+    setError('')
+  }
+  return (
+    <fieldset className="field full-field category-path-field">
+      <legend>Category</legend>
+      <div className="category-path-values">{values.map((path) => <span key={path}>{path}<button type="button" aria-label={`Xóa ${path}`} onClick={() => onChange(values.filter((value) => value !== path))}><Icon name="close" size={12} /></button></span>)}</div>
+      <div className={`category-path-input ${error ? 'has-error' : ''}`}><input value={draft} onChange={(event) => { setDraft(event.target.value); setError('') }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addDraft() } }} placeholder="abc > cde, fgh" /><button type="button" onClick={addDraft}><Icon name="plus" size={14} />Thêm nhánh</button></div>
+      {error && <small className="form-field-error" role="alert">{error}</small>}
+      <small>Category được tạo tự do. Dùng dấu &gt; cho layer và dấu phẩy cho nhánh cùng cấp.</small>
     </fieldset>
   )
 }
@@ -97,7 +123,7 @@ export default function AddCreatorModal({ creator, onClose, onSubmit }) {
           <label className={`field ${fieldErrors.handle ? 'has-error' : ''}`}><span>ID TikTok <b>*</b></span><input value={form.handle} onChange={(event) => update('handle', event.target.value)} placeholder="vickiee.bae" /><FieldError message={fieldErrors.handle} /></label>
           <label className={`field ${fieldErrors.tiktokLink ? 'has-error' : ''}`}><span>Link TikTok <b>*</b></span><input value={form.tiktokLink} onChange={(event) => update('tiktokLink', event.target.value)} placeholder="https://www.tiktok.com/@..." /><FieldError message={fieldErrors.tiktokLink} /></label>
           <label className="field"><span>Segment</span><select value={form.segment} onChange={(event) => update('segment', event.target.value)}>{CREATOR_SEGMENTS.map((value) => <option key={value}>{value}</option>)}</select></label>
-          <MultiChoiceField label="Category" values={form.category} options={CREATOR_CATEGORIES} onChange={(values) => update('category', values)} />
+          <CategoryPathField values={form.category} onChange={(values) => update('category', values)} />
           <MultiChoiceField label="Type" values={form.type} options={CREATOR_TYPES} onChange={(values) => update('type', values)} />
           <label className="field"><span>Cost</span><input type="number" min="0" value={form.cost} onChange={(event) => update('cost', event.target.value)} placeholder="0" /></label>
           <label className="field"><span>Extra/FOC (SHDA + hashtag)</span><input type="number" min="0" value={form.extraCost} onChange={(event) => update('extraCost', event.target.value)} placeholder="0" /></label>

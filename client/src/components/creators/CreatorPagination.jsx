@@ -8,7 +8,7 @@ function visiblePages(currentPage, totalPages) {
   return [...pages].filter((page) => page >= 1 && page <= totalPages).sort((left, right) => left - right)
 }
 
-export default function CreatorPagination({ currentPage, totalItems, pageSize, onPageChange, onPageSizeChange, children }) {
+export default function CreatorPagination({ currentPage, totalItems, pageSize, tourId, onPageChange, onPageSizeChange, children }) {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
   const [pageDraft, setPageDraft] = useState(String(currentPage))
   const pages = useMemo(() => visiblePages(currentPage, totalPages), [currentPage, totalPages])
@@ -26,7 +26,7 @@ export default function CreatorPagination({ currentPage, totalItems, pageSize, o
   }
 
   return (
-    <div className="pagination">
+    <div className="pagination" data-tour={tourId}>
       <div className="pagination-summary">
         <span>Hiển thị <strong>{start}–{end}</strong> trên <strong>{totalItems}</strong></span>
         <label>Số hàng<select value={pageSize} onChange={(event) => onPageSizeChange(Number(event.target.value))}>{PAGE_SIZE_OPTIONS.map((size) => <option key={size} value={size}>{size}</option>)}</select></label>

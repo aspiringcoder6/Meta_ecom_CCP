@@ -1,4 +1,5 @@
 import { calculateBookingPricing } from './pricing'
+import { categoryPathMatches } from './creatorCategoryPaths'
 import { toCreatorList } from './creatorLists'
 
 export const DEFAULT_CREATOR_FILTERS = { search: '', segment: [], category: [], type: [] }
@@ -46,7 +47,7 @@ export function matchesCreatorFilters(creator, filters, numericFilters = []) {
   const matchesSearch = !query || searchableValues.some((value) => String(value || '').toLowerCase().includes(query))
   return matchesSearch
     && (filters.segment.length === 0 || filters.segment.includes(creator.segment))
-    && (filters.category.length === 0 || filters.category.some((category) => categories.includes(category)))
+    && (filters.category.length === 0 || filters.category.some((selectedCategory) => categories.some((category) => categoryPathMatches(category, selectedCategory))))
     && (filters.type.length === 0 || filters.type.some((type) => types.includes(type)))
     && numericFilters.every((filter) => matchesNumericFilter(creator, filter))
 }

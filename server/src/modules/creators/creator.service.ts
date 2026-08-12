@@ -15,6 +15,27 @@ function stringList(value: unknown, fallback: string) {
   return singleValue ? [singleValue] : [fallback]
 }
 
+function categoryPathKey(value: unknown) {
+  return String(value || '').split(/\s*>\s*/).map((part) => part.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/gi, 'd').toLowerCase().trim()).filter(Boolean).join('>')
+}
+
+function categoryPathMatches(candidate: unknown, selected: unknown) {
+  const candidateKey = categoryPathKey(candidate)
+  const selectedKey = categoryPathKey(selected)
+  return Boolean(candidateKey && selectedKey && (candidateKey === selectedKey || candidateKey.startsWith(`${selectedKey}>`)))
+}
+
+function mergeCategoryLists(current: string[], imported: string[]) {
+  const values = [...current, ...imported]
+  const seen = new Set<string>()
+  return values.filter((value) => {
+    const key = categoryPathKey(value)
+    if (!key || seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 export function toCreatorDto(creator: Record<string, unknown>) {
   const name = String(creator.name)
   const tiktokId = String(creator.tiktokId)
@@ -44,12 +65,14 @@ export async function listCreators(filters: CreatorFilters = {}) {
   const where = {
     ...(filters.search ? { OR: [{ name: { contains: filters.search, mode: 'insensitive' as const } }, { tiktokId: { contains: filters.search, mode: 'insensitive' as const } }, { tiktokLink: { contains: filters.search, mode: 'insensitive' as const } }] } : {}),
     ...(filters.segment?.length ? { segment: { in: filters.segment } } : {}),
-    ...(filters.category?.length ? { category: { hasSome: filters.category } } : {}),
     ...(filters.type?.length ? { type: { hasSome: filters.type } } : {}),
     ...(filters.status ? { status: filters.status } : {}),
   }
   const creators = await prisma.creator.findMany({ where, include: creatorInclude, orderBy: { createdAt: 'desc' } })
-  return creators.map((creator) => toCreatorDto(creator as unknown as Record<string, unknown>))
+  const categoryFiltered = filters.category?.length
+    ? creators.filter((creator) => filters.category?.some((selected) => creator.category.some((category) => categoryPathMatches(category, selected))))
+    : creators
+  return categoryFiltered.map((creator) => toCreatorDto(creator as unknown as Record<string, unknown>))
 }
 
 export async function getCreator(id: string) {
@@ -84,7 +107,7 @@ export async function getCreatorMetrics() {
   let totalGmv = 0
   let totalBookingExpense = 0
   for (const creator of creators) {
-    const categories = creator.category.length ? creator.category : ['OTHER']
+    const categories = [...new Set((creator.category.length ? creator.category : ['OTHER']).map((category) => category.split(/\s*>\s*/)[0] || 'OTHER'))]
     for (const category of categories) categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1)
     totalFollowers += creator.followers
     totalGmv += Number(creator.gmvMonth)
@@ -125,7 +148,7 @@ export async function importCreators(value: unknown, mode: 'append' | 'replace')
           where: { tiktokId: creator.tiktokId },
           data: {
             ...creator,
-            category: [...new Set([...(current?.category || []), ...creator.category])],
+            category: mergeCategoryLists(current?.category || [], creator.category),
             type: [...new Set([...(current?.type || []), ...creator.type])],
           },
         })
@@ -174,7 +197,7 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
             where: { tiktokId: creator.tiktokId },
             data: {
               ...creator,
-              category: [...new Set([...(current?.category || []), ...creator.category])],
+              category: mergeCategoryLists(current?.category || [], creator.category),
               type: [...new Set([...(current?.type || []), ...creator.type])],
             },
           })

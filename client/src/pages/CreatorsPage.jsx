@@ -25,6 +25,7 @@ export default function CreatorsPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [importReview, setImportReview] = useState(null)
   const [sortCriteria, setSortCriteria] = useState([])
+  const [categoryDisplayLevel, setCategoryDisplayLevel] = useState(1)
   const closeFullscreenForTour = useCallback(() => setIsFullscreen(false), [])
   useCreatorTour({ canManage: canManageCreators, closeFullscreen: closeFullscreenForTour })
 
@@ -89,12 +90,13 @@ export default function CreatorsPage() {
     setImportReview(null)
   }
   const workspaceProps = {
-    creators: displayedCreators, filters, filterOptions, numericFilters, sortCriteria, canUndo, canRedo, recentlyAddedCreatorId, importReview, canManage: canManageCreators,
+    creators: displayedCreators, filters, filterOptions, numericFilters, sortCriteria, categoryDisplayLevel, canUndo, canRedo, recentlyAddedCreatorId, importReview, canManage: canManageCreators,
     onFilterChange: updateFilter,
     onAddNumericFilter: (filter) => setNumericFilters((current) => [...current, filter]),
     onRemoveNumericFilter: (filterId) => setNumericFilters((current) => current.filter((filter) => filter.id !== filterId)),
     onReset: resetFilters,
     onSort: (key) => setSortCriteria((current) => cycleCreatorSort(current, key)),
+    onCategoryDisplayLevelChange: setCategoryDisplayLevel,
     onSelect: setSelectedCreatorId,
     onArchive: toggleArchive,
     onUpdateCreator: updateCreator,

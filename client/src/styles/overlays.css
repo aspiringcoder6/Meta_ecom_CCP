@@ -58,6 +58,21 @@
 .multi-choice-field label.is-selected { border-color: #52baff; color: #075f98; background: #e5f5ff; box-shadow: inset 0 0 0 1px rgba(82,186,255,.18); }
 .multi-choice-field input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .multi-choice-field > small { color: #8b98a9; font-size: 8px; }
+.category-path-field { min-width: 0; margin: 0; padding: 0; border: 0; }
+.category-path-field legend { margin-bottom: 8px; color: #4a596e; font-size: 9px; font-weight: 650; }
+.category-root-choices { display: flex; flex-wrap: wrap; gap: 6px; }
+.category-root-choices button { min-height: 29px; padding: 0 9px; border: 1px solid #dce4ed; border-radius: 8px; color: #627187; background: #fbfcfe; font-size: 8px; font-weight: 700; }
+.category-root-choices button:hover, .category-root-choices button.is-selected { border-color: #52baff; color: #075f98; background: #e5f5ff; }
+.category-path-values { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.category-path-values > span { min-height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 5px 0 9px; border-radius: 8px; color: #17638f; background: #eaf7ff; font-size: 8px; font-weight: 700; }
+.category-path-values > span button { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 5px; color: #5b87a3; background: transparent; }
+.category-path-values > span button:hover { color: #a6384a; background: white; }
+.category-path-input { display: flex; gap: 7px; margin-top: 8px; }
+.category-path-input input { min-width: 0; height: 38px; flex: 1; padding: 0 11px; border: 1px solid #dce4ed; border-radius: 9px; outline: 0; color: #36465d; background: #fbfcfe; font-size: 9px; }
+.category-path-input input:focus { border-color: #79bff0; box-shadow: 0 0 0 3px rgba(82,186,255,.12); }
+.category-path-input.has-error input { border-color: #d84c60; background: #fff8f9; }
+.category-path-input button { min-width: 100px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid #b9daf1; border-radius: 9px; color: #125d8d; background: #edf8ff; font-size: 8px; font-weight: 750; }
+.category-path-field > small { color: #8b98a9; font-size: 8px; }
 .input-suffix { position: relative; }
 .input-suffix input { padding-right: 32px; }
 .input-suffix span { position: absolute; top: 0; right: 12px; height: 100%; display: grid; place-items: center; color: #7f8b9d; font-size: 10px; }

@@ -1,11 +1,12 @@
 import { calculateBookingPricing } from './pricing'
+import { projectCategoryPaths } from './creatorCategoryPaths'
 import { toCreatorList } from './creatorLists'
 
 const SEGMENT_ORDER = ['MASSIVE', 'TOP', 'MINI', 'FREECAST']
 
 function groupCreators(creators, field, fallbackLabel) {
   return Object.values(creators.reduce((groups, creator) => {
-    const labels = toCreatorList(creator[field], [fallbackLabel])
+    const labels = field === 'category' ? projectCategoryPaths(toCreatorList(creator[field], ['OTHER']), 1) : toCreatorList(creator[field], [fallbackLabel])
     labels.forEach((label) => {
       const current = groups[label] || { label, count: 0, bookingExpense: 0, segmentCounts: {} }
       current.count += 1

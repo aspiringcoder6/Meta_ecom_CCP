@@ -1,9 +1,9 @@
 import { formatCompactCurrency } from '../../utils/formatters'
-import { toCreatorList } from '../../utils/creatorLists'
+import { projectCategoryPaths } from '../../utils/creatorCategoryPaths'
 
 export default function GmvCategoryPanel({ creators }) {
   const allCategories = Object.values(creators.reduce((result, creator) => {
-    const categories = toCreatorList(creator.category, ['Chưa phân loại'])
+    const categories = projectCategoryPaths(Array.isArray(creator.category) && creator.category.length ? creator.category : ['OTHER'], 1)
     const allocatedGmv = creator.gmvMonth / categories.length
     categories.forEach((category) => {
       const current = result[category] || { label: category, gmv: 0, creators: 0 }

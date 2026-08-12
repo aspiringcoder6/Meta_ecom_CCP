@@ -79,6 +79,9 @@
   .creator-insight-details { padding: 12px; }
   .creator-insight-detail-card { padding: 12px; }
   .filter-label { width: 100%; }
+  .category-layer-selector { width: 100%; justify-content: space-between; }
+  .category-layer-track { flex: 1; }
+  .category-layer-step { flex: 1; width: auto; }
   .fullscreen-button { flex: 1; }
   .advanced-filters { padding-inline: 12px; }
   .numeric-filter-builder { grid-template-columns: 1fr; }

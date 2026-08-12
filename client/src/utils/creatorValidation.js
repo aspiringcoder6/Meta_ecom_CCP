@@ -1,4 +1,5 @@
-import { CREATOR_CATEGORIES, CREATOR_SEGMENTS, CREATOR_TYPES } from '../config/labels'
+import { CREATOR_SEGMENTS, CREATOR_TYPES } from '../config/labels'
+import { parseCategoryPaths } from './creatorCategoryPaths'
 import { toCreatorList } from './creatorLists'
 
 export const HISTORICAL_CAMPAIGN_OPTIONS = ['Chưa hợp tác', 'Đã hợp tác']
@@ -8,7 +9,6 @@ const INTEGER_FIELDS = new Set(['followers'])
 
 export const CREATOR_FIELD_OPTIONS = {
   segment: CREATOR_SEGMENTS,
-  category: CREATOR_CATEGORIES,
   type: CREATOR_TYPES,
   historicalCampaign: HISTORICAL_CAMPAIGN_OPTIONS,
 }
@@ -36,11 +36,16 @@ export function validateCreatorValue(field, rawValue) {
     return { value: number }
   }
 
-  if (field === 'category' || field === 'type') {
-    const fallback = field === 'category' ? ['BEAUTY'] : ['VIDEO']
-    const values = toCreatorList(rawValue, fallback)
-    const options = CREATOR_FIELD_OPTIONS[field]
-    if (values.some((value) => !options.includes(value))) return { error: 'Có giá trị không nằm trong danh sách cho phép.' }
+  if (field === 'category') {
+    if (!text) return { value: ['OTHER'] }
+    const values = parseCategoryPaths(rawValue, [])
+    if (!values.length) return { error: 'Category không hợp lệ.' }
+    return { value: values }
+  }
+
+  if (field === 'type') {
+    const values = toCreatorList(rawValue, ['VIDEO'])
+    if (values.some((value) => !CREATOR_TYPES.includes(value))) return { error: 'Có giá trị không nằm trong danh sách cho phép.' }
     return { value: values }
   }
 
