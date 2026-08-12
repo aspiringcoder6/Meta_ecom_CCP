@@ -20,7 +20,7 @@ export default function AuthLayout() {
         <small className="auth-brand-footer">© 2026 Meta Ecom · Internal Workspace</small>
       </aside>
       <main className="auth-main">
-        <div className="auth-mobile-brand"><img src="/Logo/metaIcon.jpg" alt="" /><span><strong>Meta Ecom</strong><small>Creator Campaign Platform</small></span></div>
+        <div className="auth-mobile-brand"><img src="/Logo/metaIcon.jpg" alt="" /><span><strong>Meta Ecom</strong><small>Campaign Management Platform</small></span></div>
         <Outlet />
         <p className="auth-demo-notice"><Icon name="shield" size={14} />{AUTH_DEMO_NOTICE}</p>
       </main>
