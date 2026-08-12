@@ -103,7 +103,7 @@ export function useCreatorTour({ canManage, closeFullscreen }) {
       step('[data-tour="fullscreen-sort-header"]', 'Sorting trong bảng lớn', 'Bấm nhiều header để sort theo nhiều tiêu chí. Badge 1 là ưu tiên cao nhất, sau đó là 2, 3…', 'bottom', 'start'),
       step('[data-tour="column-resizer"]', 'Thay đổi độ rộng cột', 'Kéo mép phải của header để resize cột. Double-click vào mép kéo để khôi phục kích thước mặc định.', 'right'),
       step('[data-tour="fullscreen-pagination"]', 'Pagination và số hàng', 'Chọn 10, 25, 50 hoặc 100 hàng mỗi trang, dùng số trang hoặc nhập trang đích. Pagination tự cập nhật sau khi Search và filter.', 'top'),
-      step('[data-tour="row-density"]', 'Mật độ hiển thị hàng', 'Dùng − và + để thay đổi chiều cao từng hàng mà không đổi số hàng trên trang. Bấm số px ở giữa để trở về mật độ mặc định.', 'top'),
+      step('[data-tour="row-density"]', 'Mật độ và Tự khớp nội dung', 'Dùng − và + để đặt một chiều cao chung. Bật “Tự khớp” để mỗi hàng tự cao theo nội dung riêng, giúp hiển thị đầy đủ Creator có nhiều nhánh Category.', 'top'),
       ...(canManage ? [
         step('[data-tour="edit-toggle"]', 'Chế độ chỉnh sửa spreadsheet', 'Chọn “Bắt đầu chỉnh sửa”. Guide sẽ chờ spreadsheet mode sẵn sàng trước khi hướng dẫn các ô dữ liệu.', 'bottom', 'end', {
           disableActiveInteraction: true,

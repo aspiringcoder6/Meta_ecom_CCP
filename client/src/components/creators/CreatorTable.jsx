@@ -54,7 +54,7 @@ function ColumnResizeHandle({ index, width, dataTour, onResize, onReset }) {
   return <span className="column-resize-handle" data-tour={dataTour} role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
-export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], updatedCreatorIds = [], sortCriteria = [], categoryDisplayLevel = 1, onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
+export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], updatedCreatorIds = [], sortCriteria = [], categoryDisplayLevel = 1, onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, autoFitRows = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
   if (!creators.length) return <EmptyResults />
 
   const tableWidth = resizable ? columnWidths.reduce((total, width) => total + width, 0) : undefined
@@ -63,7 +63,7 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
 
   return (
     <div className="creator-table-wrap">
-      <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${editMode ? 'is-editing' : ''}`} data-tour={resizable ? 'fullscreen-table' : 'page-table'} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
+      <table className={`creator-table ${resizable ? 'is-resizable' : ''} ${autoFitRows ? 'is-auto-fit' : ''} ${editMode ? 'is-editing' : ''}`} data-tour={resizable ? 'fullscreen-table' : 'page-table'} style={resizable ? { width: `${tableWidth}px`, minWidth: `${tableWidth}px`, '--creator-row-height': `${rowHeight}px` } : undefined}>
         {resizable && <colgroup>{columnWidths.map((width, index) => <col key={index} style={{ width: `${width}px` }} />)}</colgroup>}
         <thead><tr>{COLUMNS.map((column, index) => {
           const sortIndex = sortCriteria.findIndex((criterion) => criterion.key === column.key)

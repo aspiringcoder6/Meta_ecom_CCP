@@ -25,6 +25,7 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
   const [headerHeight, setHeaderHeight] = useState(64)
   const [toolbarHeight, setToolbarHeight] = useState(106)
   const [rowHeight, setRowHeight] = useState(DEFAULT_ROW_HEIGHT)
+  const [autoFitRows, setAutoFitRows] = useState(false)
   const [editMode, setEditMode] = useState(Boolean(importReview) && canManage)
   const [pageSize, setPageSize] = useState(isFullscreen ? 25 : 10)
   const [currentPage, setCurrentPage] = useState(1)
@@ -66,7 +67,14 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
 
   const updateColumnWidth = (index, width) => setColumnWidths((current) => current.map((item, itemIndex) => itemIndex === index ? width : item))
   const resetColumnWidth = (index) => updateColumnWidth(index, DEFAULT_COLUMN_WIDTHS[index])
-  const changeRowHeight = (amount) => setRowHeight((current) => Math.min(MAX_ROW_HEIGHT, Math.max(MIN_ROW_HEIGHT, current + amount)))
+  const changeRowHeight = (amount) => {
+    setAutoFitRows(false)
+    setRowHeight((current) => Math.min(MAX_ROW_HEIGHT, Math.max(MIN_ROW_HEIGHT, current + amount)))
+  }
+  const resetRowHeight = () => {
+    setAutoFitRows(false)
+    setRowHeight(DEFAULT_ROW_HEIGHT)
+  }
   const enterEditMode = () => { onBeginEdit(); setEditMode(true) }
   const finishEditMode = () => { onCommitEdit(); setEditMode(false) }
   const cancelEditMode = () => { onCancelEdit(); setEditMode(false) }
@@ -113,9 +121,9 @@ export default function CreatorWorkspace({ creators, filters, filterOptions, num
       {!isFullscreen && toolbar}
       {importReview && isFullscreen && <ImportReviewBanner review={importReview} />}
       <div className="table-meta"><span><strong>{creators.length}</strong> Creator</span><span>{importReview ? 'Dòng xanh lá: Creator mới · dòng xanh dương: Creator được cập nhật · lỗi được liệt kê màu đỏ phía trên' : editMode ? 'Bấm vào ô để sửa · Enter để lưu · Esc để hủy nội dung đang nhập' : isFullscreen ? 'Bấm header để sort nhiều tiêu chí · Kéo mép cột để chỉnh độ rộng' : 'Bấm header để sort nhiều tiêu chí · Cuộn ngang để xem toàn bộ thông tin'}</span></div>
-      <CreatorTable creators={visibleCreators} canManage={canManage} highlightedCreatorIds={importReview?.createdIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} updatedCreatorIds={importReview?.updatedIds || []} sortCriteria={sortCriteria} categoryDisplayLevel={categoryDisplayLevel} onSort={onSort} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
+      <CreatorTable creators={visibleCreators} canManage={canManage} highlightedCreatorIds={importReview?.createdIds || (recentlyAddedCreatorId ? [recentlyAddedCreatorId] : [])} updatedCreatorIds={importReview?.updatedIds || []} sortCriteria={sortCriteria} categoryDisplayLevel={categoryDisplayLevel} onSort={onSort} onSelect={onSelect} onArchive={onArchive} editMode={editMode} onUpdate={onUpdateCreator} onDelete={onDeleteCreator} resizable={isFullscreen} autoFitRows={autoFitRows} columnWidths={columnWidths} rowHeight={rowHeight} onColumnResize={updateColumnWidth} onColumnReset={resetColumnWidth} />
       <CreatorPagination tourId={`${tourScope}-pagination`} currentPage={currentPage} totalItems={creators.length} pageSize={pageSize} onPageChange={setCurrentPage} onPageSizeChange={setPageSize}>
-        {isFullscreen && <div className="row-density-controls" data-tour="row-density"><span>Mật độ: <strong>{getDensityLabel(rowHeight)}</strong></span><button disabled={rowHeight === MIN_ROW_HEIGHT} onClick={() => changeRowHeight(-ROW_HEIGHT_STEP)} aria-label="Giảm chiều cao hàng để xem nhiều Creator hơn" title="Xem nhiều hàng hơn"><Icon name="minus" size={14} /></button><button className="density-value" onClick={() => setRowHeight(DEFAULT_ROW_HEIGHT)} title="Đặt lại chiều cao hàng">{rowHeight}px</button><button disabled={rowHeight === MAX_ROW_HEIGHT} onClick={() => changeRowHeight(ROW_HEIGHT_STEP)} aria-label="Tăng chiều cao hàng" title="Tăng chiều cao hàng"><Icon name="plus" size={14} /></button></div>}
+        {isFullscreen && <div className="row-density-controls" data-tour="row-density"><span>Mật độ: <strong>{autoFitRows ? 'Tự khớp' : getDensityLabel(rowHeight)}</strong></span><button className={`auto-fit-rows${autoFitRows ? ' is-active' : ''}`} type="button" aria-pressed={autoFitRows} onClick={() => setAutoFitRows((current) => !current)} title="Tự điều chỉnh chiều cao riêng cho từng hàng theo nội dung"><Icon name="sparkles" size={13} />Tự khớp</button><button disabled={!autoFitRows && rowHeight === MIN_ROW_HEIGHT} onClick={() => changeRowHeight(-ROW_HEIGHT_STEP)} aria-label="Giảm chiều cao hàng để xem nhiều Creator hơn" title="Xem nhiều hàng hơn"><Icon name="minus" size={14} /></button><button className="density-value" onClick={resetRowHeight} title="Đặt lại chiều cao hàng">{autoFitRows ? 'Auto' : `${rowHeight}px`}</button><button disabled={!autoFitRows && rowHeight === MAX_ROW_HEIGHT} onClick={() => changeRowHeight(ROW_HEIGHT_STEP)} aria-label="Tăng chiều cao hàng" title="Tăng chiều cao hàng"><Icon name="plus" size={14} /></button></div>}
       </CreatorPagination>
     </section>
   )

@@ -129,7 +129,7 @@
 .category-tree-option.is-covered .category-tree-check { border-color: #70b9e7; color: #1686d3; background: #e7f5fe; }
 .category-tree-all { margin-top: 4px; border-bottom: 1px solid #edf1f5; border-radius: 8px 8px 4px 4px; }
 .category-tree-submenu { z-index: 910; width: 238px; max-height: 330px; display: none; overflow-y: auto; scrollbar-width: thin; }
-.category-tree-node:hover > .category-tree-submenu, .category-tree-node:focus-within > .category-tree-submenu { display: block; }
+.category-tree-node:hover > .category-tree-submenu, .category-tree-node:focus-within > .category-tree-submenu, .category-tree-submenu.is-open { display: block; }
 .category-tree-menu > footer { min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 5px 1px; border-top: 1px solid #edf1f5; color: #8c98a8; font-size: 8px; }
 .category-tree-menu > footer button { padding: 5px; color: #1686d3; background: transparent; font-size: 8px; font-weight: 750; }
 .creators-panel:not(.creator-fullscreen-view):has(.multi-filter.is-open) { position: relative; z-index: 30; overflow: visible; }
@@ -244,6 +244,10 @@
 .creator-table.is-resizable td { min-width: 0; max-width: none; padding-block: 4px; overflow: hidden; }
 .creator-table.is-resizable .long-text-cell, .creator-table.is-resizable .mcn-note-cell { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .creator-table.is-resizable .tiktok-link { max-width: 100%; }
+.creator-table.is-resizable.is-auto-fit tbody tr, .creator-table.is-resizable.is-auto-fit td { height: auto; }
+.creator-table.is-resizable.is-auto-fit td { padding-block: 10px; }
+.creator-table.is-resizable.is-auto-fit .long-text-cell, .creator-table.is-resizable.is-auto-fit .mcn-note-cell { overflow-wrap: anywhere; text-overflow: clip; white-space: normal; }
+.creator-table.is-resizable.is-auto-fit .category-path-ribbons { max-height: none; overflow: visible; }
 .column-resize-handle { position: absolute; z-index: 10; top: 0; right: -4px; width: 9px; height: 100%; display: block; cursor: col-resize; touch-action: none; }
 .column-resize-handle::after { position: absolute; top: 20%; right: 4px; width: 2px; height: 60%; border-radius: 4px; background: transparent; content: ''; transition: background 120ms ease; }
 .column-resize-handle:hover::after, .column-resize-handle:focus-visible::after { background: #43aeee; }
@@ -345,10 +349,13 @@
 .pagination-jump { display: flex; align-items: center; gap: 5px; margin-left: 5px; }
 .pagination-jump input { width: 48px; padding: 0 6px; text-align: center; }
 .pagination-jump > span { white-space: nowrap; }
-.row-density-controls { min-width: 245px; justify-content: center; padding: 4px 8px; border: 1px solid #e0e8f0; border-radius: 10px; background: #f8fbfe; }
+.row-density-controls { min-width: 330px; justify-content: center; padding: 4px 8px; border: 1px solid #e0e8f0; border-radius: 10px; background: #f8fbfe; }
 .row-density-controls > span { margin-right: 5px; color: #708096; font-size: 8px; white-space: nowrap; }
 .row-density-controls > span strong { color: #28435f; }
 .row-density-controls button { width: 28px; padding: 0; display: grid; place-items: center; }
+.row-density-controls .auto-fit-rows { width: auto; display: inline-flex; gap: 5px; margin-right: 5px; padding: 0 8px; color: #176b9f; border-color: #c9deee; background: white; font-size: 8px; font-weight: 750; white-space: nowrap; }
+.row-density-controls .auto-fit-rows:hover { border-color: #82c5ec; color: var(--navy); background: #edf8ff; }
+.row-density-controls .auto-fit-rows.is-active { border-color: #52baff; color: var(--navy); background: #dff3ff; box-shadow: inset 0 0 0 1px rgba(82,186,255,.18); }
 .row-density-controls .density-value { width: 44px; color: #137fc8; font-variant-numeric: tabular-nums; font-weight: 750; }
 .row-density-controls .density-value:hover { border-color: #9dcced; background: white; }
 .no-results { min-height: 340px; display: grid; place-content: center; justify-items: center; padding: 40px; text-align: center; }

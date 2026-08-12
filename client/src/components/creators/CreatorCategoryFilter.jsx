@@ -6,6 +6,8 @@ import Icon from '../common/Icon'
 const MENU_WIDTH = 252
 const SUBMENU_WIDTH = 238
 const VIEWPORT_GAP = 8
+const SUBMENU_OVERLAP = 4
+const SUBMENU_CLOSE_DELAY = 280
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), Math.max(min, max))
@@ -14,32 +16,52 @@ function clamp(value, min, max) {
 function submenuPosition(element, childCount) {
   const rect = element.getBoundingClientRect()
   const estimatedHeight = Math.min(330, childCount * 35 + 16)
-  const opensRight = rect.right + 6 + SUBMENU_WIDTH <= window.innerWidth - VIEWPORT_GAP
-  const preferredLeft = opensRight ? rect.right + 6 : rect.left - SUBMENU_WIDTH - 6
+  const opensRight = rect.right - SUBMENU_OVERLAP + SUBMENU_WIDTH <= window.innerWidth - VIEWPORT_GAP
+  const preferredLeft = opensRight ? rect.right - SUBMENU_OVERLAP : rect.left - SUBMENU_WIDTH + SUBMENU_OVERLAP
   return {
     left: clamp(preferredLeft, VIEWPORT_GAP, window.innerWidth - SUBMENU_WIDTH - VIEWPORT_GAP),
     top: clamp(rect.top - 7, VIEWPORT_GAP, window.innerHeight - estimatedHeight - VIEWPORT_GAP),
+    side: opensRight ? 'right' : 'left',
   }
 }
 
 function CategoryTreeNode({ node, selectedValues, onToggle }) {
-  const [position, setPosition] = useState({ left: 0, top: 0 })
+  const [position, setPosition] = useState({ left: 0, top: 0, side: 'right' })
+  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false)
+  const closeTimerRef = useRef(null)
   const exactSelected = selectedValues.includes(node.value)
   const coveredByParent = !exactSelected && selectedValues.some((selected) => categoryPathMatches(node.value, selected))
   const hasChildren = node.children.length > 0
-  const updatePosition = (event) => {
-    if (hasChildren) setPosition(submenuPosition(event.currentTarget, node.children.length))
+  const clearCloseTimer = () => {
+    window.clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = null
+  }
+  const openSubmenu = (event) => {
+    if (!hasChildren) return
+    clearCloseTimer()
+    setPosition(submenuPosition(event.currentTarget, node.children.length))
+    setIsSubmenuOpen(true)
+  }
+  const keepSubmenuOpen = () => {
+    clearCloseTimer()
+    setIsSubmenuOpen(true)
+  }
+  const scheduleSubmenuClose = () => {
+    clearCloseTimer()
+    closeTimerRef.current = window.setTimeout(() => setIsSubmenuOpen(false), SUBMENU_CLOSE_DELAY)
   }
 
+  useEffect(() => () => clearCloseTimer(), [])
+
   return (
-    <div className="category-tree-node" onPointerEnter={updatePosition} onFocus={updatePosition}>
+    <div className="category-tree-node" onPointerEnter={openSubmenu} onPointerLeave={scheduleSubmenuClose} onFocus={openSubmenu} onBlur={scheduleSubmenuClose}>
       <button className={`category-tree-option ${exactSelected ? 'is-selected' : ''} ${coveredByParent ? 'is-covered' : ''}`} type="button" role="option" aria-selected={exactSelected || coveredByParent} onClick={() => onToggle(node.value)}>
         <span className="category-tree-check"><Icon name="check" size={13} /></span>
         <span className="category-tree-label">{node.label}</span>
         {hasChildren && <Icon name="chevronRight" size={14} />}
       </button>
       {hasChildren && (
-        <div className="category-tree-submenu" data-category-filter-menu style={position}>
+        <div className={`category-tree-submenu opens-${position.side}${isSubmenuOpen ? ' is-open' : ''}`} data-category-filter-menu style={{ left: position.left, top: position.top }} onPointerEnter={keepSubmenuOpen} onPointerLeave={scheduleSubmenuClose}>
           {node.children.map((child) => <CategoryTreeNode node={child} selectedValues={selectedValues} onToggle={onToggle} key={child.value} />)}
         </div>
       )}
