@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { buildCategoryTree, categoryPathMatches } from '../../utils/creatorCategoryPaths'
 import Icon from '../common/Icon'
@@ -74,27 +74,55 @@ export default function CreatorCategoryFilter({ values, options, onChange }) {
   const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0, maxHeight: 360 })
   const triggerRef = useRef(null)
   const containerRef = useRef(null)
+  const menuRef = useRef(null)
   const selectedValues = Array.isArray(values) ? values : []
   const tree = useMemo(() => buildCategoryTree(options), [options])
   const triggerLabel = selectedValues.length === 0 ? 'Tất cả Category' : selectedValues.length === 1 ? selectedValues[0] : 'Category đã chọn'
+
+  const updateMenuPosition = useCallback((measuredHeight) => {
+    const trigger = triggerRef.current
+    if (!trigger) return
+    const rect = trigger.getBoundingClientRect()
+    const availableBelow = Math.max(0, window.innerHeight - rect.bottom - VIEWPORT_GAP - 6)
+    const availableAbove = Math.max(0, rect.top - VIEWPORT_GAP - 6)
+    const estimatedHeight = Math.min(380, 88 + tree.length * 35 + (selectedValues.length ? 32 : 0))
+    const desiredHeight = Math.max(110, Math.min(380, measuredHeight || estimatedHeight))
+    const fitsBelow = availableBelow >= desiredHeight
+    const fitsAbove = availableAbove >= desiredHeight
+    const opensBelow = fitsBelow || (!fitsAbove && availableBelow >= availableAbove)
+    const availableSpace = opensBelow ? availableBelow : availableAbove
+    const maxHeight = Math.max(110, Math.min(380, availableSpace))
+    const visibleHeight = Math.min(desiredHeight, maxHeight)
+
+    setMenuPosition({
+      left: clamp(rect.right - MENU_WIDTH, VIEWPORT_GAP, window.innerWidth - MENU_WIDTH - VIEWPORT_GAP),
+      top: opensBelow ? rect.bottom + 6 : Math.max(VIEWPORT_GAP, rect.top - visibleHeight - 6),
+      maxHeight,
+    })
+  }, [selectedValues.length, tree.length])
 
   const openMenu = () => {
     if (isOpen) {
       setIsOpen(false)
       return
     }
-    const rect = triggerRef.current.getBoundingClientRect()
-    const availableBelow = window.innerHeight - rect.bottom - VIEWPORT_GAP
-    const availableAbove = rect.top - VIEWPORT_GAP
-    const opensBelow = availableBelow >= Math.min(280, availableAbove)
-    const maxHeight = Math.max(180, Math.min(380, opensBelow ? availableBelow : availableAbove))
-    setMenuPosition({
-      left: clamp(rect.right - MENU_WIDTH, VIEWPORT_GAP, window.innerWidth - MENU_WIDTH - VIEWPORT_GAP),
-      top: opensBelow ? rect.bottom + 6 : Math.max(VIEWPORT_GAP, rect.top - maxHeight - 6),
-      maxHeight,
-    })
+    updateMenuPosition()
     setIsOpen(true)
   }
+
+  useLayoutEffect(() => {
+    if (!isOpen) return undefined
+    const syncPosition = () => updateMenuPosition(menuRef.current?.offsetHeight)
+    syncPosition()
+    const frame = window.requestAnimationFrame(syncPosition)
+    const resizeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(syncPosition) : null
+    if (triggerRef.current) resizeObserver?.observe(triggerRef.current)
+    if (menuRef.current) resizeObserver?.observe(menuRef.current)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      resizeObserver?.disconnect()
+    }
+  }, [isOpen, updateMenuPosition])
 
   useEffect(() => {
     if (!isOpen) return undefined
@@ -110,22 +138,26 @@ export default function CreatorCategoryFilter({ values, options, onChange }) {
       setIsOpen(false)
       triggerRef.current?.focus()
     }
-    const closeOnViewportChange = () => setIsOpen(false)
+    const syncOnViewportChange = () => updateMenuPosition(menuRef.current?.offsetHeight)
     const closeOnExternalScroll = (event) => {
       if (event.target?.closest?.('[data-category-filter-menu]')) return
-      setIsOpen(false)
+      syncOnViewportChange()
     }
     document.addEventListener('pointerdown', closeOnOutsideClick)
     document.addEventListener('keydown', closeOnEscape)
-    window.addEventListener('resize', closeOnViewportChange)
+    window.addEventListener('resize', syncOnViewportChange)
     window.addEventListener('scroll', closeOnExternalScroll, true)
+    window.visualViewport?.addEventListener('resize', syncOnViewportChange)
+    window.visualViewport?.addEventListener('scroll', syncOnViewportChange)
     return () => {
       document.removeEventListener('pointerdown', closeOnOutsideClick)
       document.removeEventListener('keydown', closeOnEscape)
-      window.removeEventListener('resize', closeOnViewportChange)
+      window.removeEventListener('resize', syncOnViewportChange)
       window.removeEventListener('scroll', closeOnExternalScroll, true)
+      window.visualViewport?.removeEventListener('resize', syncOnViewportChange)
+      window.visualViewport?.removeEventListener('scroll', syncOnViewportChange)
     }
-  }, [isOpen])
+  }, [isOpen, updateMenuPosition])
 
   const toggleValue = (path) => {
     if (selectedValues.includes(path)) {
@@ -137,7 +169,7 @@ export default function CreatorCategoryFilter({ values, options, onChange }) {
   }
 
   const menu = isOpen && createPortal(
-    <div className="category-tree-menu" data-category-filter-menu role="listbox" aria-label="Lọc theo Category" aria-multiselectable="true" style={{ left: menuPosition.left, top: menuPosition.top, maxHeight: menuPosition.maxHeight }} onClick={(event) => event.stopPropagation()}>
+    <div ref={menuRef} className="category-tree-menu" data-category-filter-menu role="listbox" aria-label="Lọc theo Category" aria-multiselectable="true" style={{ left: menuPosition.left, top: menuPosition.top, maxHeight: menuPosition.maxHeight }} onClick={(event) => event.stopPropagation()}>
       <header><strong>Category</strong><small>Hover để xem cấp con</small></header>
       <button className={`category-tree-option category-tree-all ${selectedValues.length === 0 ? 'is-selected' : ''}`} type="button" role="option" aria-selected={selectedValues.length === 0} onClick={() => onChange([])}><span className="category-tree-check"><Icon name="check" size={13} /></span><span className="category-tree-label">Tất cả Category</span></button>
       <div className="category-tree-scroll">{tree.map((node) => <CategoryTreeNode node={node} selectedValues={selectedValues} onToggle={toggleValue} key={node.value} />)}</div>
