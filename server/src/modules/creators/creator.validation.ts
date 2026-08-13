@@ -80,32 +80,38 @@ function categoryKey(value: unknown) {
 
 function categoryPathValue(value: unknown, errors: FieldErrors) {
   const rawValues = Array.isArray(value) ? value : [value]
-  const tokens = rawValues.flatMap((item) => text(item).split(/[,;|\n]+/)).map((item) => text(item)).filter(Boolean)
-  if (!tokens.length) return ['OTHER']
+  if (!rawValues.some((item) => text(item))) return ['OTHER']
   const rootsByKey = new Map(CREATOR_CATEGORIES.map((category) => [categoryKey(category), category]))
   rootsByKey.set('mom baby', 'MOM&BABY')
   rootsByKey.set('mom and baby', 'MOM&BABY')
   const paths: string[] = []
   const seen = new Set<string>()
 
-  for (const token of tokens) {
-    const tokenParts = token.split(/\s*>\s*/).map((part) => text(part)).filter(Boolean)
-    const tokenHead = tokenParts[0]
-    if (!tokenHead) continue
-    const parts = tokenParts
-    const firstPart = parts[0] ?? tokenHead
-    const root = rootsByKey.get(categoryKey(firstPart)) || firstPart.replace(/\s+/g, ' ').trim()
-    const retainedParts = parts.slice(0, 2)
-    if (retainedParts.some((part) => part.length > 80)) {
-      errors.category = 'Main Category và Subcategory tối đa 80 ký tự cho mỗi cấp.'
-      continue
-    }
-    const normalizedParts = [root, ...retainedParts.slice(1).map((part) => part.replace(/\s+/g, ' ').trim())]
-    const path = normalizedParts.join(' > ')
-    const key = normalizedParts.map(categoryKey).join('>')
-    if (!seen.has(key)) {
-      seen.add(key)
-      paths.push(path)
+  for (const rawValue of rawValues) {
+    const tokens = text(rawValue).split(/[,;|\n]+/).map((item) => text(item)).filter(Boolean)
+    let previousParts: string[] = []
+
+    for (const token of tokens) {
+      const tokenParts = token.split(/\s*>\s*/).map((part) => text(part)).filter(Boolean)
+      const tokenHead = tokenParts[0]
+      if (!tokenHead) continue
+      const previousRoot = previousParts[0]
+      const parts = tokenParts.length === 1 && previousRoot ? [previousRoot, tokenHead] : tokenParts
+      const firstPart = parts[0] ?? tokenHead
+      const root = rootsByKey.get(categoryKey(firstPart)) || firstPart.replace(/\s+/g, ' ').trim()
+      const retainedParts = parts.slice(0, 2)
+      if (retainedParts.some((part) => part.length > 80)) {
+        errors.category = 'Main Category và Subcategory tối đa 80 ký tự cho mỗi cấp.'
+        continue
+      }
+      const normalizedParts = [root, ...retainedParts.slice(1).map((part) => part.replace(/\s+/g, ' ').trim())]
+      const path = normalizedParts.join(' > ')
+      const key = normalizedParts.map(categoryKey).join('>')
+      if (!seen.has(key)) {
+        seen.add(key)
+        paths.push(path)
+      }
+      previousParts = normalizedParts
     }
   }
 

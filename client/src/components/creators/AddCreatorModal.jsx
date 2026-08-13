@@ -70,7 +70,7 @@ function CategoryPathField({ values, onChange }) {
       <div className="category-path-values">{values.map((path) => <span key={path}>{path}<button type="button" aria-label={`Xóa ${path}`} onClick={() => onChange(values.filter((value) => value !== path))}><Icon name="close" size={12} /></button></span>)}</div>
       <div className={`category-path-input ${error ? 'has-error' : ''}`}><input value={draft} onChange={(event) => { setDraft(event.target.value); setError('') }} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addDraft() } }} placeholder="abc > cde, fgh" /><button type="button" onClick={addDraft}><Icon name="plus" size={14} />Thêm nhánh</button></div>
       {error && <small className="form-field-error" role="alert">{error}</small>}
-      <small>Category có tối đa 2 cấp. Dùng dấu phẩy để thêm nhiều Category; cần ghi đầy đủ Main Category &gt; Subcategory cho từng nhánh con.</small>
+      <small>Category có tối đa 2 cấp. Trong cùng một lần nhập, các giá trị sau dấu phẩy sẽ dùng chung Main Category gần nhất.</small>
     </fieldset>
   )
 }

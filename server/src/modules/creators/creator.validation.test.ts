@@ -35,20 +35,33 @@ test('defaults an empty category to OTHER', () => {
   assert.deepEqual(creator.category, ['OTHER'])
 })
 
-test('keeps only main category and subcategory without inheriting comma siblings', () => {
+test('expands comma shorthand within one category cell', () => {
   const creator = validateCreatorInput({
     tiktokId: 'creator.fashion',
     tiktokLink: 'creator-link',
-    category: 'Fashion > Female > Purse, Hat, Fashion > Male > Shoes',
+    category: 'Newborns & Maternity > Baby Product, Supplies for mother, Baby Care & Health',
   })
-  assert.deepEqual(creator.category, ['FASHION > Female', 'Hat', 'FASHION > Male'])
+  assert.deepEqual(creator.category, [
+    'Newborns & Maternity > Baby Product',
+    'Newborns & Maternity > Supplies for mother',
+    'Newborns & Maternity > Baby Care & Health',
+  ])
 })
 
-test('accepts arbitrary category roots without implicit parent inheritance', () => {
+test('accepts arbitrary category roots and comma shorthand', () => {
   const creator = validateCreatorInput({
     tiktokId: 'creator.dynamic',
     tiktokLink: 'creator-link',
     category: 'abc > cde, fgh, Newborns & Maternity > Baby Product',
   })
-  assert.deepEqual(creator.category, ['abc > cde', 'fgh', 'Newborns & Maternity > Baby Product'])
+  assert.deepEqual(creator.category, ['abc > cde', 'abc > fgh', 'Newborns & Maternity > Baby Product'])
+})
+
+test('does not inherit a parent between separate category array entries', () => {
+  const creator = validateCreatorInput({
+    tiktokId: 'creator.separate',
+    tiktokLink: 'creator-link',
+    category: ['Newborns & Maternity > Baby Product', 'Fashion'],
+  })
+  assert.deepEqual(creator.category, ['Newborns & Maternity > Baby Product', 'FASHION'])
 })

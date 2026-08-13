@@ -51,8 +51,23 @@ export function uniqueCategoryPaths(values) {
 
 export function parseCategoryPaths(value, fallback = ['OTHER']) {
   const rawValues = Array.isArray(value) ? value : [value]
-  const tokens = rawValues.flatMap((item) => String(item ?? '').split(/[,;|\n]+/)).map((item) => item.trim()).filter(Boolean)
-  const paths = tokens.map(normalizeCategoryPath).filter(Boolean)
+  const paths = []
+
+  rawValues.forEach((rawValue) => {
+    const tokens = String(rawValue ?? '').split(/[,;|\n]+/).map((item) => item.trim()).filter(Boolean)
+    let previousParts = []
+
+    tokens.forEach((token) => {
+      const tokenParts = splitCategoryPath(token)
+      const expandedParts = tokenParts.length === 1 && previousParts.length > 1
+        ? [previousParts[0], tokenParts[0]]
+        : tokenParts
+      const normalized = normalizeCategoryPath(expandedParts.join(CATEGORY_PATH_SEPARATOR))
+      if (!normalized) return
+      paths.push(normalized)
+      previousParts = splitCategoryPath(normalized)
+    })
+  })
 
   const uniquePaths = uniqueCategoryPaths(paths)
   return uniquePaths.length ? uniquePaths : [...fallback]
