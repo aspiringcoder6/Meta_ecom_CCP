@@ -87,13 +87,12 @@ function categoryPathValue(value: unknown, errors: FieldErrors) {
   rootsByKey.set('mom and baby', 'MOM&BABY')
   const paths: string[] = []
   const seen = new Set<string>()
-  let previousParts: string[] = []
 
   for (const token of tokens) {
     const tokenParts = token.split(/\s*>\s*/).map((part) => text(part)).filter(Boolean)
     const tokenHead = tokenParts[0]
     if (!tokenHead) continue
-    const parts = tokenParts.length === 1 && previousParts.length > 1 ? [...previousParts.slice(0, -1), tokenHead] : tokenParts
+    const parts = tokenParts
     const firstPart = parts[0] ?? tokenHead
     const root = rootsByKey.get(categoryKey(firstPart)) || firstPart.replace(/\s+/g, ' ').trim()
     const retainedParts = parts.slice(0, 2)
@@ -108,7 +107,6 @@ function categoryPathValue(value: unknown, errors: FieldErrors) {
       seen.add(key)
       paths.push(path)
     }
-    previousParts = normalizedParts
   }
 
   if (!paths.length && !errors.category) errors.category = 'Category không hợp lệ.'

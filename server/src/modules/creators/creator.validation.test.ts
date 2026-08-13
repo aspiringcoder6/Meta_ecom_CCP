@@ -35,20 +35,20 @@ test('defaults an empty category to OTHER', () => {
   assert.deepEqual(creator.category, ['OTHER'])
 })
 
-test('keeps only main category and subcategory', () => {
+test('keeps only main category and subcategory without inheriting comma siblings', () => {
   const creator = validateCreatorInput({
     tiktokId: 'creator.fashion',
     tiktokLink: 'creator-link',
     category: 'Fashion > Female > Purse, Hat, Fashion > Male > Shoes',
   })
-  assert.deepEqual(creator.category, ['FASHION > Female', 'FASHION > Hat', 'FASHION > Male'])
+  assert.deepEqual(creator.category, ['FASHION > Female', 'Hat', 'FASHION > Male'])
 })
 
-test('accepts arbitrary category roots and keeps their hierarchy', () => {
+test('accepts arbitrary category roots without implicit parent inheritance', () => {
   const creator = validateCreatorInput({
     tiktokId: 'creator.dynamic',
     tiktokLink: 'creator-link',
     category: 'abc > cde, fgh, Newborns & Maternity > Baby Product',
   })
-  assert.deepEqual(creator.category, ['abc > cde', 'abc > fgh', 'Newborns & Maternity > Baby Product'])
+  assert.deepEqual(creator.category, ['abc > cde', 'fgh', 'Newborns & Maternity > Baby Product'])
 })

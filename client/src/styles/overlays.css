@@ -22,6 +22,8 @@
 .profile-details div { display: grid; gap: 3px; }
 .profile-details dt { color: #929eae; font-size: 8px; }
 .profile-details dd { margin: 0; color: #36465d; font-size: 10px; font-weight: 600; }
+.profile-details dd.profile-category-ribbons { min-width: 0; }
+.profile-category-ribbons .category-path-ribbons { max-height: none; overflow: visible; padding-top: 2px; }
 .profile-details .profile-detail-wide { grid-column: 1 / -1; padding: 10px 12px; border: 1px solid #e3edf6; border-radius: 10px; background: #f8fbfe; }
 .profile-details .profile-detail-wide dd { line-height: 1.55; white-space: pre-wrap; }
 .contact-list { display: grid; gap: 10px; }

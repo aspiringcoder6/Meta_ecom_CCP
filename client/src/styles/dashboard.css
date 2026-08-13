@@ -76,6 +76,10 @@
 .financial-bar-value strong { color: #25445f; font-size: 9px; font-variant-numeric: tabular-nums; }
 .financial-creators-table .financial-mini-header { min-height: 30px; display: grid; grid-template-columns: minmax(174px,1fr) 100px 110px 110px 56px; align-items: center; gap: 10px; padding: 0 21px 0 78px; color: #929ead; font-size: 7px; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
 .financial-creators-table .mini-table-row { grid-template-columns: 24px 40px minmax(110px,1fr) 100px 110px 110px 56px; }
+.dashboard-category-ribbons { min-width: 0; width: 100%; display: block; overflow: hidden; }
+.dashboard-category-ribbons .category-path-ribbons { max-height: 47px; padding-block: 1px; }
+.dashboard-category-ribbons .category-path-ribbon { max-width: calc(100% - 8px); }
+.dashboard-category-ribbons .category-path-segment { max-width: 76px; }
 .financial-value { min-width: 0; display: grid; gap: 2px; }
 .financial-value strong { overflow: hidden; color: #28445e; font-size: 9px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; white-space: nowrap; }
 .financial-value small { color: #9aa5b4; font-size: 7px; }

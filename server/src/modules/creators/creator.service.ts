@@ -36,7 +36,22 @@ function categoryPathMatches(candidate: unknown, selected: unknown) {
 }
 
 function mergeCategoryLists(current: string[], imported: string[]) {
-  return normalizeCategoryList([...current, ...imported])
+  let merged = normalizeCategoryList(current)
+  for (const importedPath of normalizeCategoryList(imported)) {
+    const importedParts = importedPath.split(/\s*>\s*/).filter(Boolean)
+    if (importedParts.length > 1) {
+      const importedRootKey = categoryPathKey(importedParts[0])
+      const hasExistingRoot = merged.some((currentPath) => categoryPathKey(currentPath).split('>')[0] === importedRootKey)
+      if (hasExistingRoot) {
+        merged = merged.filter((currentPath) => {
+          const currentParts = currentPath.split(/\s*>\s*/).filter(Boolean)
+          return !(currentParts.length === 1 && categoryPathKey(currentParts[0]) === importedRootKey)
+        })
+      }
+    }
+    merged = normalizeCategoryList([...merged, importedPath])
+  }
+  return merged
 }
 
 export function toCreatorDto(creator: Record<string, unknown>) {

@@ -25,48 +25,69 @@ function submenuPosition(element, childCount) {
   }
 }
 
-function CategoryTreeNode({ node, selectedValues, onToggle }) {
+function CategoryTreeNode({ node, selectedValues, onToggle, isSubmenuOpen, onOpenSubmenu, onKeepSubmenu, onScheduleSubmenuClose }) {
   const [position, setPosition] = useState({ left: 0, top: 0, side: 'right' })
-  const [isSubmenuOpen, setIsSubmenuOpen] = useState(false)
-  const closeTimerRef = useRef(null)
   const exactSelected = selectedValues.includes(node.value)
   const coveredByParent = !exactSelected && selectedValues.some((selected) => categoryPathMatches(node.value, selected))
   const hasChildren = node.children.length > 0
-  const clearCloseTimer = () => {
-    window.clearTimeout(closeTimerRef.current)
-    closeTimerRef.current = null
-  }
   const openSubmenu = (event) => {
     if (!hasChildren) return
-    clearCloseTimer()
     setPosition(submenuPosition(event.currentTarget, node.children.length))
-    setIsSubmenuOpen(true)
+    onOpenSubmenu(node.value)
   }
-  const keepSubmenuOpen = () => {
-    clearCloseTimer()
-    setIsSubmenuOpen(true)
-  }
-  const scheduleSubmenuClose = () => {
-    clearCloseTimer()
-    closeTimerRef.current = window.setTimeout(() => setIsSubmenuOpen(false), SUBMENU_CLOSE_DELAY)
-  }
-
-  useEffect(() => () => clearCloseTimer(), [])
 
   return (
-    <div className="category-tree-node" onPointerEnter={openSubmenu} onPointerLeave={scheduleSubmenuClose} onFocus={openSubmenu} onBlur={scheduleSubmenuClose}>
+    <div className="category-tree-node" onPointerEnter={openSubmenu} onPointerLeave={() => onScheduleSubmenuClose(node.value)} onFocus={openSubmenu} onBlur={() => onScheduleSubmenuClose(node.value)}>
       <button className={`category-tree-option ${exactSelected ? 'is-selected' : ''} ${coveredByParent ? 'is-covered' : ''}`} type="button" role="option" aria-selected={exactSelected || coveredByParent} onClick={() => onToggle(node.value)}>
         <span className="category-tree-check"><Icon name="check" size={13} /></span>
         <span className="category-tree-label">{node.label}</span>
         {hasChildren && <Icon name="chevronRight" size={14} />}
       </button>
       {hasChildren && (
-        <div className={`category-tree-submenu opens-${position.side}${isSubmenuOpen ? ' is-open' : ''}`} data-category-filter-menu style={{ left: position.left, top: position.top }} onPointerEnter={keepSubmenuOpen} onPointerLeave={scheduleSubmenuClose}>
-          {node.children.map((child) => <CategoryTreeNode node={child} selectedValues={selectedValues} onToggle={onToggle} key={child.value} />)}
+        <div className={`category-tree-submenu opens-${position.side}${isSubmenuOpen ? ' is-open' : ''}`} data-category-filter-menu style={{ left: position.left, top: position.top }} onPointerEnter={() => onKeepSubmenu(node.value)} onPointerLeave={() => onScheduleSubmenuClose(node.value)}>
+          <CategoryTreeLevel nodes={node.children} selectedValues={selectedValues} onToggle={onToggle} />
         </div>
       )}
     </div>
   )
+}
+
+function CategoryTreeLevel({ nodes, selectedValues, onToggle }) {
+  const [activeSubmenu, setActiveSubmenu] = useState(null)
+  const closeTimerRef = useRef(null)
+  const clearCloseTimer = () => {
+    window.clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = null
+  }
+  const openSubmenu = (value) => {
+    clearCloseTimer()
+    setActiveSubmenu(value)
+  }
+  const keepSubmenuOpen = (value) => {
+    clearCloseTimer()
+    setActiveSubmenu(value)
+  }
+  const scheduleSubmenuClose = (value) => {
+    clearCloseTimer()
+    closeTimerRef.current = window.setTimeout(() => {
+      setActiveSubmenu((current) => current === value ? null : current)
+    }, SUBMENU_CLOSE_DELAY)
+  }
+
+  useEffect(() => () => clearCloseTimer(), [])
+
+  return nodes.map((node) => (
+    <CategoryTreeNode
+      node={node}
+      selectedValues={selectedValues}
+      onToggle={onToggle}
+      isSubmenuOpen={activeSubmenu === node.value}
+      onOpenSubmenu={openSubmenu}
+      onKeepSubmenu={keepSubmenuOpen}
+      onScheduleSubmenuClose={scheduleSubmenuClose}
+      key={node.value}
+    />
+  ))
 }
 
 export default function CreatorCategoryFilter({ values, options, onChange }) {
@@ -172,7 +193,7 @@ export default function CreatorCategoryFilter({ values, options, onChange }) {
     <div ref={menuRef} className="category-tree-menu" data-category-filter-menu role="listbox" aria-label="Lọc theo Category" aria-multiselectable="true" style={{ left: menuPosition.left, top: menuPosition.top, maxHeight: menuPosition.maxHeight }} onClick={(event) => event.stopPropagation()}>
       <header><strong>Category</strong><small>Hover để xem cấp con</small></header>
       <button className={`category-tree-option category-tree-all ${selectedValues.length === 0 ? 'is-selected' : ''}`} type="button" role="option" aria-selected={selectedValues.length === 0} onClick={() => onChange([])}><span className="category-tree-check"><Icon name="check" size={13} /></span><span className="category-tree-label">Tất cả Category</span></button>
-      <div className="category-tree-scroll">{tree.map((node) => <CategoryTreeNode node={node} selectedValues={selectedValues} onToggle={toggleValue} key={node.value} />)}</div>
+      <div className="category-tree-scroll"><CategoryTreeLevel nodes={tree} selectedValues={selectedValues} onToggle={toggleValue} /></div>
       {selectedValues.length > 0 && <footer><span>{selectedValues.length} lựa chọn</span><button type="button" onClick={() => onChange([])}>Xóa lựa chọn</button></footer>}
     </div>,
     document.body,

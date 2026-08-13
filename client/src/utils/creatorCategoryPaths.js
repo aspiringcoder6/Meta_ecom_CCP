@@ -52,28 +52,32 @@ export function uniqueCategoryPaths(values) {
 export function parseCategoryPaths(value, fallback = ['OTHER']) {
   const rawValues = Array.isArray(value) ? value : [value]
   const tokens = rawValues.flatMap((item) => String(item ?? '').split(/[,;|\n]+/)).map((item) => item.trim()).filter(Boolean)
-  const paths = []
-  let previousParts = []
-
-  tokens.forEach((token) => {
-    const tokenParts = splitCategoryPath(token)
-    const expandedParts = tokenParts.length === 1 && previousParts.length > 1
-      ? [...previousParts.slice(0, -1), tokenParts[0]]
-      : tokenParts
-    const normalized = normalizeCategoryPath(expandedParts.join(CATEGORY_PATH_SEPARATOR))
-    if (!normalized) return
-    paths.push(normalized)
-    previousParts = splitCategoryPath(normalized)
-  })
+  const paths = tokens.map(normalizeCategoryPath).filter(Boolean)
 
   const uniquePaths = uniqueCategoryPaths(paths)
   return uniquePaths.length ? uniquePaths : [...fallback]
 }
 
 export function mergeCategoryPaths(currentValues, importedValues) {
-  const current = Array.isArray(currentValues) ? currentValues : [currentValues].filter(Boolean)
-  const imported = Array.isArray(importedValues) ? importedValues : [importedValues].filter(Boolean)
-  return uniqueCategoryPaths([...current, ...imported])
+  let merged = uniqueCategoryPaths(Array.isArray(currentValues) ? currentValues : [currentValues].filter(Boolean))
+  const imported = uniqueCategoryPaths(Array.isArray(importedValues) ? importedValues : [importedValues].filter(Boolean))
+
+  imported.forEach((path) => {
+    const importedParts = splitCategoryPath(path)
+    if (importedParts.length > 1) {
+      const importedRootKey = normalizeKey(importedParts[0])
+      const hasExistingRoot = merged.some((currentPath) => normalizeKey(splitCategoryPath(currentPath)[0]) === importedRootKey)
+      if (hasExistingRoot) {
+        merged = merged.filter((currentPath) => {
+          const currentParts = splitCategoryPath(currentPath)
+          return !(currentParts.length === 1 && normalizeKey(currentParts[0]) === importedRootKey)
+        })
+      }
+    }
+    merged = uniqueCategoryPaths([...merged, path])
+  })
+
+  return merged
 }
 
 export function categoryPathMatches(candidate, selectedPath) {
