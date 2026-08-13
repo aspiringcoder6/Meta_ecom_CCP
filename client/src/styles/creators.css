@@ -47,7 +47,7 @@
 .category-top-creators-card { overflow: hidden; }
 .category-top-creators-table { width: 100%; overflow-x: auto; border: 1px solid #e2e9f0; border-radius: 10px; background: white; scrollbar-color: #b8c8db #eef3f8; scrollbar-width: thin; }
 .category-top-creators-header { min-width: 680px; min-height: 37px; display: grid; grid-template-columns: minmax(190px,1fr) 90px 125px 105px; align-items: center; gap: 12px; padding: 0 14px 0 92px; color: #7f8da0; background: #f2f7fb; font-size: 8px; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; }
-.category-top-creator-row { min-width: 680px; min-height: 66px; display: grid; grid-template-columns: 24px 40px minmax(120px,1fr) 90px 125px 105px; align-items: center; gap: 12px; padding: 8px 14px; border: 0; border-top: 1px solid #e9eef4; color: inherit; background: white; text-align: left; }
+.category-top-creator-row { width: 100%; min-width: 680px; min-height: 66px; display: grid; grid-template-columns: 24px 40px minmax(120px,1fr) 90px 125px 105px; align-items: center; gap: 12px; box-sizing: border-box; padding: 8px 14px; border: 0; border-top: 1px solid #e9eef4; color: inherit; background: white; text-align: left; }
 .category-top-creator-row:hover { background: #f5faff; }
 .category-top-creator-row:focus-visible { position: relative; z-index: 1; outline: 3px solid rgba(82,186,255,.28); outline-offset: -3px; }
 .category-top-creator-row > * { min-width: 0; }

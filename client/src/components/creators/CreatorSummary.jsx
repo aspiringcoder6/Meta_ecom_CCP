@@ -21,7 +21,7 @@ function CategorySegmentBreakdown({ categories, total, expanded, selectedCategor
   const visibleCategories = expanded ? categories : categories.slice(0, 3)
   return (
     <article className="creator-insight-detail-card category-segment-card">
-      <header><div><h3>Phân bổ tệp KOC trong từng Category</h3><p>{expanded ? 'Toàn bộ Category trong hệ thống' : 'Top 3 Category có nhiều KOC nhất'} · Chọn một dòng để xem top KOC</p></div><span>{visibleCategories.length}/{categories.length} Category</span></header>
+      <header><div><h3>Phân bổ tệp KOC trong từng Category</h3><p>{expanded ? 'Toàn bộ Category trong hệ thống' : 'Top 3 Category có nhiều KOC nhất'} - Hãy bấm vào một dòng bất kì để xem top 5 KOC của category đó</p></div><span>{visibleCategories.length}/{categories.length} Category</span></header>
       <div className="category-segment-table-wrap">
         <div className="category-segment-table">
           <div className="category-segment-header"><span>Category</span><span>Tổng</span>{SEGMENTS.map((segment) => <span key={segment}>{segment}</span>)}</div>
@@ -44,7 +44,7 @@ function CategoryTopCreators({ category, onSelect }) {
   if (!category) return null
   return (
     <article className="creator-insight-detail-card category-top-creators-card">
-      <header><div><h3>Top KOC · {category.label}</h3><p>Xếp theo GMV / Month, sau đó Followers · tối đa 5 Creator</p></div><span>{category.topCreators.length} KOC</span></header>
+      <header><div><h3>Top KOC 5 - {category.label}</h3><p>Xếp theo GMV / Month, sau đó Followers</p></div></header>
       <div className="category-top-creators-table">
         <div className="category-top-creators-header"><span>Creator</span><span>Segment</span><span>GMV / Month</span><span>Followers</span></div>
         {category.topCreators.map((creator, index) => (
