@@ -131,16 +131,18 @@
 .category-tree-scroll { min-height: 0; overflow-y: auto; padding-top: 4px; scrollbar-width: thin; }
 .category-tree-node { position: relative; }
 .category-tree-option { width: 100%; min-height: 34px; display: flex; align-items: center; gap: 8px; padding: 5px 7px; border-radius: 8px; color: #53637a; background: transparent; font-size: 9px; font-weight: 650; text-align: left; }
-.category-tree-option:hover, .category-tree-node:focus-within > .category-tree-option { color: #075f98; background: #f2f9fe; }
+.category-tree-option:hover, .category-tree-option:focus-visible, .category-tree-node.is-submenu-open > .category-tree-option { color: #075f98; background: #f2f9fe; }
 .category-tree-check { width: 18px; height: 18px; flex: 0 0 18px; display: grid; place-items: center; border: 1px solid #d4dee8; border-radius: 5px; color: transparent; background: white; }
 .category-tree-label { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .category-tree-option > svg { flex: 0 0 auto; color: #9ba7b5; }
 .category-tree-option.is-selected { color: #075f98; background: #eaf7ff; }
 .category-tree-option.is-selected .category-tree-check { border-color: #1686d3; color: white; background: #1686d3; }
+.category-tree-option.is-partial { color: #3176a3; background: #f2f9fe; }
+.category-tree-option.is-partial .category-tree-check { border-color: #9acdeb; color: #2788c6; background: #e8f5fd; }
 .category-tree-option.is-covered .category-tree-check { border-color: #70b9e7; color: #1686d3; background: #e7f5fe; }
 .category-tree-all { margin-top: 4px; border-bottom: 1px solid #edf1f5; border-radius: 8px 8px 4px 4px; }
 .category-tree-submenu { z-index: 910; width: 238px; max-height: 330px; display: none; overflow-y: auto; scrollbar-width: thin; }
-.category-tree-node:hover > .category-tree-submenu, .category-tree-node:focus-within > .category-tree-submenu, .category-tree-submenu.is-open { display: block; }
+.category-tree-submenu.is-open { display: block; }
 .category-tree-menu > footer { min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 5px 1px; border-top: 1px solid #edf1f5; color: #8c98a8; font-size: 8px; }
 .category-tree-menu > footer button { padding: 5px; color: #1686d3; background: transparent; font-size: 8px; font-weight: 750; }
 .creators-panel:not(.creator-fullscreen-view):has(.multi-filter.is-open) { position: relative; z-index: 30; overflow: visible; }

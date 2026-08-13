@@ -30,16 +30,16 @@ function CategoryTreeNode({ node, selectedValues, onToggle, isSubmenuOpen, onOpe
   const exactSelected = selectedValues.includes(node.value)
   const coveredByParent = !exactSelected && selectedValues.some((selected) => categoryPathMatches(node.value, selected))
   const hasChildren = node.children.length > 0
+  const partiallySelected = hasChildren && !exactSelected && selectedValues.some((selected) => categoryPathMatches(selected, node.value))
   const openSubmenu = (event) => {
-    if (!hasChildren) return
-    setPosition(submenuPosition(event.currentTarget, node.children.length))
-    onOpenSubmenu(node.value)
+    if (hasChildren) setPosition(submenuPosition(event.currentTarget, node.children.length))
+    onOpenSubmenu(hasChildren ? node.value : null)
   }
 
   return (
-    <div className="category-tree-node" onPointerEnter={openSubmenu} onPointerLeave={() => onScheduleSubmenuClose(node.value)} onFocus={openSubmenu} onBlur={() => onScheduleSubmenuClose(node.value)}>
-      <button className={`category-tree-option ${exactSelected ? 'is-selected' : ''} ${coveredByParent ? 'is-covered' : ''}`} type="button" role="option" aria-selected={exactSelected || coveredByParent} onClick={() => onToggle(node.value)}>
-        <span className="category-tree-check"><Icon name="check" size={13} /></span>
+    <div className={`category-tree-node${isSubmenuOpen ? ' is-submenu-open' : ''}`} onPointerEnter={openSubmenu} onPointerLeave={() => onScheduleSubmenuClose(node.value)} onFocus={openSubmenu} onBlur={() => onScheduleSubmenuClose(node.value)}>
+      <button className={`category-tree-option ${exactSelected ? 'is-selected' : ''} ${coveredByParent ? 'is-covered' : ''} ${partiallySelected ? 'is-partial' : ''}`} type="button" role="option" aria-selected={exactSelected || coveredByParent} aria-label={partiallySelected ? `${node.label}, đã chọn một phần` : node.label} onClick={() => onToggle(node.value)}>
+        <span className="category-tree-check"><Icon name={partiallySelected ? 'minus' : 'check'} size={13} /></span>
         <span className="category-tree-label">{node.label}</span>
         {hasChildren && <Icon name="chevronRight" size={14} />}
       </button>
