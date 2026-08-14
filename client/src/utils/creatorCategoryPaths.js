@@ -79,9 +79,10 @@ export function mergeCategoryPaths(currentValues, importedValues) {
 
   imported.forEach((path) => {
     const importedParts = splitCategoryPath(path)
+    const importedRootKey = normalizeKey(importedParts[0])
+    const hasExistingRoot = merged.some((currentPath) => normalizeKey(splitCategoryPath(currentPath)[0]) === importedRootKey)
+    if (importedParts.length === 1 && hasExistingRoot) return
     if (importedParts.length > 1) {
-      const importedRootKey = normalizeKey(importedParts[0])
-      const hasExistingRoot = merged.some((currentPath) => normalizeKey(splitCategoryPath(currentPath)[0]) === importedRootKey)
       if (hasExistingRoot) {
         merged = merged.filter((currentPath) => {
           const currentParts = splitCategoryPath(currentPath)

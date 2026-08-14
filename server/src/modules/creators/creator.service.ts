@@ -39,9 +39,10 @@ function mergeCategoryLists(current: string[], imported: string[]) {
   let merged = normalizeCategoryList(current)
   for (const importedPath of normalizeCategoryList(imported)) {
     const importedParts = importedPath.split(/\s*>\s*/).filter(Boolean)
+    const importedRootKey = categoryPathKey(importedParts[0])
+    const hasExistingRoot = merged.some((currentPath) => categoryPathKey(currentPath).split('>')[0] === importedRootKey)
+    if (importedParts.length === 1 && hasExistingRoot) continue
     if (importedParts.length > 1) {
-      const importedRootKey = categoryPathKey(importedParts[0])
-      const hasExistingRoot = merged.some((currentPath) => categoryPathKey(currentPath).split('>')[0] === importedRootKey)
       if (hasExistingRoot) {
         merged = merged.filter((currentPath) => {
           const currentParts = currentPath.split(/\s*>\s*/).filter(Boolean)
