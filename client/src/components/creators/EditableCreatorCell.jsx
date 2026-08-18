@@ -6,7 +6,7 @@ function draftValue(field, value) {
   return field === 'category' || field === 'type' ? formatCreatorList(value) : String(value ?? '')
 }
 
-export default function EditableCreatorCell({ creatorId, field, value, options, className = '', style, note, dataTour, onCommit }) {
+export default function EditableCreatorCell({ creatorId, field, value, creators = [], options, className = '', style, note, dataTour, onCommit }) {
   const [draft, setDraft] = useState(draftValue(field, value))
   const [error, setError] = useState('')
 
@@ -16,7 +16,7 @@ export default function EditableCreatorCell({ creatorId, field, value, options, 
   }, [field, value])
 
   const commit = () => {
-    const result = validateCreatorValue(field, draft)
+    const result = validateCreatorValue(field, draft, { creators, creatorId })
     if (result.error) {
       setError(result.error)
       return

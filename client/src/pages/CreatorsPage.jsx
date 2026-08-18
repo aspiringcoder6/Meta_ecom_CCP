@@ -90,7 +90,7 @@ export default function CreatorsPage() {
     setImportReview(null)
   }
   const workspaceProps = {
-    creators: displayedCreators, filters, filterOptions, numericFilters, sortCriteria, categoryDisplayLevel, canUndo, canRedo, recentlyAddedCreatorId, importReview, canManage: canManageCreators,
+    creators: displayedCreators, allCreators: creators, filters, filterOptions, numericFilters, sortCriteria, categoryDisplayLevel, canUndo, canRedo, recentlyAddedCreatorId, importReview, canManage: canManageCreators,
     onFilterChange: updateFilter,
     onAddNumericFilter: (filter) => setNumericFilters((current) => [...current, filter]),
     onRemoveNumericFilter: (filterId) => setNumericFilters((current) => current.filter((filter) => filter.id !== filterId)),
@@ -124,8 +124,8 @@ export default function CreatorsPage() {
       {!isFullscreen && <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />}
       {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
       <CreatorDetailsDrawer creator={selectedCreator} canManage={canManageCreators} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />
-      {canManageCreators && addOpen && <AddCreatorModal onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}
-      {canManageCreators && editingCreator && <AddCreatorModal creator={editingCreator} onClose={() => setEditingCreatorId(null)} onSubmit={handleEdit} />}
+      {canManageCreators && addOpen && <AddCreatorModal creators={creators} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}
+      {canManageCreators && editingCreator && <AddCreatorModal creator={editingCreator} creators={creators} onClose={() => setEditingCreatorId(null)} onSubmit={handleEdit} />}
     </main>
   )
 }

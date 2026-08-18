@@ -26,11 +26,12 @@ function getInitialForm(creator) {
   }
 }
 
-function validateForm(form) {
+function validateForm(form, creators, creatorId) {
   const errors = {}
-  const idResult = validateCreatorValue('tiktokId', form.handle)
+  const context = { creators, creatorId }
+  const idResult = validateCreatorValue('tiktokId', form.handle, context)
   if (idResult.error) errors.handle = idResult.error
-  const linkResult = validateCreatorValue('tiktokLink', form.tiktokLink)
+  const linkResult = validateCreatorValue('tiktokLink', form.tiktokLink, context)
   if (linkResult.error) errors.tiktokLink = linkResult.error
   return errors
 }
@@ -75,7 +76,7 @@ function CategoryPathField({ values, onChange }) {
   )
 }
 
-export default function AddCreatorModal({ creator, onClose, onSubmit }) {
+export default function AddCreatorModal({ creator, creators = [], onClose, onSubmit }) {
   const [form, setForm] = useState(() => getInitialForm(creator))
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
@@ -91,7 +92,7 @@ export default function AddCreatorModal({ creator, onClose, onSubmit }) {
 
   const submit = async (event) => {
     event.preventDefault()
-    const errors = validateForm(form)
+    const errors = validateForm(form, creators, creator?.id)
     if (Object.keys(errors).length) {
       setFieldErrors(errors)
       return

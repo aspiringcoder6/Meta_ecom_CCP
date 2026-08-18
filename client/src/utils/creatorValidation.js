@@ -13,16 +13,45 @@ export const CREATOR_FIELD_OPTIONS = {
   historicalCampaign: HISTORICAL_CAMPAIGN_OPTIONS,
 }
 
-export function validateCreatorValue(field, rawValue) {
+export function normalizeTikTokId(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/^@+/, '')
+}
+
+export function normalizeTikTokLink(value) {
+  const text = String(value ?? '').trim().toLowerCase()
+  if (!text) return ''
+  try {
+    const url = new URL(text)
+    const host = url.hostname.replace(/^www\./, '')
+    const path = url.pathname.replace(/\/+$/, '') || '/'
+    return `${host}${path}`
+  } catch {
+    return text.replace(/\/+$/, '')
+  }
+}
+
+function duplicateCreator(field, value, creators, creatorId) {
+  if (field !== 'tiktokId' && field !== 'tiktokLink') return null
+  const normalize = field === 'tiktokId' ? normalizeTikTokId : normalizeTikTokLink
+  const normalizedValue = normalize(value)
+  if (!normalizedValue) return null
+  return creators.find((creator) => String(creator.id) !== String(creatorId ?? '') && normalize(creator[field]) === normalizedValue) || null
+}
+
+export function validateCreatorValue(field, rawValue, context = {}) {
   const text = String(rawValue ?? '').trim()
 
   if (field === 'tiktokId') {
     if (!text) return { error: 'ID TikTok không được để trống.' }
+    const duplicate = duplicateCreator(field, text, context.creators || [], context.creatorId)
+    if (duplicate) return { error: `ID TikTok đã được sử dụng bởi ${duplicate.tiktokId}.` }
     return { value: text }
   }
 
   if (field === 'tiktokLink') {
     if (!text) return { error: 'Link TikTok không được để trống.' }
+    const duplicate = duplicateCreator(field, text, context.creators || [], context.creatorId)
+    if (duplicate) return { error: `Link TikTok đã được sử dụng bởi ${duplicate.tiktokId}.` }
     return { value: text }
   }
 

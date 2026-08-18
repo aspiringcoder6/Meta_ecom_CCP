@@ -54,12 +54,12 @@ function ColumnResizeHandle({ index, width, dataTour, onResize, onReset }) {
   return <span className="column-resize-handle" data-tour={dataTour} role="separator" tabIndex="0" aria-label={`Điều chỉnh độ rộng cột ${index + 1}`} aria-orientation="vertical" aria-valuemin="64" aria-valuemax="480" aria-valuenow={width} onDoubleClick={() => onReset(index)} onKeyDown={resizeWithKeyboard} onPointerDown={(event) => { event.stopPropagation(); startDragResize(event, { axis: 'x', value: width, min: 64, max: 480, onChange: (nextWidth) => onResize(index, nextWidth) }) }} />
 }
 
-export default function CreatorTable({ creators, canManage = false, highlightedCreatorIds = [], updatedCreatorIds = [], sortCriteria = [], categoryDisplayLevel = 1, onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, autoFitRows = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
+export default function CreatorTable({ creators, allCreators = creators, canManage = false, highlightedCreatorIds = [], updatedCreatorIds = [], sortCriteria = [], categoryDisplayLevel = 1, onSort, onSelect, onArchive, editMode = false, onUpdate, onDelete, resizable = false, autoFitRows = false, columnWidths = [], rowHeight = 76, onColumnResize, onColumnReset }) {
   if (!creators.length) return <EmptyResults />
 
   const tableWidth = resizable ? columnWidths.reduce((total, width) => total + width, 0) : undefined
   const secondStickyStyle = resizable ? { left: `${columnWidths[0]}px` } : undefined
-  const editableCell = (creator, field, options = undefined, className = '', note = undefined) => <EditableCreatorCell creatorId={creator.id} field={field} value={creator[field]} options={options} className={className} note={note} onCommit={onUpdate} />
+  const editableCell = (creator, field, options = undefined, className = '', note = undefined) => <EditableCreatorCell creatorId={creator.id} field={field} value={creator[field]} creators={allCreators} options={options} className={className} note={note} onCommit={onUpdate} />
 
   return (
     <div className="creator-table-wrap">
@@ -76,7 +76,7 @@ export default function CreatorTable({ creators, canManage = false, highlightedC
             const rowClassName = updatedCreatorIds.includes(creator.id) ? 'is-import-updated' : highlightedCreatorIds.includes(creator.id) ? 'is-newly-added' : ''
             return <tr className={rowClassName} key={creator.id} onClick={editMode ? undefined : () => onSelect(creator.id)}>
               {editMode ? editableCell(creator, 'tiktokLink', undefined, 'sticky-link-cell') : <td className="sticky-link-cell">{/^https?:\/\//i.test(creator.tiktokLink) ? <a className="tiktok-link" href={creator.tiktokLink} target="_blank" rel="noreferrer" onClick={(event) => event.stopPropagation()}>{creator.tiktokLink.replace('https://www.', '')}</a> : <span className="tiktok-link is-plain">{creator.tiktokLink}</span>}</td>}
-              {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} dataTour="spreadsheet-cell" onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
+              {editMode ? <EditableCreatorCell creatorId={creator.id} field="tiktokId" value={creator.tiktokId} creators={allCreators} className="sticky-id-cell" style={secondStickyStyle} note={creator.name} dataTour="spreadsheet-cell" onCommit={onUpdate} /> : <td className="sticky-id-cell" style={secondStickyStyle}><div className="creator-cell creator-id-copy"><div><strong>{creator.tiktokId}</strong><small>{creator.name}</small></div></div></td>}
               {editMode ? editableCell(creator, 'segment', CREATOR_FIELD_OPTIONS.segment) : <td><span className="segment-tag">{creator.segment}</span></td>}
               {editMode ? editableCell(creator, 'category', CREATOR_FIELD_OPTIONS.category) : <td className="category-path-cell"><CategoryPathRibbons values={creator.category} level={categoryDisplayLevel} /></td>}
               {editMode ? editableCell(creator, 'type', CREATOR_FIELD_OPTIONS.type) : <td><TagList values={creator.type} className="type-tag" /></td>}

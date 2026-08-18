@@ -9,6 +9,51 @@ function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'CR'
 }
 
+function normalizedTikTokId(value: unknown) {
+  return String(value ?? '').trim().toLowerCase().replace(/^@+/, '')
+}
+
+function normalizedTikTokLink(value: unknown) {
+  const text = String(value ?? '').trim().toLowerCase()
+  if (!text) return ''
+  try {
+    const url = new URL(text)
+    const host = url.hostname.replace(/^www\./, '')
+    const path = url.pathname.replace(/\/+$/, '') || '/'
+    return `${host}${path}`
+  } catch {
+    return text.replace(/\/+$/, '')
+  }
+}
+
+type CreatorIdentity = { id: string; tiktokId: string; tiktokLink: string }
+
+function assertCreatorIdentityRowsUnique(creators: CreatorIdentity[], affectedIds?: Set<string>) {
+  const idOwners = new Map<string, CreatorIdentity>()
+  const linkOwners = new Map<string, CreatorIdentity>()
+  for (const creator of creators) {
+    const idKey = normalizedTikTokId(creator.tiktokId)
+    const linkKey = normalizedTikTokLink(creator.tiktokLink)
+    const duplicateId = idOwners.get(idKey)
+    const duplicateLink = linkOwners.get(linkKey)
+    const conflictIsRelevant = (other: CreatorIdentity | undefined) => other && (!affectedIds || affectedIds.has(creator.id) || affectedIds.has(other.id))
+    if (idKey && conflictIsRelevant(duplicateId)) {
+      throw new ApiError(409, `ID TikTok đã được sử dụng bởi ${duplicateId?.tiktokId}.`, 'DUPLICATE_TIKTOK_ID', { tiktokId: 'ID TikTok đã tồn tại trong hệ thống.' })
+    }
+    if (linkKey && conflictIsRelevant(duplicateLink)) {
+      throw new ApiError(409, `Link TikTok đã được sử dụng bởi ${duplicateLink?.tiktokId}.`, 'DUPLICATE_TIKTOK_LINK', { tiktokLink: 'Link TikTok đã tồn tại trong hệ thống.' })
+    }
+    if (idKey && !duplicateId) idOwners.set(idKey, creator)
+    if (linkKey && !duplicateLink) linkOwners.set(linkKey, creator)
+  }
+}
+
+async function assertCreatorIdentityAvailable(tiktokId: string, tiktokLink: string, excludeId?: string) {
+  const creators = await prisma.creator.findMany({ select: { id: true, tiktokId: true, tiktokLink: true } })
+  const candidate: CreatorIdentity = { id: excludeId || '__candidate__', tiktokId, tiktokLink }
+  assertCreatorIdentityRowsUnique([...creators.filter((creator) => creator.id !== excludeId), candidate], new Set([candidate.id]))
+}
+
 function stringList(value: unknown, fallback: string) {
   if (Array.isArray(value)) return value.map(String).filter(Boolean)
   const singleValue = String(value || '').trim()
@@ -102,6 +147,7 @@ export async function getCreator(id: string) {
 
 export async function createCreator(value: unknown) {
   const data = validateCreatorInput(value) as CreatorInput
+  await assertCreatorIdentityAvailable(data.tiktokId, data.tiktokLink)
   const creator = await prisma.creator.create({ data, include: creatorInclude })
   return toCreatorDto(creator as unknown as Record<string, unknown>)
 }
@@ -109,6 +155,9 @@ export async function createCreator(value: unknown) {
 export async function updateCreator(id: string, value: unknown) {
   const data = validateCreatorInput(value, true)
   if (!Object.keys(data).length) throw new ApiError(400, 'Không có trường nào để cập nhật.', 'EMPTY_UPDATE')
+  const current = await prisma.creator.findUnique({ where: { id }, select: { tiktokId: true, tiktokLink: true } })
+  if (!current) throw new ApiError(404, 'Không tìm thấy Creator.', 'CREATOR_NOT_FOUND')
+  await assertCreatorIdentityAvailable(data.tiktokId ?? current.tiktokId, data.tiktokLink ?? current.tiktokLink, id)
   const creator = await prisma.creator.update({ where: { id }, data, include: creatorInclude })
   return toCreatorDto(creator as unknown as Record<string, unknown>)
 }
@@ -193,6 +242,7 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
   const deletes = Array.isArray(value.deletes) ? value.deletes.filter((id): id is string => typeof id === 'string') : []
 
   await prisma.$transaction(async (tx) => {
+    const affectedIds = new Set(updates.map((update) => update?.id).filter((id): id is string => typeof id === 'string'))
     const createIds = creates.map((creator) => creator.tiktokId)
     const protectedCreators = deletes.length && createIds.length ? await tx.creator.findMany({ where: { id: { in: deletes }, tiktokId: { in: createIds } }, select: { id: true } }) : []
     const protectedIds = new Set(protectedCreators.map((creator) => creator.id))
@@ -222,12 +272,16 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
           })
         }
       }
+      const createdOrUpdated = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { id: true } })
+      createdOrUpdated.forEach((creator) => affectedIds.add(creator.id))
     }
     for (const update of updates) {
       if (!update || typeof update.id !== 'string') continue
       const changes = validateCreatorInput(update.changes, true)
       if (Object.keys(changes).length) await tx.creator.update({ where: { id: update.id }, data: changes })
     }
+    const identities = await tx.creator.findMany({ select: { id: true, tiktokId: true, tiktokLink: true } })
+    assertCreatorIdentityRowsUnique(identities, affectedIds)
   }, { maxWait: 10_000, timeout: 60_000 })
   return listCreators()
 }
