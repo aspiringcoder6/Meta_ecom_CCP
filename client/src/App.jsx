@@ -5,6 +5,10 @@ import AppLayout from './components/layout/AppLayout'
 import AppProvider from './context/AppProvider'
 import AuthProvider from './context/AuthProvider'
 import CreatorsPage from './pages/CreatorsPage'
+import CampaignDetailPage from './pages/CampaignDetailPage'
+import CampaignsPage from './pages/CampaignsPage'
+import ClientReviewPage from './pages/ClientReviewPage'
+import CreateCampaignPage from './pages/CreateCampaignPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import PendingApprovalPage from './pages/PendingApprovalPage'
@@ -21,6 +25,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="client-review/:token" element={<ClientReviewPage />} />
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route element={<PublicOnly />}>
             <Route element={<AuthLayout />}>
@@ -35,10 +40,12 @@ export default function App() {
               <Route path="unauthorized" element={<UnauthorizedPage />} />
               <Route element={<RequireRole roles={WORK_ROLES} />}>
                 <Route path="creators" element={<CreatorsPage />} />
-                <Route path="campaigns" element={<PlaceholderPage />} />
+                <Route path="campaigns" element={<CampaignsPage />} />
+                <Route path="campaigns/:campaignId" element={<CampaignDetailPage />} />
                 <Route path="deliverables" element={<PlaceholderPage />} />
               </Route>
               <Route element={<RequireRole roles={['ADMIN', 'CAMPAIGN_MANAGER']} />}>
+                <Route path="campaigns/new" element={<CreateCampaignPage />} />
                 <Route path="reviews" element={<PlaceholderPage />} />
               </Route>
               <Route element={<RequireRole roles={['ADMIN']} />}>

@@ -7,6 +7,8 @@ function required(name: string) {
 }
 
 export const env = {
+  // The pg adapter needs a direct PostgreSQL URL. Prisma Dev exposes its
+  // HTTP gateway through DATABASE_URL and its TCP endpoint through DIRECT_URL.
   databaseUrl: process.env.DIRECT_URL || required('DATABASE_URL'),
   port: Number(process.env.PORT) || 4000,
   clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173').split(',').map((origin) => origin.trim()).filter(Boolean),

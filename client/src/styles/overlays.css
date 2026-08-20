@@ -34,6 +34,30 @@
 .campaign-mini div { min-width: 0; display: grid; }
 .campaign-mini strong { color: #3a495f; font-size: 9px; }
 .campaign-mini small { margin-top: 3px; color: #929dad; font-size: 8px; }
+.creator-campaign-assignment .section-title { align-items: flex-start; }
+.creator-campaign-assignment .section-title > div { display: grid; gap: 4px; }
+.creator-campaign-assignment .section-title > div > small { color: #8d9bad; font-size: 8px; }
+.creator-campaign-assignment .section-title > button { min-height: 30px; padding: 0 10px; border: 1px solid #cde4f4; border-radius: 8px; background: #f2faff; }
+.creator-campaign-assignment .section-title > button:hover,
+.creator-campaign-assignment .section-title > button.is-open { background: #e4f5ff; }
+.quick-campaign-assign { margin-bottom: 13px; padding: 11px; border: 1px solid #d7e7f3; border-radius: 12px; background: #f7fbff; }
+.quick-campaign-assign > label { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid #d7e3ee; border-radius: 9px; color: #89a0b6; background: white; }
+.quick-campaign-assign > label:focus-within { border-color: #52baff; box-shadow: 0 0 0 3px rgba(82,186,255,.12); }
+.quick-campaign-assign > label input,
+.quick-campaign-assign > label input:focus { min-width: 0; flex: 1; border: 0; outline: 0; color: #30465f; background: transparent; box-shadow: none; font-size: 9.5px; }
+.quick-campaign-assign > label > button { width: 24px; height: 24px; display: grid; place-items: center; flex: 0 0 auto; border-radius: 6px; color: #8295a9; }
+.quick-campaign-results { max-height: 230px; display: grid; gap: 5px; margin-top: 8px; overflow-y: auto; }
+.quick-campaign-results > p { margin: 0; padding: 13px 8px 7px; color: #8a99ac; font-size: 8.5px; text-align: center; }
+.quick-campaign-results > button { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 10px; border-radius: 8px; color: #1686d3; background: white; text-align: left; }
+.quick-campaign-results > button:hover:not(:disabled) { background: #e7f5ff; }
+.quick-campaign-results > button:disabled { cursor: default; color: #7990a5; background: #f1f5f8; }
+.quick-campaign-results > button > span { min-width: 0; display: grid; gap: 3px; }
+.quick-campaign-results strong { overflow: hidden; color: #263e59; font-size: 9.5px; text-overflow: ellipsis; white-space: nowrap; }
+.quick-campaign-results small { overflow: hidden; color: #8b9aab; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.quick-campaign-results em { display: inline-flex; align-items: center; gap: 4px; color: #4e8a69; font-size: 8px; font-style: normal; font-weight: 700; white-space: nowrap; }
+.assigned-campaign-list { display: grid; }
+.assigned-campaign-empty { margin: 0; padding: 17px 12px; border: 1px dashed #d9e5ef; border-radius: 10px; color: #8d9cae; background: #fbfdff; font-size: 8.5px; text-align: center; }
+.creator-campaign-assignment .campaign-status { min-height: 23px; padding-inline: 8px; font-size: 7.5px; }
 .drawer-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; padding-top: 22px; }
 .modal-layer { display: grid; place-items: center; padding: 20px; }
 .creator-modal { position: relative; z-index: 1; width: min(680px,100%); max-height: calc(100vh - 40px); padding: 25px; border-radius: 20px; overflow-y: auto; background: white; box-shadow: 0 28px 80px rgba(1,32,82,.26); animation: modal-in 180ms ease-out; }

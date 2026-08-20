@@ -72,16 +72,19 @@ button.help-card:hover small { color: #b4d3f0; }
 .popover { position: absolute; top: calc(100% + 12px); right: 0; border: 1px solid var(--line); border-radius: 16px; background: white; box-shadow: 0 20px 55px rgba(1,32,82,.17); animation: popover-in 150ms ease-out; }
 @keyframes popover-in { from { opacity: 0; transform: translateY(-5px) scale(.98); } }
 .notification-popover { width: 355px; overflow: hidden; }
+.notification-scroll { max-height: 410px; overflow-y: auto; }
 .popover-heading { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 13px; border-bottom: 1px solid var(--line); }
 .popover-heading strong { color: var(--navy); font-size: 14px; }
 .popover-heading button, .popover-footer { color: #1485d2; background: transparent; font-size: 11px; font-weight: 650; }
-.notification-item { position: relative; display: flex; align-items: flex-start; gap: 11px; padding: 14px 18px; border-bottom: 1px solid #edf1f6; }
+.notification-item { position: relative; width: 100%; display: flex; align-items: flex-start; gap: 11px; padding: 14px 18px; border-bottom: 1px solid #edf1f6; background: white; text-align: left; }
+.notification-item:hover { background: #f8fbfe; }
 .notification-item.unread { background: #f6fbff; }
 .notification-item.unread::after { content: ""; position: absolute; top: 18px; right: 14px; width: 6px; height: 6px; border-radius: 50%; background: var(--blue-dark); }
 .notice-symbol { width: 32px; height: 32px; flex: 0 0 32px; display: grid; place-items: center; border-radius: 10px; color: #1478bd; background: #e1f2ff; }
 .notification-item div { display: grid; padding-right: 10px; }
 .notification-item strong { color: var(--ink); font-size: 12px; }
 .notification-item small { margin-top: 3px; color: var(--muted); font-size: 10px; }
+.notification-empty { margin: 0; padding: 28px 18px; color: #8c9bad; font-size: 10px; text-align: center; }
 .popover-footer { width: 100%; padding: 13px; }
 .user-popover { width: 190px; display: grid; padding: 8px; }
 .user-popover button { padding: 10px 11px; border-radius: 8px; color: #3c4b61; background: transparent; font-size: 12px; text-align: left; }

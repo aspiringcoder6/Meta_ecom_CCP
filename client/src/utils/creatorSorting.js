@@ -1,11 +1,11 @@
 import { calculateBookingPricing } from './pricing'
 import { formatCreatorList } from './creatorLists'
 
-const NUMBER_FIELDS = new Set(['cost', 'extraCost', 'totalCast', 'bookingExpense', 'followers', 'gmvMonth'])
+const NUMBER_FIELDS = new Set(['cost', 'extraCost', 'totalCast', 'bookingExpense', 'agi', 'followers', 'gmvMonth'])
 const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' })
 
 function getSortValue(creator, key) {
-  if (key === 'totalCast' || key === 'bookingExpense') {
+  if (key === 'totalCast' || key === 'bookingExpense' || key === 'agi') {
     return calculateBookingPricing(creator.cost, creator.extraCost)[key]
   }
   if (key === 'category' || key === 'type') return formatCreatorList(creator[key])

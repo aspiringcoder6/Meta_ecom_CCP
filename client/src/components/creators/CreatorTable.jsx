@@ -20,6 +20,7 @@ const COLUMNS = [
   { key: 'extraCost', label: <span>Extra/FOC<br /><small>(SHDA + hashtag)</small></span> },
   { key: 'totalCast', label: <span>Tổng Cast<br /><small>(Đã bao gồm thuế)</small></span> },
   { key: 'bookingExpense', label: <span>Booking Expense</span> },
+  { key: 'agi', label: <span>AGI<br /><small>(Booking Expense − Cast)</small></span> },
   { key: 'followers', label: <span>Followers</span> },
   { key: 'gmvMonth', label: <span>GMV / Month</span> },
   { key: 'scope', label: <span>Scope</span> },
@@ -84,6 +85,7 @@ export default function CreatorTable({ creators, allCreators = creators, canMana
               {editMode ? editableCell(creator, 'extraCost') : <td className="number-cell">{formatCurrency(creator.extraCost)}</td>}
               <td className={`number-cell calculated-cell ${editMode ? 'spreadsheet-readonly-cell' : ''}`} title={editMode ? 'Tự động tính từ Cost và Extra/FOC' : undefined}>{formatCurrency(pricing.totalCast)}</td>
               <td className={`number-cell calculated-cell ${editMode ? 'spreadsheet-readonly-cell' : ''}`} title={editMode ? 'Tự động tính theo công thức Booking Expense' : undefined}>{formatCurrency(pricing.bookingExpense)}</td>
+              <td className={`number-cell calculated-cell agi-cell ${editMode ? 'spreadsheet-readonly-cell' : ''}`} title="Tự động tính: Booking Expense − Tổng Cast">{formatCurrency(pricing.agi)}</td>
               {editMode ? editableCell(creator, 'followers') : <td className="number-cell">{formatNumber(creator.followers)}</td>}
               {editMode ? editableCell(creator, 'gmvMonth') : <td className="number-cell">{formatCurrency(creator.gmvMonth)}</td>}
               {editMode ? editableCell(creator, 'scope') : <td className="long-text-cell">{creator.scope || '—'}</td>}

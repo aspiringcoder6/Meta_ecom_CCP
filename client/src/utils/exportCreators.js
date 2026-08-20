@@ -5,14 +5,14 @@ import { formatCreatorList } from './creatorLists'
 export function exportCreatorsToCsv(creators) {
   const headers = [
     'Link TikTok', 'ID TikTok', 'Segment', 'Category', 'Type', 'Cost', 'Extra/FOC (SHDA + hashtag)',
-    'Tổng Cast (Đã bao gồm thuế)', 'Booking Expense', 'Followers', 'GMV / Month', 'Scope',
+    'Tổng Cast (Đã bao gồm thuế)', 'Booking Expense', 'AGI', 'Followers', 'GMV / Month', 'Scope',
     'Contact', 'Concept', 'Product Focus', 'Tình trạng hợp tác', 'MCN note',
   ]
   const rows = creators.map((creator) => {
     const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
     return [
       creator.tiktokLink, creator.tiktokId, creator.segment, formatCategoryPaths(creator.category), formatCreatorList(creator.type), creator.cost,
-      creator.extraCost, pricing.totalCast, pricing.bookingExpense, creator.followers, creator.gmvMonth,
+      creator.extraCost, pricing.totalCast, pricing.bookingExpense, pricing.agi, creator.followers, creator.gmvMonth,
       creator.scope, creator.contact, creator.concept, creator.productFocus, creator.historicalCampaign, creator.mcnNote,
     ]
   })

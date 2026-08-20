@@ -15,8 +15,9 @@ import { cycleCreatorSort, sortCreators } from '../utils/creatorSorting'
 import { toCreatorList } from '../utils/creatorLists'
 
 export default function CreatorsPage() {
-  const { canManageCreators } = useAuth()
-  const { creators, recentlyAddedCreatorId, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
+  const { user, canManageCreators } = useAuth()
+  const { creators, campaigns, recentlyAddedCreatorId, assignCreatorToCampaign, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive, undoCreators, redoCreators, canUndo, canRedo, beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession, showToast } = useApp()
+  const canAssignCampaign = ['ADMIN', 'CAMPAIGN_MANAGER'].includes(user?.role)
   const [filters, setFilters] = useState(DEFAULT_CREATOR_FILTERS)
   const [numericFilters, setNumericFilters] = useState([])
   const [selectedCreatorId, setSelectedCreatorId] = useState(null)
@@ -123,7 +124,7 @@ export default function CreatorsPage() {
       <CreatorSummary creators={creators} onSelect={setSelectedCreatorId} />
       {!isFullscreen && <CreatorWorkspace {...workspaceProps} onEnterFullscreen={() => setIsFullscreen(true)} />}
       {isFullscreen && <CreatorWorkspace {...workspaceProps} isFullscreen onExitFullscreen={() => setIsFullscreen(false)} />}
-      <CreatorDetailsDrawer creator={selectedCreator} canManage={canManageCreators} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} />
+      <CreatorDetailsDrawer creator={selectedCreator} campaigns={campaigns} canManage={canManageCreators} canAssignCampaign={canAssignCampaign} onClose={() => setSelectedCreatorId(null)} onArchive={toggleArchive} onEdit={openCreatorEdit} onAssignCampaign={assignCreatorToCampaign} />
       {canManageCreators && addOpen && <AddCreatorModal creators={creators} onClose={() => setAddOpen(false)} onSubmit={handleAdd} />}
       {canManageCreators && editingCreator && <AddCreatorModal creator={editingCreator} creators={creators} onClose={() => setEditingCreatorId(null)} onSubmit={handleEdit} />}
     </main>

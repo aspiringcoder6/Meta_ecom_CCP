@@ -12,10 +12,13 @@ export function calculateBookingPricing(cost, extra) {
   const quotedAmount = costAmount + extraAmount
   const totalCast = quotedAmount >= EXTRA_THRESHOLD ? quotedAmount / 0.9 : quotedAmount
   const bookingExpense = totalCast >= CAST_THRESHOLD ? totalCast / 0.65 : totalCast / 0.6
+  const roundedTotalCast = Math.round(totalCast)
+  const roundedBookingExpense = Math.round(bookingExpense)
 
   return {
     quotedAmount,
-    totalCast: Math.round(totalCast),
-    bookingExpense: Math.round(bookingExpense),
+    totalCast: roundedTotalCast,
+    bookingExpense: roundedBookingExpense,
+    agi: roundedBookingExpense - roundedTotalCast,
   }
 }

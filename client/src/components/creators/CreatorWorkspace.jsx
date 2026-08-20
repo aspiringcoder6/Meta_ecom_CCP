@@ -7,7 +7,7 @@ import Icon from '../common/Icon'
 import ImportReviewBanner from './ImportReviewBanner'
 import CreatorPagination from './CreatorPagination'
 
-const DEFAULT_COLUMN_WIDTHS = [180, 190, 90, 270, 145, 125, 190, 150, 150, 105, 145, 220, 220, 145, 220, 72]
+const DEFAULT_COLUMN_WIDTHS = [180, 190, 90, 270, 145, 125, 190, 150, 150, 145, 105, 145, 220, 220, 145, 220, 72]
 const DEFAULT_ROW_HEIGHT = 64
 const MIN_ROW_HEIGHT = 40
 const MAX_ROW_HEIGHT = 120

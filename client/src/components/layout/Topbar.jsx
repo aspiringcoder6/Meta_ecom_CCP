@@ -8,7 +8,11 @@ import UserMenu from './UserMenu'
 export default function Topbar({ onOpenMobile }) {
   const { pathname } = useLocation()
   const [openMenu, setOpenMenu] = useState(null)
-  const currentLabel = PAGE_META[pathname]?.label || 'Dashboard'
+  const currentLabel = pathname === '/campaigns/new'
+    ? 'Tạo Campaign'
+    : pathname.startsWith('/campaigns/')
+      ? 'Chi tiết Campaign'
+      : PAGE_META[pathname]?.label || 'Dashboard'
 
   const toggleMenu = (menu) => setOpenMenu((current) => current === menu ? null : menu)
 

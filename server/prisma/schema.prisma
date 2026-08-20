@@ -96,31 +96,55 @@ model Creator {
 }
 
 model Campaign {
-  id          String            @id @default(uuid())
-  name        String
-  client      String
-  startDate   DateTime
-  endDate     DateTime
-  budget      Decimal?
-  description String?
-  status      String            @default("active")
-  createdAt   DateTime          @default(now())
-  creators    CampaignCreator[]
-  milestones  Milestone[]
+  id                  String            @id @default(uuid())
+  externalId          String            @unique
+  name                String
+  client              String
+  owner               String            @default("Chưa gán")
+  startDate           DateTime
+  endDate             DateTime
+  budget              Decimal?          @db.Decimal(18, 2)
+  creatorBudget       Decimal?          @db.Decimal(18, 2)
+  description         String?
+  defaultDeliverables Json              @default("[]")
+  status              String            @default("DRAFT")
+  lastClientReviewAt  DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  creators            CampaignCreator[]
+  milestones          Milestone[]
+  reviewLinks         ReviewLink[]
+  notifications       Notification[]
+
+  @@index([status])
+  @@index([client])
 }
 
 model CampaignCreator {
-  id           String        @id @default(uuid())
-  campaign     Campaign      @relation(fields: [campaignId], references: [id])
-  campaignId   String
-  creator      Creator       @relation(fields: [creatorId], references: [id])
-  creatorId    String
-  deliverables Deliverable[]
+  id                 String           @id @default(uuid())
+  campaign           Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId         String
+  creator            Creator          @relation(fields: [creatorId], references: [id])
+  creatorId          String
+  status             String           @default("PROPOSED")
+  suggestedPrice     Decimal          @default(0) @db.Decimal(18, 2)
+  actualPrice        Decimal?         @db.Decimal(18, 2)
+  deliverablesData   Json             @default("[]")
+  clientDecision     String           @default("PENDING")
+  clientNote         String?
+  clientChangedAt    DateTime?
+  clientChangeUnread Boolean          @default(false)
+  creatorConfirmed   Boolean          @default(false)
+  deliverables       Deliverable[]
+  feedback           ClientFeedback[]
+
+  @@unique([campaignId, creatorId])
+  @@index([campaignId, clientChangeUnread])
 }
 
 model Deliverable {
   id                String          @id @default(uuid())
-  campaignCreator   CampaignCreator @relation(fields: [campaignCreatorId], references: [id])
+  campaignCreator   CampaignCreator @relation(fields: [campaignCreatorId], references: [id], onDelete: Cascade)
   campaignCreatorId String
   status            String          @default("not_started")
   deadline          DateTime?
@@ -129,38 +153,54 @@ model Deliverable {
 
 model Milestone {
   id         String   @id @default(uuid())
-  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId String
   title      String
   dueDate    DateTime
+  owner      String   @default("Chưa gán")
+  status     String   @default("UPCOMING")
+
+  @@index([dueDate, status])
 }
 
 model ReviewLink {
   id         String           @id @default(uuid())
   token      String           @unique
+  campaign   Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId String
   expiresAt  DateTime
   revoked    Boolean          @default(false)
   createdAt  DateTime         @default(now())
   feedback   ClientFeedback[]
+
+  @@index([campaignId, revoked])
 }
 
 model ClientFeedback {
-  id           String     @id @default(uuid())
-  reviewLink   ReviewLink @relation(fields: [reviewLinkId], references: [id])
-  reviewLinkId String
-  action       String // "approved" | "rejected" | "revision_requested"
-  comment      String?
-  createdAt    DateTime   @default(now())
+  id                String           @id @default(uuid())
+  reviewLink        ReviewLink       @relation(fields: [reviewLinkId], references: [id], onDelete: Cascade)
+  reviewLinkId      String
+  campaignCreator   CampaignCreator? @relation(fields: [campaignCreatorId], references: [id], onDelete: SetNull)
+  campaignCreatorId String?
+  action            String
+  comment           String?
+  createdAt         DateTime         @default(now())
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  campaign   Campaign? @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  campaignId String?
+  message    String
+  detail     String?
+  icon       String    @default("bell")
+  href       String?
+  read       Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  @@index([userId, read, createdAt])
 }
 
 model AuditLog {

@@ -9,6 +9,7 @@ export const NUMERIC_FILTER_FIELDS = [
   { value: 'extraCost', label: 'Extra/FOC', format: 'currency' },
   { value: 'totalCast', label: 'Tổng Cast', format: 'currency' },
   { value: 'bookingExpense', label: 'Booking Expense', format: 'currency' },
+  { value: 'agi', label: 'AGI', format: 'currency' },
   { value: 'followers', label: 'Followers', format: 'number' },
   { value: 'gmvMonth', label: 'GMV / Month', format: 'currency' },
   { value: 'engagement', label: 'Engagement', format: 'percent' },
@@ -23,7 +24,7 @@ export const NUMERIC_FILTER_OPERATORS = [
 ]
 
 export function getCreatorNumericValue(creator, field) {
-  if (field === 'totalCast' || field === 'bookingExpense') {
+  if (field === 'totalCast' || field === 'bookingExpense' || field === 'agi') {
     return calculateBookingPricing(creator.cost, creator.extraCost)[field]
   }
   return Number(creator[field]) || 0
