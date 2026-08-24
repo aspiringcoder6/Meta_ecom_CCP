@@ -76,7 +76,7 @@ function CategoryPathField({ values, onChange }) {
   )
 }
 
-export default function AddCreatorModal({ creator, creators = [], onClose, onSubmit }) {
+export default function AddCreatorModal({ creator, creators = [], onClose, onSubmit, title, description, submitLabel, eyebrow = 'Kho Creator' }) {
   const [form, setForm] = useState(() => getInitialForm(creator))
   const [fieldErrors, setFieldErrors] = useState({})
   const [submitError, setSubmitError] = useState('')
@@ -113,7 +113,7 @@ export default function AddCreatorModal({ creator, creators = [], onClose, onSub
       <button className="modal-scrim" aria-label="Đóng form Creator" onClick={onClose} />
       <form className="creator-modal" onSubmit={submit}>
         <div className="modal-header">
-          <div><span className="eyebrow">Kho Creator</span><h2>{isEditing ? 'Chỉnh sửa Creator' : 'Thêm Creator mới'}</h2><p>{isEditing ? 'Cập nhật thông tin hồ sơ và lưu trực tiếp vào hệ thống.' : 'Tạo profile ngay. Bạn có thể bổ sung lịch sử Campaign sau.'}</p></div>
+          <div><span className="eyebrow">{eyebrow}</span><h2>{title || (isEditing ? 'Chỉnh sửa Creator' : 'Thêm Creator mới')}</h2><p>{description || (isEditing ? 'Cập nhật thông tin hồ sơ và lưu trực tiếp vào hệ thống.' : 'Tạo profile ngay. Bạn có thể bổ sung lịch sử Campaign sau.')}</p></div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Đóng"><Icon name="close" /></button>
         </div>
 
@@ -142,7 +142,7 @@ export default function AddCreatorModal({ creator, creators = [], onClose, onSub
           <label className="field"><span>Số điện thoại</span><input value={form.phone} onChange={(event) => update('phone', event.target.value)} placeholder="+84 ..." /></label>
         </div>
 
-        <div className="modal-footer"><button className="secondary-button" type="button" onClick={onClose} disabled={isSubmitting}>Hủy</button><button className="primary-button" type="submit" disabled={isSubmitting}><Icon name={isEditing ? 'check' : 'plus'} />{isSubmitting ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Thêm Creator'}</button></div>
+        <div className="modal-footer"><button className="secondary-button" type="button" onClick={onClose} disabled={isSubmitting}>Hủy</button><button className="primary-button" type="submit" disabled={isSubmitting}><Icon name={isEditing ? 'check' : 'plus'} />{isSubmitting ? 'Đang lưu...' : submitLabel || (isEditing ? 'Lưu thay đổi' : 'Thêm Creator')}</button></div>
       </form>
     </div>
   )

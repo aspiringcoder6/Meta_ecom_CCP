@@ -7,11 +7,24 @@ import { notificationApi } from '../services/notificationApi'
 import { getApiErrorMessage } from '../services/apiClient'
 import { calculateBookingPricing } from '../utils/pricing'
 import { nextCampaignId } from '../utils/campaigns'
+import { campaignStatusLabel } from '../config/campaigns'
 import { CAMPAIGN_STORAGE_KEY, campaignReviewToken, readStoredCampaigns, writeStoredCampaigns } from '../utils/campaignStorage'
 import { NOTIFICATION_STORAGE_KEY, readStoredNotifications, writeStoredNotifications } from '../utils/notificationStorage'
 import { AppContext } from './appContext'
 
 const HISTORY_LIMIT = 60
+
+function dedupeNotifications(items) {
+  const milestoneKeys = new Set()
+  return items.filter((item) => {
+    const isMilestone = item.icon === 'clock' || String(item.id).startsWith('milestone-due-')
+    if (!isMilestone) return true
+    const key = `${item.title}|${item.detail || ''}|${item.href || ''}`
+    if (milestoneKeys.has(key)) return false
+    milestoneKeys.add(key)
+    return true
+  })
+}
 
 function normalizeCampaign(campaign) {
   return {
@@ -44,13 +57,25 @@ function campaignCreatorAssignment(creator, defaults = [], existing = {}) {
   return {
     creatorId: creator?.id ?? existing.creatorId,
     name: creator?.name || existing.name,
+    tiktokLink: creator?.tiktokLink || existing.tiktokLink || '',
     tiktokId: creator?.tiktokId || existing.tiktokId,
     segment: creator?.segment || existing.segment || '',
     category: creator?.category || existing.category || [],
+    type: creator?.type || existing.type || [],
+    concept: creator?.concept || existing.concept || '',
     followers: Number(creator?.followers ?? existing.followers) || 0,
+    gmvMonth: Number(creator?.gmvMonth ?? existing.gmvMonth) || 0,
     status: existing.status || 'PROPOSED',
     suggestedPrice: Number(existing.suggestedPrice) || suggestedPrice,
     actualPrice: existing.actualPrice ?? '',
+    quotedCost: existing.quotedCost ?? '',
+    quotedExtraCost: existing.quotedExtraCost ?? '',
+    scope: existing.scope || '',
+    pic: existing.pic || '',
+    metaEcomNote: existing.metaEcomNote || '',
+    finalTracking: existing.finalTracking || '',
+    finalNote: existing.finalNote || '',
+    kocDecision: existing.kocDecision || (existing.creatorConfirmed ? 'APPROVED' : 'PENDING'),
     deliverables: existing.deliverables?.length ? existing.deliverables : cloneDeliverables(defaults, creator?.id ?? existing.creatorId),
     clientDecision,
     clientNote: existing.clientNote || '',
@@ -117,7 +142,7 @@ function createQuickCreator() {
 export default function AppProvider({ children }) {
   const [creatorHistory, dispatchCreators] = useReducer(creatorHistoryReducer, { past: [], present: INITIAL_CREATORS, future: [] })
   const [campaigns, setCampaigns] = useState(() => readStoredCampaigns(INITIAL_CAMPAIGNS).map(normalizeCampaign))
-  const [notifications, setNotifications] = useState(readStoredNotifications)
+  const [notifications, setNotifications] = useState(() => dedupeNotifications(readStoredNotifications()))
   const [isLoadingCreators, setIsLoadingCreators] = useState(true)
   const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(true)
   const [backendAvailable, setBackendAvailable] = useState(false)
@@ -171,7 +196,7 @@ export default function AppProvider({ children }) {
         const localMilestones = current.filter((item) => String(item.id).startsWith('milestone-due-'))
         const serverIds = new Set(serverNotifications.map((item) => item.id))
         const serverKeys = new Set(serverNotifications.map((item) => `${item.title}|${item.href}`))
-        return [...serverNotifications, ...localMilestones.filter((item) => !serverIds.has(item.id) && !serverKeys.has(`${item.title}|${item.href}`))].slice(0, 40)
+        return dedupeNotifications([...serverNotifications, ...localMilestones.filter((item) => !serverIds.has(item.id) && !serverKeys.has(`${item.title}|${item.href}`))]).slice(0, 40)
       })
     }).catch(() => {
       window.clearInterval(interval)
@@ -189,8 +214,16 @@ export default function AppProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    writeStoredCampaigns(campaigns)
-  }, [campaigns])
+    const sourceById = new Map(creators.map((creator) => [String(creator.id), creator]))
+    writeStoredCampaigns(campaigns.map((campaign) => ({
+      ...campaign,
+      creators: (campaign.creators || []).map((assignment) => campaignCreatorAssignment(
+        sourceById.get(String(assignment.creatorId)),
+        campaign.deliverables,
+        assignment,
+      )),
+    })))
+  }, [campaigns, creators])
 
   useEffect(() => {
     const syncStoredState = (event) => {
@@ -203,7 +236,7 @@ export default function AppProvider({ children }) {
       if (event.key === NOTIFICATION_STORAGE_KEY && event.newValue) {
         try {
           const nextNotifications = JSON.parse(event.newValue)
-          if (Array.isArray(nextNotifications)) setNotifications(nextNotifications)
+          if (Array.isArray(nextNotifications)) setNotifications(dedupeNotifications(nextNotifications))
         } catch { /* Ignore incomplete storage events. */ }
       }
     }
@@ -236,7 +269,7 @@ export default function AppProvider({ children }) {
       const known = new Set(current.map((item) => item.id))
       const additions = upcoming.filter((item) => !known.has(item.id))
       if (!additions.length) return current
-      const next = [...additions, ...current].slice(0, 40)
+      const next = dedupeNotifications([...additions, ...current]).slice(0, 40)
       writeStoredNotifications(next)
       return next
     })
@@ -299,6 +332,28 @@ export default function AppProvider({ children }) {
       return null
     }
   }, [])
+
+  const updateCampaignStatus = async (campaignId, status) => {
+    const campaign = campaigns.find((item) => item.id === campaignId)
+    if (!campaign || campaign.status === status) return true
+    const previousStatus = campaign.status
+    setCampaigns((current) => current.map((item) => item.id === campaignId ? { ...item, status } : item))
+    try {
+      const saved = await campaignApi.updateStatus(campaignId, status)
+      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaignBackendAvailable(true)
+      showToast(`Đã chuyển Campaign sang ${campaignStatusLabel(status)}`)
+      return true
+    } catch (error) {
+      if (shouldUseLocalCampaignFallback(error)) {
+        showToast(`Đã chuyển Campaign sang ${campaignStatusLabel(status)} trong dữ liệu demo`)
+        return true
+      }
+      setCampaigns((current) => current.map((item) => item.id === campaignId ? { ...item, status: previousStatus } : item))
+      showToast(getApiErrorMessage(error, 'Không thể cập nhật trạng thái Campaign.'))
+      return false
+    }
+  }
 
   const assignCreatorToCampaign = (creatorId, campaignId) => {
     const creator = creators.find((item) => String(item.id) === String(creatorId))
@@ -444,6 +499,37 @@ export default function AppProvider({ children }) {
     }
   }
 
+  const createAndAssignCampaignCreator = async (campaignId, form) => {
+    const campaign = campaigns.find((item) => item.id === campaignId)
+    if (!campaign) throw new Error('Không tìm thấy Campaign để assign Creator.')
+    try {
+      const savedCreator = await creatorApi.create(creatorPayloadFromForm(form))
+      dispatchCreators({ type: 'apply', update: (current) => [savedCreator, ...current] })
+      highlightCreator(savedCreator.id)
+      const assignment = campaignCreatorAssignment(savedCreator, campaign.deliverables)
+      setCampaigns((current) => current.map((item) => item.id === campaignId
+        ? { ...item, creators: [...(item.creators || []), assignment] }
+        : item))
+      try {
+        const savedCampaign = await campaignApi.addCreators(campaignId, [String(savedCreator.id)])
+        setCampaigns((current) => replaceCampaign(current, savedCampaign))
+        setCampaignBackendAvailable(true)
+      } catch (campaignError) {
+        if (!shouldUseLocalCampaignFallback(campaignError)) {
+          showToast(getApiErrorMessage(campaignError, 'Creator đã được tạo trong kho nhưng chưa đồng bộ được vào Campaign.'))
+          return savedCreator
+        }
+      }
+      setBackendAvailable(true)
+      showToast(`Đã tạo ${savedCreator.name} và thêm vào ${campaign.name}`)
+      return savedCreator
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Không thể tạo và assign Creator mới.')
+      showToast(message)
+      throw new Error(message)
+    }
+  }
+
   const saveCreatorDetails = async (creatorId, form) => {
     try {
       const savedCreator = await creatorApi.update(creatorId, creatorPayloadFromForm(form))
@@ -546,7 +632,7 @@ export default function AppProvider({ children }) {
   }
 
   const value = {
-    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, removeCampaignCreator, updateCampaignCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
+    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, updateCampaignStatus, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
     undoCreators, redoCreators, canUndo: creatorHistory.past.length > 0, canRedo: creatorHistory.future.length > 0,
     beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession,
   }

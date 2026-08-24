@@ -1,6 +1,7 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { NAV_ITEMS } from '../../config/navigation'
 import { useAuth } from '../../hooks/useAuth'
+import { requestCampaignTour } from '../../utils/campaignTour'
 import { CREATOR_TOUR_PENDING_KEY, requestCreatorTour } from '../../utils/creatorTour'
 import Icon from '../common/Icon'
 
@@ -14,10 +15,17 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
     navigate('/dashboard')
     onCloseMobile()
   }
-  const startCreatorGuide = () => {
+  const isCreatorPage = pathname === '/creators'
+  const isCampaignPage = pathname === '/campaigns' || pathname === '/campaigns/new' || /^\/campaigns\/[^/]+$/.test(pathname)
+  const guideLabel = isCampaignPage ? 'Hướng dẫn Campaign' : isCreatorPage ? 'Hướng dẫn Creators' : 'Bắt đầu quick tutorial'
+  const startPageGuide = () => {
     onCloseMobile()
-    if (pathname === '/creators') {
+    if (isCreatorPage) {
       window.setTimeout(requestCreatorTour, 80)
+      return
+    }
+    if (isCampaignPage) {
+      window.setTimeout(requestCampaignTour, 80)
       return
     }
     window.sessionStorage.setItem(CREATOR_TOUR_PENDING_KEY, '1')
@@ -51,9 +59,9 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
           {user.role === 'ADMIN' && <NavLink to="/settings" className={navClass} onClick={onCloseMobile} title={collapsed ? 'Cài đặt' : undefined}>
             <Icon name="settings" /><span>Cài đặt</span>
           </NavLink>}
-          {canUseCreatorGuide && <button type="button" className="help-card" onClick={startCreatorGuide} title={collapsed ? 'Hướng dẫn Creator Management' : undefined}>
+          {canUseCreatorGuide && <button type="button" className="help-card" onClick={startPageGuide} title={collapsed ? guideLabel : undefined}>
             <img className="help-mascot" src="/Avatar/Meers.png" alt="Meers" />
-            <div><strong>Meers hướng dẫn</strong><small>Bắt đầu quick tutorial</small></div>
+            <div><strong>Meers hướng dẫn</strong><small>{guideLabel}</small></div>
           </button>}
           <button className="collapse-button" onClick={onToggleCollapse}>
             <Icon name="panel" /><span>Thu gọn sidebar</span>

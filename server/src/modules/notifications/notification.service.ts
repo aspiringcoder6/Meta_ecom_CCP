@@ -23,9 +23,9 @@ async function ensureUpcomingMilestoneNotifications(userId: string) {
     const detail = `${milestone.campaign.name} · ${milestone.dueDate.toISOString().slice(0, 10)}${milestone.owner ? ` · ${milestone.owner}` : ''}`
     const href = `/campaigns/${milestone.campaign.externalId}?tab=timeline`
     if (existingKeys.has(`${message}|${detail}|${href}`)) return []
-    return [{ userId, campaignId: milestone.campaign.id, message, detail, icon: 'clock', href }]
+    return [{ userId, campaignId: milestone.campaign.id, message, detail, icon: 'clock', href, dedupeKey: `milestone:${milestone.id}` }]
   })
-  if (additions.length) await prisma.notification.createMany({ data: additions })
+  if (additions.length) await prisma.notification.createMany({ data: additions, skipDuplicates: true })
 }
 
 function toDto(notification: { id: string; message: string; detail: string | null; icon: string; href: string | null; campaignId: string | null; read: boolean; createdAt: Date }) {
@@ -38,7 +38,20 @@ function toDto(notification: { id: string; message: string; detail: string | nul
 export async function listNotifications(userId: string) {
   await ensureUpcomingMilestoneNotifications(userId)
   const notifications = await prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: 'desc' }, take: 40 })
-  return notifications.map(toDto)
+  const milestoneKeys = new Set<string>()
+  const duplicateIds: string[] = []
+  const uniqueNotifications = notifications.filter((notification) => {
+    if (notification.icon !== 'clock') return true
+    const key = `${notification.message}|${notification.detail || ''}|${notification.href || ''}`
+    if (milestoneKeys.has(key)) {
+      duplicateIds.push(notification.id)
+      return false
+    }
+    milestoneKeys.add(key)
+    return true
+  })
+  if (duplicateIds.length) await prisma.notification.deleteMany({ where: { userId, id: { in: duplicateIds } } })
+  return uniqueNotifications.map(toDto)
 }
 
 export async function markNotificationRead(userId: string, notificationId: string) {

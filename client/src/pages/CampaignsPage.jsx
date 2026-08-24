@@ -6,6 +6,7 @@ import Icon from '../components/common/Icon'
 import { CAMPAIGN_STATUSES } from '../config/campaigns'
 import { useApp } from '../hooks/useApp'
 import { useAuth } from '../hooks/useAuth'
+import { useCampaignTour } from '../hooks/useCampaignTour'
 
 export default function CampaignsPage() {
   const navigate = useNavigate()
@@ -14,6 +15,7 @@ export default function CampaignsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('ALL')
   const canCreate = ['ADMIN', 'CAMPAIGN_MANAGER'].includes(user?.role)
+  useCampaignTour({ mode: 'list', canManage: canCreate })
   const visibleCampaigns = useMemo(() => {
     const term = search.trim().toLowerCase()
     return campaigns.filter((campaign) => {
@@ -24,15 +26,15 @@ export default function CampaignsPage() {
 
   return (
     <main className="page campaigns-page">
-      <section className="page-heading campaigns-heading">
+      <section className="page-heading campaigns-heading" data-tour="campaigns-heading">
         <div><p className="page-kicker">Campaign Management</p><h1>Campaigns</h1><p>Tạo, theo dõi và quản lý toàn bộ Campaign tại một nơi.</p></div>
-        {canCreate && <button className="primary-button campaign-create-button" onClick={() => navigate('/campaigns/new')}><Icon name="plus" />Tạo Campaign</button>}
+        {canCreate && <button className="primary-button campaign-create-button" data-tour="campaign-create-button" onClick={() => navigate('/campaigns/new')}><Icon name="plus" />Tạo Campaign</button>}
       </section>
       <CampaignMetrics campaigns={campaigns} />
-      <section className="campaign-list-panel panel">
+      <section className="campaign-list-panel panel" data-tour="campaigns-list">
         <header className="campaign-list-header">
           <div><h2>Danh sách Campaign</h2><p>{visibleCampaigns.length} / {campaigns.length} Campaign</p></div>
-          <div className="campaign-list-filters">
+          <div className="campaign-list-filters" data-tour="campaigns-filters">
             <label><Icon name="search" size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm tên, ID, Client hoặc Owner..." />{search && <button type="button" onClick={() => setSearch('')} aria-label="Xoá tìm kiếm"><Icon name="close" size={14} /></button>}</label>
             <select value={status} onChange={(event) => setStatus(event.target.value)} aria-label="Lọc theo trạng thái"><option value="ALL">Tất cả trạng thái</option>{CAMPAIGN_STATUSES.map((item) => <option value={item.value} key={item.value}>{item.label}</option>)}</select>
           </div>

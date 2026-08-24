@@ -34,6 +34,15 @@ export function validateCampaignCreate(value: unknown) {
   }
 }
 
+export function validateCampaignStatus(value: unknown) {
+  const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
+  const status = String(input.status || '')
+  if (!['DRAFT', 'RUNNING', 'PAUSED', 'COMPLETED', 'CANCELLED'].includes(status)) {
+    throw new ApiError(422, 'Trạng thái Campaign không hợp lệ.', 'INVALID_CAMPAIGN_STATUS')
+  }
+  return status
+}
+
 export function validateCreatorIds(value: unknown) {
   const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
   if (!Array.isArray(input.creatorIds)) throw new ApiError(422, 'Danh sách Creator không hợp lệ.', 'INVALID_CREATORS')
@@ -46,6 +55,20 @@ export function validateCampaignCreatorChanges(value: unknown) {
   if (typeof input.status === 'string') changes.status = input.status
   if (input.actualPrice === '' || input.actualPrice === null) changes.actualPrice = null
   else if (input.actualPrice !== undefined) changes.actualPrice = amount(input.actualPrice, true)
+  if (input.quotedCost === '' || input.quotedCost === null) changes.quotedCost = null
+  else if (input.quotedCost !== undefined) changes.quotedCost = amount(input.quotedCost, true)
+  if (input.quotedExtraCost === '' || input.quotedExtraCost === null) changes.quotedExtraCost = null
+  else if (input.quotedExtraCost !== undefined) changes.quotedExtraCost = amount(input.quotedExtraCost, true)
+  if (typeof input.scope === 'string') changes.scope = text(input.scope, 'Scope').slice(0, 2000)
+  if (typeof input.pic === 'string') changes.pic = text(input.pic, 'PIC').slice(0, 255)
+  if (typeof input.metaEcomNote === 'string') changes.metaEcomNote = text(input.metaEcomNote, 'Meta Ecom Note').slice(0, 2000)
+  if (typeof input.finalTracking === 'string') changes.finalTracking = text(input.finalTracking, 'Tracking').slice(0, 2000)
+  if (typeof input.finalNote === 'string') changes.finalNote = text(input.finalNote, 'Final Note').slice(0, 2000)
+  if (input.kocDecision !== undefined) {
+    const kocDecision = String(input.kocDecision)
+    if (!['PENDING', 'APPROVED', 'REJECTED'].includes(kocDecision)) throw new ApiError(422, 'KOC Confirm không hợp lệ.', 'INVALID_KOC_DECISION')
+    changes.kocDecision = kocDecision
+  }
   if (Array.isArray(input.deliverables)) changes.deliverables = input.deliverables
   if (typeof input.creatorConfirmed === 'boolean') changes.creatorConfirmed = input.creatorConfirmed
   if (!Object.keys(changes).length) throw new ApiError(422, 'Không có thay đổi hợp lệ.', 'EMPTY_UPDATE')
@@ -69,11 +92,28 @@ export function validateMilestones(value: unknown) {
 export function validateClientResponses(value: unknown) {
   const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
   if (!Array.isArray(input.responses)) throw new ApiError(422, 'Phản hồi không hợp lệ.', 'INVALID_REVIEW')
-  const allowed = new Set(['APPROVED', 'REJECTED', 'CONSIDER'])
+  const allowed = new Set(['APPROVED', 'REJECTED', 'PENDING'])
   return input.responses.map((raw) => {
     const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
     const decision = String(item.decision || '')
     if (!item.creatorId || !allowed.has(decision)) throw new ApiError(422, 'Phản hồi Creator không hợp lệ.', 'INVALID_REVIEW')
     return { creatorId: String(item.creatorId), decision, note: text(item.note, 'Ghi chú').slice(0, 2000) }
+  })
+}
+
+export function validateDeliverableFeedback(value: unknown) {
+  const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
+  if (!Array.isArray(input.updates)) throw new ApiError(422, 'Brand Feedback không hợp lệ.', 'INVALID_DELIVERABLE_FEEDBACK')
+  return input.updates.map((raw) => {
+    const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+    if (!item.creatorId || !Array.isArray(item.deliverables)) throw new ApiError(422, 'Brand Feedback không hợp lệ.', 'INVALID_DELIVERABLE_FEEDBACK')
+    return {
+      creatorId: String(item.creatorId),
+      deliverables: item.deliverables.map((rawDeliverable) => {
+        const deliverable = (rawDeliverable && typeof rawDeliverable === 'object' ? rawDeliverable : {}) as Record<string, unknown>
+        if (!deliverable.id) throw new ApiError(422, 'Không tìm thấy Deliverable.', 'INVALID_DELIVERABLE_FEEDBACK')
+        return { id: String(deliverable.id), brandFeedback: text(deliverable.brandFeedback, 'Brand Feedback').slice(0, 4000) }
+      }),
+    }
   })
 }

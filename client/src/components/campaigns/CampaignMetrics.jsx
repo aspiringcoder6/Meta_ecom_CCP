@@ -11,5 +11,5 @@ export default function CampaignMetrics({ campaigns }) {
     { icon: 'edit', label: 'Đang soạn', value: draft, detail: 'Campaign Draft' },
     { icon: 'sparkles', label: 'Tổng ngân sách', value: formatCompactCurrency(budget), detail: 'Không gồm campaign đã huỷ' },
   ]
-  return <section className="campaign-metrics">{metrics.map((metric) => <article key={metric.label}><span><Icon name={metric.icon} size={20} /></span><div><small>{metric.label}</small><strong>{metric.value}</strong><em>{metric.detail}</em></div></article>)}</section>
+  return <section className="campaign-metrics" data-tour="campaigns-metrics">{metrics.map((metric) => <article key={metric.label}><span><Icon name={metric.icon} size={20} /></span><div><small>{metric.label}</small><strong>{metric.value}</strong><em>{metric.detail}</em></div></article>)}</section>
 }

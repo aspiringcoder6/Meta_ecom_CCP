@@ -69,6 +69,15 @@
 .campaign-status-paused { color: #946b16; background: #fff2d7; }
 .campaign-status-completed { color: #247e55; background: #e3f6ec; }
 .campaign-status-cancelled { color: #a94755; background: #ffeaed; }
+.campaign-status-control { --status-color: #6c578c; --status-bg: #f1eafb; min-width: 218px; display: grid; gap: 4px; }
+.campaign-status-control > span { color: #8292a6; font-size: 7px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.campaign-status-control > div { min-height: 39px; display: flex; align-items: center; gap: 7px; padding: 0 10px; border: 1px solid color-mix(in srgb,var(--status-color) 25%,#dce5ee); border-radius: 10px; color: var(--status-color); background: var(--status-bg); transition: opacity 150ms ease,box-shadow 150ms ease; }
+.campaign-status-control > div:focus-within { box-shadow: 0 0 0 3px rgba(82,186,255,.18); }
+.campaign-status-control > div > i { width: 7px; height: 7px; flex: 0 0 auto; border-radius: 50%; background: currentColor; }
+.campaign-status-control select { width: 100%; min-width: 0; border: 0; outline: 0; color: inherit; background: transparent; font-size: 10px; font-weight: 800; }
+.campaign-status-control > small { min-height: 11px; color: #95a2b3; font-size: 6.8px; text-align: right; }
+.campaign-status-control.is-saving > div { opacity: .62; }
+.campaign-status-control-running { --status-color: #0878b9; --status-bg: #e0f3ff; }.campaign-status-control-paused { --status-color: #946b16; --status-bg: #fff2d7; }.campaign-status-control-completed { --status-color: #247e55; --status-bg: #e3f6ec; }.campaign-status-control-cancelled { --status-color: #a94755; --status-bg: #ffeaed; }
 .campaign-cards { display: none; }
 .campaign-empty { min-height: 290px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 36px; text-align: center; }
 .campaign-empty > span,
@@ -258,4 +267,6 @@
   .campaign-form-aside { grid-template-columns: 1fr; }
   .campaign-form-actions, .campaign-permission-note { grid-column: auto; }
   .campaign-detail-heading { align-items: flex-start; flex-direction: column; }
+  .campaign-status-control { width: 100%; }
+  .campaign-status-control > small { text-align: left; }
 }

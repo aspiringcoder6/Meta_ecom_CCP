@@ -3,18 +3,20 @@ import CreateCampaignForm from '../components/campaigns/CreateCampaignForm'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
 import { useAuth } from '../hooks/useAuth'
+import { useCampaignTour } from '../hooks/useCampaignTour'
 
 export default function CreateCampaignPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { creators, createCampaign } = useApp()
+  useCampaignTour({ mode: 'create', canManage: true })
   const handleSubmit = async (form) => {
     await createCampaign(form)
     navigate('/campaigns')
   }
   return (
     <main className="page create-campaign-page">
-      <section className="campaign-create-heading">
+      <section className="campaign-create-heading" data-tour="campaign-create-heading">
         <button type="button" onClick={() => navigate('/campaigns')}><Icon name="chevronRight" size={18} />Quay lại danh sách</button>
         <div><p className="page-kicker">Campaign Management</p><h1>Tạo Campaign mới</h1><p>Điền thông tin tạo draft cho một campaign mới.</p></div>
       </section>

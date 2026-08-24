@@ -36,10 +36,15 @@ function toCampaignDto(campaign: CampaignRecord) {
     deliverables: jsonArray(campaign.defaultDeliverables),
     milestones: campaign.milestones.map((milestone) => ({ id: milestone.id, title: milestone.title, date: dateOnly(milestone.dueDate), owner: milestone.owner, status: milestone.status })),
     creators: campaign.creators.map((item) => ({
-      creatorId: item.creatorId, name: item.creator.name, tiktokId: item.creator.tiktokId, segment: item.creator.segment || '',
-      category: item.creator.category, followers: item.creator.followers, status: item.status,
+      creatorId: item.creatorId, name: item.creator.name, tiktokLink: item.creator.tiktokLink, tiktokId: item.creator.tiktokId, segment: item.creator.segment || '',
+      category: item.creator.category, type: item.creator.type, concept: item.creator.concept || '', followers: item.creator.followers,
+      gmvMonth: Number(item.creator.gmvMonth), status: item.status,
       suggestedPrice: Number(item.suggestedPrice), actualPrice: item.actualPrice == null ? '' : Number(item.actualPrice),
-      deliverables: jsonArray(item.deliverablesData), clientDecision: item.clientDecision, clientNote: item.clientNote || '',
+      expense: calculateBookingPricing(item.quotedCost ?? item.creator.cost, item.quotedExtraCost ?? item.creator.extraCost).bookingExpense,
+      quotedCost: item.quotedCost == null ? '' : Number(item.quotedCost), quotedExtraCost: item.quotedExtraCost == null ? '' : Number(item.quotedExtraCost), scope: item.scope || '', pic: item.pic || '',
+      metaEcomNote: item.metaEcomNote || '', finalTracking: item.finalTracking || '', finalNote: item.finalNote || '',
+      kocDecision: item.kocDecision || (item.creatorConfirmed ? 'APPROVED' : 'PENDING'),
+      deliverables: jsonArray(item.deliverablesData).length ? jsonArray(item.deliverablesData) : jsonArray(campaign.defaultDeliverables), clientDecision: item.clientDecision, clientNote: item.clientNote || '',
       clientChangedAt: item.clientChangedAt, clientChangeUnread: item.clientChangeUnread, creatorConfirmed: item.creatorConfirmed,
     })),
     reviewToken: campaign.reviewLinks[0]?.token || null,
@@ -75,6 +80,16 @@ export async function listCampaigns() {
 
 export async function getCampaign(identifier: string) {
   return toCampaignDto(await campaignRecord(identifier))
+}
+
+export async function updateCampaignStatus(identifier: string, status: string) {
+  const campaign = await campaignRecord(identifier)
+  const updated = await prisma.campaign.update({
+    where: { id: campaign.id },
+    data: { status },
+    include: campaignInclude,
+  })
+  return toCampaignDto(updated)
 }
 
 export async function createCampaign(input: {
@@ -129,8 +144,16 @@ export async function updateCampaignCreator(identifier: string, creatorId: strin
   await prisma.campaignCreator.update({ where: { id: assignment.id }, data: {
     ...(changes.status !== undefined ? { status: String(changes.status) } : {}),
     ...(Object.hasOwn(changes, 'actualPrice') ? { actualPrice: changes.actualPrice == null ? null : Number(changes.actualPrice) } : {}),
+    ...(Object.hasOwn(changes, 'quotedCost') ? { quotedCost: changes.quotedCost == null ? null : Number(changes.quotedCost) } : {}),
+    ...(Object.hasOwn(changes, 'quotedExtraCost') ? { quotedExtraCost: changes.quotedExtraCost == null ? null : Number(changes.quotedExtraCost) } : {}),
+    ...(changes.scope !== undefined ? { scope: String(changes.scope) } : {}),
+    ...(changes.pic !== undefined ? { pic: String(changes.pic) } : {}),
+    ...(changes.metaEcomNote !== undefined ? { metaEcomNote: String(changes.metaEcomNote) } : {}),
+    ...(changes.finalTracking !== undefined ? { finalTracking: String(changes.finalTracking) } : {}),
+    ...(changes.finalNote !== undefined ? { finalNote: String(changes.finalNote) } : {}),
+    ...(changes.kocDecision !== undefined ? { kocDecision: String(changes.kocDecision), creatorConfirmed: String(changes.kocDecision) === 'APPROVED' } : {}),
     ...(changes.deliverables !== undefined ? { deliverablesData: deliverableJson(changes.deliverables) } : {}),
-    ...(changes.creatorConfirmed !== undefined ? { creatorConfirmed: Boolean(changes.creatorConfirmed) } : {}),
+    ...(changes.creatorConfirmed !== undefined && changes.kocDecision === undefined ? { creatorConfirmed: Boolean(changes.creatorConfirmed), kocDecision: Boolean(changes.creatorConfirmed) ? 'APPROVED' : 'PENDING' } : {}),
   } })
   return getCampaign(campaign.id)
 }
@@ -179,7 +202,7 @@ export async function getPublicReview(token: string) {
 export async function submitPublicReview(token: string, responses: { creatorId: string; decision: string; note: string }[]) {
   const reviewLink = await reviewLinkRecord(token)
   const assignmentByCreator = new Map(reviewLink.campaign.creators.map((item) => [item.creatorId, item]))
-  const counts = { APPROVED: 0, REJECTED: 0, CONSIDER: 0, notes: 0 }
+  const counts = { APPROVED: 0, REJECTED: 0, PENDING: 0, notes: 0 }
   const changedAt = new Date()
   const changes = responses.flatMap((response) => {
     const assignment = assignmentByCreator.get(response.creatorId)
@@ -193,14 +216,51 @@ export async function submitPublicReview(token: string, responses: { creatorId: 
   if (!changes.length) return toCampaignDto(reviewLink.campaign)
   await prisma.$transaction(async (tx) => {
     for (const { assignment, response } of changes) {
-      const status = response.decision === 'APPROVED' ? 'CLIENT_APPROVED' : response.decision === 'REJECTED' ? 'CLIENT_REJECTED' : 'CONSIDER'
+      const status = response.decision === 'APPROVED' ? 'CLIENT_APPROVED' : response.decision === 'REJECTED' ? 'CLIENT_REJECTED' : 'PROPOSED'
       await tx.campaignCreator.update({ where: { id: assignment.id }, data: { clientDecision: response.decision, clientNote: response.note, clientChangedAt: changedAt, clientChangeUnread: true, status } })
       await tx.clientFeedback.create({ data: { reviewLinkId: reviewLink.id, campaignCreatorId: assignment.id, action: response.decision, comment: response.note } })
     }
     await tx.campaign.update({ where: { id: reviewLink.campaignId }, data: { lastClientReviewAt: changedAt } })
     const recipients = await tx.user.findMany({ where: { status: 'ACTIVE', role: { in: ['ADMIN', 'CAMPAIGN_MANAGER'] } }, select: { id: true } })
-    const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.CONSIDER && `cân nhắc ${counts.CONSIDER}`, counts.notes && `${counts.notes} ghi chú`].filter(Boolean)
-    if (recipients.length) await tx.notification.createMany({ data: recipients.map((user) => ({ userId: user.id, campaignId: reviewLink.campaignId, message: `${reviewLink.campaign.client} đã cập nhật Client Review`, detail: `${reviewLink.campaign.name} · ${parts.join(' · ')}`, icon: 'userCheck', href: `/campaigns/${reviewLink.campaign.externalId}?tab=creators` })) })
+    const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.PENDING && `pending ${counts.PENDING}`, counts.notes && `${counts.notes} ghi chú`].filter(Boolean)
+    const dedupeKey = `client-review:${reviewLink.campaignId}:${changedAt.getTime()}`
+    if (recipients.length) await tx.notification.createMany({ data: recipients.map((user) => ({ userId: user.id, campaignId: reviewLink.campaignId, message: `${reviewLink.campaign.client} đã cập nhật Brand Review`, detail: `${reviewLink.campaign.name} · ${parts.join(' · ')}`, icon: 'userCheck', href: `/campaigns/${reviewLink.campaign.externalId}?tab=external-listings`, dedupeKey })), skipDuplicates: true })
+  })
+  return getCampaign(reviewLink.campaignId)
+}
+
+export async function submitPublicDeliverableFeedback(token: string, updates: { creatorId: string; deliverables: { id: string; brandFeedback: string }[] }[]) {
+  const reviewLink = await reviewLinkRecord(token)
+  const assignmentByCreator = new Map(reviewLink.campaign.creators.map((item) => [item.creatorId, item]))
+  const changedAt = new Date()
+  const changes = updates.flatMap((update) => {
+    const assignment = assignmentByCreator.get(update.creatorId)
+    if (!assignment || assignment.clientDecision !== 'APPROVED' || !assignment.creatorConfirmed) return []
+    const feedbackById = new Map(update.deliverables.map((item) => [item.id, item.brandFeedback]))
+    let changedCount = 0
+    const storedDeliverables = jsonArray(assignment.deliverablesData)
+    const nextDeliverables = (storedDeliverables.length ? storedDeliverables : jsonArray(reviewLink.campaign.defaultDeliverables)).map((raw) => {
+      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+      const item = raw as Record<string, Prisma.JsonValue>
+      const id = String(item.id || '')
+      if (!feedbackById.has(id)) return raw
+      const brandFeedback = feedbackById.get(id) || ''
+      if (brandFeedback === String(item.brandFeedback || '')) return raw
+      changedCount += 1
+      return { ...item, brandFeedback }
+    })
+    return changedCount ? [{ assignment, nextDeliverables, changedCount }] : []
+  })
+  if (!changes.length) return toCampaignDto(reviewLink.campaign)
+  const totalDeliverables = changes.reduce((sum, item) => sum + item.changedCount, 0)
+  await prisma.$transaction(async (tx) => {
+    for (const change of changes) {
+      await tx.campaignCreator.update({ where: { id: change.assignment.id }, data: { deliverablesData: deliverableJson(change.nextDeliverables), clientChangedAt: changedAt, clientChangeUnread: true } })
+      await tx.clientFeedback.create({ data: { reviewLinkId: reviewLink.id, campaignCreatorId: change.assignment.id, action: 'DELIVERABLE_FEEDBACK', comment: `${change.changedCount} deliverable được cập nhật` } })
+    }
+    const recipients = await tx.user.findMany({ where: { status: 'ACTIVE', role: { in: ['ADMIN', 'CAMPAIGN_MANAGER'] } }, select: { id: true } })
+    const dedupeKey = `deliverable-feedback:${reviewLink.campaignId}:${changedAt.getTime()}`
+    if (recipients.length) await tx.notification.createMany({ data: recipients.map((user) => ({ userId: user.id, campaignId: reviewLink.campaignId, message: `${reviewLink.campaign.client} đã cập nhật Deliverable`, detail: `${reviewLink.campaign.name} · ${totalDeliverables} feedback · ${changes.length} KOC`, icon: 'checkSquare', href: `/campaigns/${reviewLink.campaign.externalId}?tab=deliverables`, dedupeKey })), skipDuplicates: true })
   })
   return getCampaign(reviewLink.campaignId)
 }

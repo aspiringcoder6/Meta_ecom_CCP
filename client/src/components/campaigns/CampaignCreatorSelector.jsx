@@ -11,7 +11,7 @@ import CreatorCategoryFilter from '../creators/CreatorCategoryFilter'
 import CreatorMultiFilter from '../creators/CreatorMultiFilter'
 import CreatorSortableHeader from '../creators/CreatorSortableHeader'
 
-export default function CampaignCreatorSelector({ creators, assignedIds, onClose, onConfirm }) {
+export default function CampaignCreatorSelector({ creators, assignedIds, onClose, onConfirm, onQuickAdd }) {
   const [filters, setFilters] = useState(DEFAULT_CREATOR_FILTERS)
   const [numericFilters, setNumericFilters] = useState([])
   const [sortCriteria, setSortCriteria] = useState([])
@@ -22,10 +22,7 @@ export default function CampaignCreatorSelector({ creators, assignedIds, onClose
     categories: [...new Set(creators.flatMap((creator) => toCreatorList(creator.category)))],
     types: [...new Set(creators.flatMap((creator) => toCreatorList(creator.type)))],
   }), [creators])
-  const visible = useMemo(() => sortCreators(
-    creators.filter((creator) => matchesCreatorFilters(creator, filters, numericFilters)),
-    sortCriteria,
-  ), [creators, filters, numericFilters, sortCriteria])
+  const visible = useMemo(() => sortCreators(creators.filter((creator) => matchesCreatorFilters(creator, filters, numericFilters)), sortCriteria), [creators, filters, numericFilters, sortCriteria])
   const selectableVisible = visible.filter((creator) => !assigned.has(String(creator.id)))
   const selectedSet = new Set(selected)
   const updateFilter = (field, value) => setFilters((current) => ({ ...current, [field]: value }))
@@ -49,7 +46,7 @@ export default function CampaignCreatorSelector({ creators, assignedIds, onClose
     <div className="modal-layer campaign-selector-layer">
       <button className="modal-scrim" type="button" aria-label="Đóng bộ chọn Creator" onClick={onClose} />
       <section className="campaign-creator-selector">
-        <header><div><span className="eyebrow">Creator Database</span><h2>Chọn Creator cho Campaign</h2><p>Tìm kiếm và lọc giống bảng Creator Management.</p></div><button type="button" className="icon-button" onClick={onClose}><Icon name="close" /></button></header>
+        <header><div><span className="eyebrow">Creator Database</span><h2>Chọn Creator cho Internal Listings</h2><p>Các cột Cost, Extra/FOC, Scope và PIC sẽ được điền sau trong chế độ chỉnh sửa.</p></div><button type="button" className="icon-button" onClick={onClose}><Icon name="close" /></button></header>
         <div className="campaign-selector-filters">
           <label className="campaign-selector-search"><Icon name="search" size={17} /><input autoFocus value={filters.search} onChange={(event) => updateFilter('search', event.target.value)} placeholder="Tìm tên, ID TikTok, Category..." />{filters.search && <button type="button" onClick={() => updateFilter('search', '')}><Icon name="close" size={13} /></button>}</label>
           <CreatorMultiFilter label="Segment" values={filters.segment} options={options.segments} onChange={(value) => updateFilter('segment', value)} />
@@ -59,10 +56,32 @@ export default function CampaignCreatorSelector({ creators, assignedIds, onClose
         <div className="campaign-selector-numeric-filters"><AdvancedNumericFilters filters={numericFilters} onAdd={(filter) => setNumericFilters((current) => [...current, filter])} onRemove={(filterId) => setNumericFilters((current) => current.filter((filter) => filter.id !== filterId))} /></div>
         <div className="campaign-selector-meta"><span><strong>{visible.length}</strong> kết quả · {selected.length} đã chọn{sortCriteria.length > 0 && ` · ${sortCriteria.length} tiêu chí sắp xếp`}</span><div>{sortCriteria.length > 0 && <button type="button" onClick={() => setSortCriteria([])}>Xóa sắp xếp</button>}<button type="button" onClick={toggleVisible}>{selectableVisible.length && selectableVisible.every((creator) => selectedSet.has(String(creator.id))) ? 'Bỏ chọn kết quả' : 'Chọn tất cả kết quả'}</button></div></div>
         <div className="campaign-selector-table-wrap">
-          <table className="campaign-selector-table"><thead><tr><th /><th>{sortHeader('Creator', 'name')}</th><th>{sortHeader('Segment', 'segment')}</th><th>{sortHeader('Category', 'category')}</th><th>{sortHeader('Followers', 'followers')}</th><th>{sortHeader('Giá gợi ý', 'bookingExpense')}</th></tr></thead><tbody>{visible.map((creator) => { const isAssigned = assigned.has(String(creator.id)); const isSelected = selectedSet.has(String(creator.id)); const pricing = calculateBookingPricing(creator.cost, creator.extraCost); return <tr className={`${isSelected ? 'is-selected' : ''} ${isAssigned ? 'is-assigned' : ''}`} onClick={() => !isAssigned && toggle(creator.id)} key={creator.id}><td><span className="campaign-selector-check">{isAssigned ? <Icon name="check" size={13} /> : isSelected && <Icon name="check" size={13} />}</span></td><td><strong>{creator.name}</strong><small>@{String(creator.tiktokId).replace(/^@/, '')}</small></td><td><span className="segment-tag">{creator.segment}</span></td><td><CategoryPathRibbons values={creator.category} level={2} /></td><td>{formatNumber(creator.followers)}</td><td><strong>{formatCompactCurrency(pricing.bookingExpense)}</strong><small>{isAssigned ? 'Đã có trong Campaign' : 'Booking Expense'}</small></td></tr> })}</tbody></table>
+          <table className="campaign-selector-table internal-selector-table">
+            <thead><tr><th /><th>{sortHeader('Link TikTok', 'tiktokLink')}</th><th>{sortHeader('ID TikTok', 'tiktokId')}</th><th>{sortHeader('Segment', 'segment')}</th><th>{sortHeader('Category', 'category')}</th><th>{sortHeader('Type', 'type')}</th><th>{sortHeader('Followers', 'followers')}</th><th>{sortHeader('GMV / Month', 'gmvMonth')}</th><th>{sortHeader('Cast', 'totalCast')}</th><th>{sortHeader('Expense', 'bookingExpense')}</th><th>{sortHeader('AGI', 'agi')}</th><th>{sortHeader('Contact', 'contact')}</th><th>{sortHeader('MCN Note', 'mcnNote')}</th></tr></thead>
+            <tbody>{visible.map((creator) => {
+              const isAssigned = assigned.has(String(creator.id))
+              const isSelected = selectedSet.has(String(creator.id))
+              const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
+              return <tr className={`${isSelected ? 'is-selected' : ''} ${isAssigned ? 'is-assigned' : ''}`} onClick={() => !isAssigned && toggle(creator.id)} key={creator.id}>
+                <td><span className="campaign-selector-check">{(isAssigned || isSelected) && <Icon name="check" size={13} />}</span></td>
+                <td><a href={creator.tiktokLink || '#'} target="_blank" rel="noreferrer" title={creator.tiktokLink} onClick={(event) => event.stopPropagation()}>{creator.tiktokLink || '—'}</a></td>
+                <td><strong>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small>{creator.name}</small></td>
+                <td><span className="segment-tag">{creator.segment || '—'}</span></td>
+                <td><CategoryPathRibbons values={creator.category} level={2} /></td>
+                <td><div className="internal-type-list">{toCreatorList(creator.type, ['—']).map((type) => <span key={type}>{type}</span>)}</div></td>
+                <td>{formatNumber(creator.followers)}</td>
+                <td><strong>{formatCompactCurrency(creator.gmvMonth)}</strong></td>
+                <td><strong>{formatCompactCurrency(pricing.totalCast)}</strong></td>
+                <td><strong>{formatCompactCurrency(pricing.bookingExpense)}</strong></td>
+                <td><strong>{formatCompactCurrency(pricing.agi)}</strong></td>
+                <td><span title={creator.contact}>{creator.contact || '—'}</span></td>
+                <td><span title={creator.mcnNote}>{creator.mcnNote || '—'}</span>{isAssigned && <small>Đã có trong Campaign</small>}</td>
+              </tr>
+            })}</tbody>
+          </table>
           {!visible.length && <div className="campaign-selector-empty"><Icon name="search" size={25} /><strong>Không tìm thấy Creator</strong><span>Thử thay đổi từ khoá hoặc bộ lọc.</span></div>}
         </div>
-        <footer><button type="button" className="secondary-button" onClick={onClose}>Huỷ</button><button type="button" className="primary-button" disabled={!selected.length} onClick={() => onConfirm(selected)}><Icon name="plus" size={16} />Thêm {selected.length || ''} Creator</button></footer>
+        <footer><button type="button" className="secondary-button campaign-selector-quick-add" onClick={onQuickAdd}><Icon name="plus" size={15} />Thêm nhanh bằng dòng mới</button><span /><button type="button" className="secondary-button" onClick={onClose}>Huỷ</button><button type="button" className="primary-button" disabled={!selected.length} onClick={() => onConfirm(selected)}><Icon name="plus" size={16} />Thêm {selected.length || ''} Creator</button></footer>
       </section>
     </div>
   )

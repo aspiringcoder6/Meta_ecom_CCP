@@ -1,6 +1,6 @@
 @import "driver.js/dist/driver.css";
 
-/* Interactive Creator guide */
+/* Interactive page guides */
 .driver-popover.meta-creator-tour { width: min(350px,calc(100vw - 30px)); max-width: 350px; padding: 18px; border: 1px solid #d7e5f1; border-radius: 16px; color: #41536b; background: #fff; box-shadow: 0 22px 65px rgba(1,32,82,.24); font-family: inherit; }
 .meta-creator-tour .driver-popover-title { color: var(--navy); font-size: 15px; font-weight: 800; line-height: 1.35; letter-spacing: -.015em; }
 .meta-creator-tour .driver-popover-description { margin-top: 8px; color: #63748a; font-size: 11px; line-height: 1.65; }

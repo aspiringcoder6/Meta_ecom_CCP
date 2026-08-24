@@ -13,6 +13,10 @@ export const campaignApi = {
     const response = await apiClient.post('/campaigns', campaign)
     return response.data.data
   },
+  async updateStatus(campaignId, status) {
+    const response = await apiClient.patch(`/campaigns/${campaignId}/status`, { status })
+    return response.data.data
+  },
   async addCreators(campaignId, creatorIds) {
     const response = await apiClient.post(`/campaigns/${campaignId}/creators`, { creatorIds })
     return response.data.data
@@ -46,6 +50,10 @@ export const publicReviewApi = {
   },
   async submit(token, responses) {
     const response = await apiClient.post(`/public/reviews/${token}`, { responses })
+    return response.data.data
+  },
+  async submitDeliverables(token, updates) {
+    const response = await apiClient.post(`/public/reviews/${token}/deliverables`, { updates })
     return response.data.data
   },
 }

@@ -20,7 +20,7 @@
 }
 
 @media (max-width: 900px) {
-  .app-content, .app-shell.is-collapsed .app-content { margin-left: 0; }
+  .app-content, .app-shell.is-collapsed .app-content { width: 100%; max-width: 100vw; margin-left: 0; }
   .sidebar, .sidebar.sidebar-collapsed { z-index: 80; width: min(272px,86vw); padding: 26px 18px 18px; transform: translateX(-105%); }
   .sidebar.sidebar-mobile-open { transform: translateX(0); }
   .sidebar-collapsed .brand-copy, .sidebar-collapsed .nav-label, .sidebar-collapsed .nav-item > span:not(.nav-count), .sidebar-collapsed .help-card > div, .sidebar-collapsed .collapse-button > span { display: initial; }

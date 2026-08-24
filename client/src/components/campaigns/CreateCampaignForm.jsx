@@ -82,7 +82,7 @@ export default function CreateCampaignForm({ creators, owner, onSubmit, onCancel
   return (
     <form className="campaign-form-layout" onSubmit={handleSubmit} noValidate>
       <div className="campaign-form-main">
-        <section className="campaign-form-section">
+        <section className="campaign-form-section" data-tour="campaign-create-general">
           <div className="campaign-section-heading"><span><Icon name="briefcase" size={20} /></span><div><h2>Thông tin chung</h2><p>Thông tin nhận diện và người chịu trách nhiệm chính.</p></div></div>
           <div className="campaign-form-grid">
             <label className={`campaign-field campaign-field-full ${errors.name ? 'has-error' : ''}`}><span>Tên Campaign <b>*</b></span><input autoFocus value={form.name} onChange={(event) => update('name', event.target.value)} placeholder="Ví dụ: Summer Glow 2026" /><FieldError message={errors.name} /></label>
@@ -92,7 +92,7 @@ export default function CreateCampaignForm({ creators, owner, onSubmit, onCancel
           </div>
         </section>
 
-        <section className="campaign-form-section">
+        <section className="campaign-form-section" data-tour="campaign-create-timeline">
           <div className="campaign-section-heading"><span><Icon name="clock" size={20} /></span><div><h2>Thời gian & timeline</h2><p>Thiết lập thời gian chạy và những cột mốc cần theo dõi.</p></div></div>
           <div className="campaign-form-grid campaign-date-grid">
             <label className={`campaign-field ${errors.startDate ? 'has-error' : ''}`}><span>Ngày bắt đầu <b>*</b></span><input type="date" value={form.startDate} onChange={(event) => update('startDate', event.target.value)} /><FieldError message={errors.startDate} /></label>
@@ -101,7 +101,7 @@ export default function CreateCampaignForm({ creators, owner, onSubmit, onCancel
           <CampaignTimelineFields value={form.milestones} onChange={(value) => update('milestones', value)} />
         </section>
 
-        <section className="campaign-form-section">
+        <section className="campaign-form-section" data-tour="campaign-create-budget">
           <div className="campaign-section-heading"><span><Icon name="trending" size={20} /></span><div><h2>Ngân sách</h2><p>Ngân sách theo Creator là tuỳ chọn và có thể cập nhật sau.</p></div></div>
           <div className="campaign-form-grid">
             <label className={`campaign-field ${errors.totalBudget ? 'has-error' : ''}`}><span>Tổng ngân sách <b>*</b></span><div className="campaign-money-input"><input type="number" min="0" step="100000" value={form.totalBudget} onChange={(event) => update('totalBudget', event.target.value)} placeholder="0" /><i>₫</i></div><FieldError message={errors.totalBudget} />{form.totalBudget !== '' && !errors.totalBudget && <small className="campaign-field-hint">{formatCompactCurrency(Number(form.totalBudget))}</small>}</label>
@@ -109,18 +109,18 @@ export default function CreateCampaignForm({ creators, owner, onSubmit, onCancel
           </div>
         </section>
 
-        <section className="campaign-form-section">
+        <section className="campaign-form-section" data-tour="campaign-create-creators">
           <div className="campaign-section-heading"><span><Icon name="users" size={20} /></span><div><h2>Creator tham gia</h2><p>Chọn Creator và cập nhật trạng thái duyệt ban đầu.</p></div><strong className="campaign-section-count">{form.creators.length} Creator</strong></div>
           <CampaignCreatorPicker creators={creators} value={form.creators} onChange={(value) => update('creators', value)} />
         </section>
 
-        <section className="campaign-form-section">
+        <section className="campaign-form-section" data-tour="campaign-create-deliverables">
           <div className="campaign-section-heading"><span><Icon name="checkSquare" size={20} /></span><div><h2>Nội dung bàn giao</h2><p>Thiết lập Deliverable dự kiến cho Campaign.</p></div></div>
           <CampaignDeliverableFields value={form.deliverables} onChange={(value) => update('deliverables', value)} />
         </section>
       </div>
 
-      <aside className="campaign-form-aside">
+      <aside className="campaign-form-aside" data-tour="campaign-create-summary">
         <div className="campaign-draft-card">
           <span className="campaign-draft-icon"><Icon name="edit" size={21} /></span>
           <small>Trạng thái khi tạo</small>
