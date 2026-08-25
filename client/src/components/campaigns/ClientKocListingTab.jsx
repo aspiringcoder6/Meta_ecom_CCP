@@ -63,7 +63,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
               <td><strong>{formatCompactCurrency(creator.gmvMonth)}</strong></td>
               <td><span className="client-listing-note-text" title={creator.metaEcomNote}>{creator.metaEcomNote || '—'}</span></td>
               <td className="client-listing-brand-pick"><div className="client-listing-decisions">{DECISIONS.map((decision) => <button type="button" className={response.decision === decision.value ? 'is-selected' : ''} onClick={() => onUpdate(creator.creatorId, 'decision', decision.value)} title={decision.label} key={decision.value}><Icon name={decision.icon} size={13} /><span>{decision.label}</span></button>)}</div></td>
-              <td className="client-listing-brand-note"><textarea rows="2" value={response.note} onChange={(event) => onUpdate(creator.creatorId, 'note', event.target.value)} placeholder="VD: Deal giá xuống dưới 10 triệu..." /></td>
+              <td className="client-listing-brand-note"><textarea rows="2" value={response.note} onChange={(event) => onUpdate(creator.creatorId, 'note', event.target.value)} placeholder="" /></td>
               <td className="client-listing-koc-confirm"><span className={`client-listing-status is-${decisionTone(confirm)}`}>{clientReviewDecisionLabel(confirm)}</span></td>
             </tr>
           })}</tbody>

@@ -67,7 +67,7 @@ export default function CampaignCreatorSelector({ creators, assignedIds, onClose
                 <td><a href={creator.tiktokLink || '#'} target="_blank" rel="noreferrer" title={creator.tiktokLink} onClick={(event) => event.stopPropagation()}>{creator.tiktokLink || '—'}</a></td>
                 <td><strong>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small>{creator.name}</small></td>
                 <td><span className="segment-tag">{creator.segment || '—'}</span></td>
-                <td><CategoryPathRibbons values={creator.category} level={2} /></td>
+                <td className="internal-selector-category"><CategoryPathRibbons values={creator.category} level={2} /></td>
                 <td><div className="internal-type-list">{toCreatorList(creator.type, ['—']).map((type) => <span key={type}>{type}</span>)}</div></td>
                 <td>{formatNumber(creator.followers)}</td>
                 <td><strong>{formatCompactCurrency(creator.gmvMonth)}</strong></td>
