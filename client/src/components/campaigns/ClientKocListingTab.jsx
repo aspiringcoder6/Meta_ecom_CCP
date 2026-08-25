@@ -2,6 +2,7 @@ import { clientReviewDecisionLabel } from '../../config/campaigns'
 import { formatCompactCurrency, formatNumber } from '../../utils/formatters'
 import { toCreatorList } from '../../utils/creatorLists'
 import Icon from '../common/Icon'
+import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 
 const DECISIONS = [
   { value: 'APPROVED', label: 'Đồng ý', icon: 'check' },
@@ -46,7 +47,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
       <header><div><span className="client-listing-eyebrow">External Listings</span><h2>Danh sách KOC</h2><p>Cuộn ngang để xem đầy đủ thông tin. Link và ID TikTok được giữ cố định.</p></div><span>{creators.length} Creator</span></header>
       <div className="client-koc-listing-table-wrap">
         <table className="client-koc-listing-table">
-          <thead><tr><th>Link TikTok</th><th>ID TikTok</th><th>Expense</th><th>Segment</th><th>Concept</th><th>Type</th><th>Followers</th><th>GMV / Month</th><th>Meta Ecom Note</th><th>Brand Pick</th><th>Brand Note</th><th>KOC Confirm</th></tr></thead>
+          <thead><tr><th>Link TikTok</th><th>ID TikTok</th><th>Expense</th><th>Segment</th><th>Category</th><th>Type</th><th>Followers</th><th>GMV / Month</th><th>Meta Ecom Note</th><th>Brand Pick</th><th>Brand Note</th><th>KOC Confirm</th></tr></thead>
           <tbody>{creators.map((creator) => {
             const response = responses[String(creator.creatorId)] || { decision: 'PENDING', note: '' }
             const tone = decisionTone(response.decision)
@@ -57,7 +58,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
               <td className="client-listing-sticky-id"><strong>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small>{creator.name || 'Creator'}</small></td>
               <td><strong>{formatCompactCurrency(creator.expense ?? creator.suggestedPrice)}</strong></td>
               <td><span className="client-listing-segment">{creator.segment || '—'}</span></td>
-              <td><span className="client-listing-clamped" title={creator.concept}>{creator.concept || '—'}</span></td>
+              <td className="client-listing-category"><CategoryPathRibbons values={creator.category || []} level={2} /></td>
               <td><div className="client-listing-types">{toCreatorList(creator.type, ['—']).map((type) => <span key={type}>{type}</span>)}</div></td>
               <td>{formatNumber(creator.followers)}</td>
               <td><strong>{formatCompactCurrency(creator.gmvMonth)}</strong></td>
