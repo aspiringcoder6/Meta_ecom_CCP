@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { formatCompactCurrency } from '../../utils/formatters'
 import Icon from '../common/Icon'
+import CampaignCategoryField from './CampaignCategoryField'
 import CampaignCreatorPicker from './CampaignCreatorPicker'
 import CampaignDeliverableFields from './CampaignDeliverableFields'
 import CampaignTimelineFields from './CampaignTimelineFields'
@@ -10,6 +11,7 @@ function initialForm(owner) {
     name: '',
     client: '',
     description: '',
+    category: [],
     owner: owner || '',
     startDate: '',
     endDate: '',
@@ -89,6 +91,7 @@ export default function CreateCampaignForm({ creators, owner, onSubmit, onCancel
             <label className={`campaign-field ${errors.client ? 'has-error' : ''}`}><span>Client / Brand <b>*</b></span><input value={form.client} onChange={(event) => update('client', event.target.value)} placeholder="Tên khách hàng hoặc thương hiệu" /><FieldError message={errors.client} /></label>
             <label className={`campaign-field ${errors.owner ? 'has-error' : ''}`}><span>Người phụ trách (Owner) <b>*</b></span><input value={form.owner} onChange={(event) => update('owner', event.target.value)} placeholder="Tên người phụ trách" /><FieldError message={errors.owner} /></label>
             <label className="campaign-field campaign-field-full"><span>Mô tả</span><textarea rows="4" value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="Mục tiêu, thông điệp và ghi chú chính của Campaign..." /></label>
+            <div className="campaign-field campaign-field-full"><span>Category <em>Tuỳ chọn</em></span><CampaignCategoryField creators={creators} value={form.category} onChange={(value) => update('category', value)} /></div>
           </div>
         </section>
 

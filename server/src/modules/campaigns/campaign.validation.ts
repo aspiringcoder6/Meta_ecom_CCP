@@ -19,19 +19,36 @@ function amount(value: unknown, optional = false) {
   return normalized
 }
 
-export function validateCampaignCreate(value: unknown) {
-  const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
+function categoryValues(value: unknown) {
+  if (value === undefined || value === null) return []
+  if (!Array.isArray(value)) throw new ApiError(422, 'Category Campaign không hợp lệ.', 'INVALID_CAMPAIGN', { category: 'Category phải là một danh sách.' })
+  return [...new Set(value.map((item) => String(item || '').replace(/\s+/g, ' ').trim()).filter(Boolean))].slice(0, 100)
+}
+
+function campaignInformation(input: Record<string, unknown>) {
   const startDate = dateValue(input.startDate, 'Ngày bắt đầu')
   const endDate = dateValue(input.endDate, 'Ngày kết thúc')
   if (endDate < startDate) throw new ApiError(422, 'Ngày kết thúc phải sau ngày bắt đầu.', 'INVALID_CAMPAIGN')
   return {
     name: text(input.name, 'Tên Campaign', true), client: text(input.client, 'Client / Brand', true), owner: text(input.owner, 'Owner', true),
-    description: text(input.description, 'Mô tả'), startDate, endDate,
+    description: text(input.description, 'Mô tả'), category: categoryValues(input.category), startDate, endDate,
     totalBudget: amount(input.totalBudget) ?? 0, creatorBudget: amount(input.creatorBudget, true),
+  }
+}
+
+export function validateCampaignCreate(value: unknown) {
+  const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
+  return {
+    ...campaignInformation(input),
     creators: Array.isArray(input.creators) ? input.creators : [],
     milestones: Array.isArray(input.milestones) ? input.milestones : [],
     deliverables: Array.isArray(input.deliverables) ? input.deliverables : [],
   }
+}
+
+export function validateCampaignUpdate(value: unknown) {
+  const input = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>
+  return campaignInformation(input)
 }
 
 export function validateCampaignStatus(value: unknown) {

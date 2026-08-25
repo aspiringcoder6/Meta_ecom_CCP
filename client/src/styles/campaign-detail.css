@@ -68,6 +68,8 @@
 .campaign-overview-description dl div { padding: 12px; border-radius: 10px; background: #f7faff; }
 .campaign-overview-description dt { color: #8b99aa; font-size: 8px; }
 .campaign-overview-description dd { margin: 4px 0 0; color: #30465f; font-size: 10px; font-weight: 700; }
+.campaign-overview-description dl div.campaign-overview-category { grid-column: 1 / -1; }
+.campaign-overview-category .category-path-ribbons { max-height: 54px; overflow-y: auto; padding-top: 3px; }
 .campaign-overview-description dl div.is-over-budget { background: #fff0f2; }.campaign-overview-description dl div.is-over-budget dt,.campaign-overview-description dl div.is-over-budget dd { color: #b43e4e; }
 .campaign-overview-progress { display: flex; align-items: center; flex-direction: column; text-align: center; }
 .campaign-overview-progress > header { width: 100%; display: flex; justify-content: space-between; text-align: left; }
@@ -298,7 +300,11 @@
 .internal-readonly-value strong { overflow: hidden; color: #30465f; font-size: 8.5px; text-overflow: ellipsis; }
 .internal-readonly-value small { color: #8998aa; font-size: 6.8px; font-weight: 500; }
 .internal-updated-badge { display: inline-block; margin-top: 4px; padding: 3px 5px; border-radius: 5px; color: #8b6418; background: #fff0bc; font-size: 6.5px; font-style: normal; font-weight: 800; }
-.internal-listings-table .category-path-ribbons { max-width: 250px; max-height: 50px; overflow: hidden; }
+.internal-listings-table td.internal-listing-category-cell { overflow: visible; }
+.internal-listings-table .internal-listing-category-cell .category-path-ribbons { width: 100%; max-width: 250px; max-height: 56px; overflow-x: hidden; overflow-y: auto; padding: 2px 9px 2px 0; overscroll-behavior: contain; scrollbar-color: #1686d3 #e7f1f8; scrollbar-gutter: stable; scrollbar-width: thin; }
+.internal-listings-table .internal-listing-category-cell .category-path-ribbons::-webkit-scrollbar { width: 7px; }
+.internal-listings-table .internal-listing-category-cell .category-path-ribbons::-webkit-scrollbar-track { border-radius: 8px; background: #e7f1f8; }
+.internal-listings-table .internal-listing-category-cell .category-path-ribbons::-webkit-scrollbar-thumb { border: 2px solid #e7f1f8; border-radius: 8px; background: #1686d3; }
 .internal-listings-table .category-path-ribbon { font-size: 6.5px; }
 .internal-type-list { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .internal-type-list > span { padding: 4px 6px; border-radius: 6px; color: #086ca8; background: #e2f3fd; font-size: 6.8px; font-weight: 800; white-space: nowrap; }
@@ -442,6 +448,21 @@
 .final-finance-input span { position: absolute; top: 0; right: 8px; height: 36px; display: grid; place-items: center; color: #8796a8; }
 .final-creators-table textarea { min-height: 46px; resize: vertical; padding: 7px; line-height: 1.35; }
 .final-finance-input input:focus,.final-creators-table textarea:focus { border-color: #52baff; box-shadow: 0 0 0 3px rgba(82,186,255,.12); }
+
+/* Campaign settings */
+.campaign-settings-card { padding: 21px; }
+.campaign-settings-card > .campaign-tab-heading { margin-bottom: 17px; }
+.campaign-settings-actions { display: flex; align-items: center; gap: 8px; }
+.campaign-settings-actions button:disabled { cursor: not-allowed; opacity: .45; }
+.campaign-settings-readonly,.campaign-settings-error { display: flex; align-items: center; gap: 7px; margin-bottom: 13px; padding: 10px 12px; border-radius: 9px; font-size: 8.5px; }
+.campaign-settings-readonly { color: #667d94; border: 1px solid #dce6ef; background: #f6f9fc; }
+.campaign-settings-error { color: #a33f4d; border: 1px solid #f0cbd1; background: #fff3f5; }
+.campaign-settings-card fieldset { min-width: 0; display: grid; gap: 15px; margin: 0; padding: 0; border: 0; }
+.campaign-settings-section { padding: 20px; border: 1px solid #e0e8f0; border-radius: 14px; background: #fbfdff; }
+.campaign-settings-section-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 17px; }
+.campaign-settings-section-heading > span { width: 36px; height: 36px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 10px; color: #087bc2; background: #dff2ff; }
+.campaign-settings-section-heading h3 { margin: 0; color: var(--navy); font-size: 12px; }
+.campaign-settings-section-heading p { margin: 3px 0 0; color: #8898aa; font-size: 8px; }
 .final-creators-table tfoot th,.final-creators-table tfoot td { height: 54px; border-top: 1px solid #cfdae5; font-weight: 800; }
 .final-creators-table tfoot th { color: #163b61; background: #fff7b8; font-size: 8.5px; }
 .final-creators-table tfoot td { color: #173d61; background: #fffdf0; }

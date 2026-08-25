@@ -5,6 +5,7 @@ import CampaignDeliverablesPreview from '../components/campaigns/CampaignDeliver
 import CampaignDeliverablesTab from '../components/campaigns/CampaignDeliverablesTab'
 import CampaignFinalCreatorsTab from '../components/campaigns/CampaignFinalCreatorsTab'
 import CampaignOverviewTab from '../components/campaigns/CampaignOverviewTab'
+import CampaignSettingsTab from '../components/campaigns/CampaignSettingsTab'
 import CampaignStatusControl from '../components/campaigns/CampaignStatusControl'
 import CampaignTimelineTab from '../components/campaigns/CampaignTimelineTab'
 import Icon from '../components/common/Icon'
@@ -20,6 +21,7 @@ const TABS = [
   { value: 'timeline', label: 'Timeline', icon: 'clock' },
   { value: 'deliverables', label: 'Deliverables', icon: 'checkSquare' },
   { value: 'final-creators', label: 'Final Creators', icon: 'userCheck' },
+  { value: 'settings', label: 'Settings', icon: 'settings' },
 ]
 
 export default function CampaignDetailPage() {
@@ -27,7 +29,7 @@ export default function CampaignDetailPage() {
   const { campaignId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
-  const { campaigns, creators, isLoadingCampaigns, campaignBackendAvailable, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, updateCampaignStatus, markCampaignClientChangesRead, refreshCampaign, ensureCampaignReviewLink, showToast } = useApp()
+  const { campaigns, creators, isLoadingCampaigns, campaignBackendAvailable, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, updateCampaignStatus, updateCampaignInformation, markCampaignClientChangesRead, refreshCampaign, ensureCampaignReviewLink, showToast } = useApp()
   const campaign = campaigns.find((item) => item.id === campaignId)
   const requestedTab = searchParams.get('tab') === 'creators' ? 'internal-listings' : searchParams.get('tab')
   const activeTab = TABS.some((tab) => tab.value === requestedTab) ? requestedTab : 'overview'
@@ -59,6 +61,7 @@ export default function CampaignDetailPage() {
       {activeTab === 'external-listings' && <CampaignDeliverablesPreview campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onEnsureLink={() => ensureCampaignReviewLink(campaign.id)} onNotify={showToast} />}
       {activeTab === 'deliverables' && <CampaignDeliverablesTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} />}
       {activeTab === 'final-creators' && <CampaignFinalCreatorsTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} />}
+      {activeTab === 'settings' && <CampaignSettingsTab campaign={campaign} creators={creators} canEdit={canEdit} onSave={(changes) => updateCampaignInformation(campaign.id, changes)} key={campaign.id} />}
     </main>
   )
 }

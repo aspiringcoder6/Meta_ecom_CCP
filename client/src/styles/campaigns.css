@@ -131,6 +131,17 @@
 .campaign-money-input { position: relative; }
 .campaign-money-input input { padding-right: 38px; }
 .campaign-money-input i { position: absolute; top: 50%; right: 14px; color: #71839a; font-size: 11px; font-style: normal; transform: translateY(-50%); }
+.campaign-category-field { display: grid; gap: 10px; }
+.campaign-category-picker { width: min(100%, 360px); }
+.campaign-category-picker .multi-filter,.campaign-category-picker .multi-filter-trigger { width: 100%; }
+.campaign-category-picker .multi-filter-trigger { min-height: 44px; justify-content: flex-start; padding-inline: 13px; border-color: #dbe5ef; border-radius: 10px; background: #fbfdff; }
+.campaign-category-picker .multi-filter-trigger > span { min-width: 0; flex: 1; overflow: hidden; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.campaign-category-selection { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.campaign-category-selection > span { min-height: 29px; display: inline-flex; align-items: center; gap: 7px; padding: 0 8px 0 10px; border: 1px solid #bfe2f7; border-radius: 8px; color: #086fae; background: #eaf7ff; font-size: 8.5px; font-weight: 750; }
+.campaign-category-selection button { width: 18px; height: 18px; display: grid; place-items: center; border-radius: 5px; color: #5b8eae; }
+.campaign-category-selection button:hover { color: #a33f4d; background: #fff; }
+.campaign-category-field > p { margin: 0; color: #8b9aaf; font-size: 9px; line-height: 1.5; }
+.campaign-category-field.is-disabled .campaign-category-picker { pointer-events: none; opacity: .65; }
 
 .campaign-repeatable { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e8eef4; }
 .campaign-repeatable-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 13px; }

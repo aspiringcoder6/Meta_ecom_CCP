@@ -12,6 +12,7 @@ campaignRouter.use(requireAuth, requireRoles('ADMIN', 'CAMPAIGN_MANAGER', 'MEMBE
 campaignRouter.get('/', controller.list)
 campaignRouter.post('/', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.create)
 campaignRouter.get('/:id', controller.getOne)
+campaignRouter.patch('/:id', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.updateInformation)
 campaignRouter.patch('/:id/status', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.updateStatus)
 campaignRouter.post('/:id/creators', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.addCreators)
 campaignRouter.patch('/:id/creators/:creatorId', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.updateCreator)

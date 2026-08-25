@@ -13,6 +13,10 @@ export const campaignApi = {
     const response = await apiClient.post('/campaigns', campaign)
     return response.data.data
   },
+  async update(campaignId, campaign) {
+    const response = await apiClient.patch(`/campaigns/${campaignId}`, campaign)
+    return response.data.data
+  },
   async updateStatus(campaignId, status) {
     const response = await apiClient.patch(`/campaigns/${campaignId}/status`, { status })
     return response.data.data

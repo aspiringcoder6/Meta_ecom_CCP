@@ -90,7 +90,7 @@ function CategoryTreeLevel({ nodes, selectedValues, onToggle }) {
   ))
 }
 
-export default function CreatorCategoryFilter({ values, options, onChange }) {
+export default function CreatorCategoryFilter({ values, options, onChange, label = 'Category', emptyLabel = 'Tất cả Category', clearLabel = 'Tất cả Category', helperText = 'Hover để xem cấp con', ariaLabel = 'Lọc theo Category' }) {
   const [isOpen, setIsOpen] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ left: 0, top: 0, maxHeight: 360 })
   const triggerRef = useRef(null)
@@ -98,7 +98,7 @@ export default function CreatorCategoryFilter({ values, options, onChange }) {
   const menuRef = useRef(null)
   const selectedValues = Array.isArray(values) ? values : []
   const tree = useMemo(() => buildCategoryTree(options), [options])
-  const triggerLabel = selectedValues.length === 0 ? 'Tất cả Category' : selectedValues.length === 1 ? selectedValues[0] : 'Category đã chọn'
+  const triggerLabel = selectedValues.length === 0 ? emptyLabel : selectedValues.length === 1 ? selectedValues[0] : `${label} đã chọn`
 
   const updateMenuPosition = useCallback((measuredHeight) => {
     const trigger = triggerRef.current
@@ -190,9 +190,9 @@ export default function CreatorCategoryFilter({ values, options, onChange }) {
   }
 
   const menu = isOpen && createPortal(
-    <div ref={menuRef} className="category-tree-menu" data-category-filter-menu role="listbox" aria-label="Lọc theo Category" aria-multiselectable="true" style={{ left: menuPosition.left, top: menuPosition.top, maxHeight: menuPosition.maxHeight }} onClick={(event) => event.stopPropagation()}>
-      <header><strong>Category</strong><small>Hover để xem cấp con</small></header>
-      <button className={`category-tree-option category-tree-all ${selectedValues.length === 0 ? 'is-selected' : ''}`} type="button" role="option" aria-selected={selectedValues.length === 0} onClick={() => onChange([])}><span className="category-tree-check"><Icon name="check" size={13} /></span><span className="category-tree-label">Tất cả Category</span></button>
+    <div ref={menuRef} className="category-tree-menu" data-category-filter-menu role="listbox" aria-label={ariaLabel} aria-multiselectable="true" style={{ left: menuPosition.left, top: menuPosition.top, maxHeight: menuPosition.maxHeight }} onClick={(event) => event.stopPropagation()}>
+      <header><strong>{label}</strong><small>{helperText}</small></header>
+      <button className={`category-tree-option category-tree-all ${selectedValues.length === 0 ? 'is-selected' : ''}`} type="button" role="option" aria-selected={selectedValues.length === 0} onClick={() => onChange([])}><span className="category-tree-check"><Icon name="check" size={13} /></span><span className="category-tree-label">{clearLabel}</span></button>
       <div className="category-tree-scroll"><CategoryTreeLevel nodes={tree} selectedValues={selectedValues} onToggle={toggleValue} /></div>
       {selectedValues.length > 0 && <footer><span>{selectedValues.length} lựa chọn</span><button type="button" onClick={() => onChange([])}>Xóa lựa chọn</button></footer>}
     </div>,

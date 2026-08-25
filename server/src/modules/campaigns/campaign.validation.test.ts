@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { validateCampaignCreatorChanges, validateCampaignStatus, validateClientResponses, validateDeliverableFeedback } from './campaign.validation.js'
+import { validateCampaignCreatorChanges, validateCampaignStatus, validateCampaignUpdate, validateClientResponses, validateDeliverableFeedback } from './campaign.validation.js'
+
+test('accepts Campaign categories and subcategories in settings', () => {
+  const settings = validateCampaignUpdate({
+    name: 'Summer Campaign', client: 'Meta Brand', owner: 'Campaign Owner', description: '',
+    category: ['Fashion', 'Newborns & Maternity > Baby Product', 'Fashion'],
+    startDate: '2026-08-01', endDate: '2026-09-01', totalBudget: 100000000, creatorBudget: null,
+  })
+  assert.deepEqual(settings.category, ['Fashion', 'Newborns & Maternity > Baby Product'])
+})
 
 test('accepts only the supported Campaign statuses', () => {
   assert.equal(validateCampaignStatus({ status: 'RUNNING' }), 'RUNNING')

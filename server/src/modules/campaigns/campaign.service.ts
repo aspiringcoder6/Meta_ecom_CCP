@@ -28,6 +28,7 @@ function toCampaignDto(campaign: CampaignRecord) {
     client: campaign.client,
     owner: campaign.owner,
     description: campaign.description || '',
+    category: campaign.category,
     startDate: dateOnly(campaign.startDate),
     endDate: dateOnly(campaign.endDate),
     totalBudget: Number(campaign.budget || 0),
@@ -94,7 +95,7 @@ export async function updateCampaignStatus(identifier: string, status: string) {
 
 export async function createCampaign(input: {
   name: string; client: string; owner: string; description: string; startDate: Date; endDate: Date; totalBudget: number; creatorBudget: number | null;
-  creators: unknown[]; milestones: unknown[]; deliverables: unknown[];
+  category: string[]; creators: unknown[]; milestones: unknown[]; deliverables: unknown[];
 }) {
   const creatorIds = [...new Set(input.creators.map((item) => String((item as Record<string, unknown>)?.creatorId || '')).filter(Boolean))]
   const creators = creatorIds.length ? await prisma.creator.findMany({ where: { id: { in: creatorIds } } }) : []
@@ -109,7 +110,7 @@ export async function createCampaign(input: {
   const campaign = await prisma.campaign.create({
     data: {
       externalId: await nextExternalId(), name: input.name, client: input.client, owner: input.owner, description: input.description,
-      startDate: input.startDate, endDate: input.endDate, budget: input.totalBudget, creatorBudget: input.creatorBudget,
+      category: input.category, startDate: input.startDate, endDate: input.endDate, budget: input.totalBudget, creatorBudget: input.creatorBudget,
       defaultDeliverables: deliverableJson(input.deliverables), status: 'DRAFT',
       milestones: { create: milestones },
       creators: { create: creatorIds.flatMap((creatorId) => {
@@ -123,6 +124,29 @@ export async function createCampaign(input: {
     include: campaignInclude,
   })
   return toCampaignDto(campaign)
+}
+
+export async function updateCampaignInformation(identifier: string, input: {
+  name: string; client: string; owner: string; description: string; category: string[];
+  startDate: Date; endDate: Date; totalBudget: number; creatorBudget: number | null;
+}) {
+  const campaign = await campaignRecord(identifier)
+  const updated = await prisma.campaign.update({
+    where: { id: campaign.id },
+    data: {
+      name: input.name,
+      client: input.client,
+      owner: input.owner,
+      description: input.description,
+      category: input.category,
+      startDate: input.startDate,
+      endDate: input.endDate,
+      budget: input.totalBudget,
+      creatorBudget: input.creatorBudget,
+    },
+    include: campaignInclude,
+  })
+  return toCampaignDto(updated)
 }
 
 export async function addCreators(identifier: string, creatorIds: string[]) {

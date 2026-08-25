@@ -29,6 +29,7 @@ function dedupeNotifications(items) {
 function normalizeCampaign(campaign) {
   return {
     ...campaign,
+    category: Array.isArray(campaign.category) ? campaign.category : [],
     creators: (campaign.creators || []).map((creator) => campaignCreatorAssignment(undefined, campaign.deliverables, creator)),
   }
 }
@@ -352,6 +353,29 @@ export default function AppProvider({ children }) {
       setCampaigns((current) => current.map((item) => item.id === campaignId ? { ...item, status: previousStatus } : item))
       showToast(getApiErrorMessage(error, 'Không thể cập nhật trạng thái Campaign.'))
       return false
+    }
+  }
+
+  const updateCampaignInformation = async (campaignId, changes) => {
+    const campaign = campaigns.find((item) => item.id === campaignId)
+    if (!campaign) throw new Error('Không tìm thấy Campaign để cập nhật.')
+    const optimistic = normalizeCampaign({ ...campaign, ...changes })
+    setCampaigns((current) => current.map((item) => item.id === campaignId ? optimistic : item))
+    try {
+      const saved = await campaignApi.update(campaignId, changes)
+      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaignBackendAvailable(true)
+      showToast('Đã cập nhật thông tin Campaign')
+      return normalizeCampaign(saved)
+    } catch (error) {
+      if (shouldUseLocalCampaignFallback(error)) {
+        showToast('Đã cập nhật thông tin Campaign trong dữ liệu demo')
+        return optimistic
+      }
+      setCampaigns((current) => current.map((item) => item.id === campaignId ? campaign : item))
+      const message = getApiErrorMessage(error, 'Không thể cập nhật thông tin Campaign.')
+      showToast(message)
+      throw new Error(message)
     }
   }
 
@@ -704,7 +728,7 @@ export default function AppProvider({ children }) {
   }
 
   const value = {
-    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, updateCampaignStatus, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
+    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, updateCampaignStatus, updateCampaignInformation, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
     undoCreators, redoCreators, canUndo: creatorHistory.past.length > 0, canRedo: creatorHistory.future.length > 0,
     beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession,
   }

@@ -3,6 +3,7 @@ import { acceptedCampaignCreators, campaignCreatorDeliverables, finalCampaignCre
 import { campaignProgress, formatCampaignDate } from '../../utils/campaigns'
 import { formatCompactCurrency } from '../../utils/formatters'
 import Icon from '../common/Icon'
+import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 
 function deliverablesForOverview(campaign, creator) {
   const deliverables = campaignCreatorDeliverables(campaign, creator)
@@ -90,6 +91,7 @@ export default function CampaignOverviewTab({ campaign, onOpenTab }) {
           <p>{campaign.description || 'Chưa có mô tả cho Campaign này.'}</p>
           <dl>
             <div><dt>Client / Brand</dt><dd>{campaign.client}</dd></div><div><dt>Owner</dt><dd>{campaign.owner}</dd></div>
+            <div className="campaign-overview-category"><dt>Category</dt><dd>{campaign.category?.length ? <CategoryPathRibbons values={campaign.category} level={2} /> : 'Chưa thiết lập'}</dd></div>
             <div><dt>Ngày bắt đầu</dt><dd>{formatCampaignDate(campaign.startDate)}</dd></div><div><dt>Ngày kết thúc</dt><dd>{formatCampaignDate(campaign.endDate)}</dd></div>
             <div><dt>Tổng ngân sách</dt><dd>{totalBudget > 0 ? formatCompactCurrency(totalBudget) : 'Chưa thiết lập'}</dd></div><div><dt>Expense dự kiến</dt><dd>{formatCompactCurrency(internalExpense)}</dd></div>
             <div className={remainingBudget != null && remainingBudget < 0 ? 'is-over-budget' : ''}><dt>Ngân sách còn lại</dt><dd>{remainingBudget == null ? 'Chưa thiết lập' : formatCompactCurrency(remainingBudget)}</dd></div><div><dt>Final + agency fee 6%</dt><dd>{formatCompactCurrency(finalExpenseWithAgencyFee)}</dd></div>

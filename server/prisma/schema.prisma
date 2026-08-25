@@ -106,6 +106,7 @@ model Campaign {
   budget              Decimal?          @db.Decimal(18, 2)
   creatorBudget       Decimal?          @db.Decimal(18, 2)
   description         String?
+  category            String[]          @default([])
   defaultDeliverables Json              @default("[]")
   status              String            @default("DRAFT")
   lastClientReviewAt  DateTime?
