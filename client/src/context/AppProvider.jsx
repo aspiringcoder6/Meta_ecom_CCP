@@ -400,6 +400,44 @@ export default function AppProvider({ children }) {
     return additions.length
   }
 
+  const assignExistingCampaignCreator = async (campaignId, creatorId, campaignChanges = {}) => {
+    const campaign = campaigns.find((item) => item.id === campaignId)
+    const creator = creators.find((item) => String(item.id) === String(creatorId))
+    if (!campaign || !creator) throw new Error('Không tìm thấy Creator hoặc Campaign để thêm.')
+    if ((campaign.creators || []).some((item) => String(item.creatorId) === String(creatorId))) {
+      throw new Error(`${creator.name} đã có trong Campaign này.`)
+    }
+
+    const assignment = campaignCreatorAssignment(creator, campaign.deliverables, campaignChanges)
+    setCampaigns((current) => current.map((item) => item.id === campaignId
+      ? { ...item, creators: [...(item.creators || []), assignment] }
+      : item))
+
+    let savedCampaign
+    try {
+      savedCampaign = await campaignApi.addCreators(campaignId, [String(creatorId)])
+      setCampaignBackendAvailable(true)
+    } catch (error) {
+      if (shouldUseLocalCampaignFallback(error)) return creator
+      setCampaigns((current) => current.map((item) => item.id === campaignId
+        ? { ...item, creators: (item.creators || []).filter((currentCreator) => String(currentCreator.creatorId) !== String(creatorId)) }
+        : item))
+      throw new Error(getApiErrorMessage(error, 'Không thể thêm Creator có sẵn vào Campaign.'))
+    }
+
+    try {
+      const hasCampaignChanges = Object.values(campaignChanges).some((value) => value !== '' && value != null)
+      const finalCampaign = hasCampaignChanges
+        ? await campaignApi.updateCreator(campaignId, creatorId, campaignChanges)
+        : savedCampaign
+      setCampaigns((current) => replaceCampaign(current, finalCampaign))
+      return creator
+    } catch (error) {
+      setCampaigns((current) => replaceCampaign(current, savedCampaign))
+      throw new Error(getApiErrorMessage(error, 'Creator đã được thêm nhưng các thông tin riêng của Campaign chưa được lưu.'))
+    }
+  }
+
   const removeCampaignCreator = (campaignId, creatorId) => {
     const campaign = campaigns.find((item) => item.id === campaignId)
     const assignment = campaign?.creators?.find((item) => String(item.creatorId) === String(creatorId))
@@ -544,6 +582,40 @@ export default function AppProvider({ children }) {
     }
   }
 
+  const updateCampaignSourceCreator = async (creatorId, changes) => {
+    const original = creators.find((creator) => String(creator.id) === String(creatorId))
+    if (!original) throw new Error('Không tìm thấy hồ sơ Creator để cập nhật.')
+    const optimisticCreator = { ...original, ...changes }
+    dispatchCreators({ type: 'replaceOne', creatorId: original.id, creator: optimisticCreator })
+    setCampaigns((current) => current.map((campaign) => ({
+      ...campaign,
+      creators: (campaign.creators || []).map((assignment) => String(assignment.creatorId) === String(creatorId)
+        ? { ...assignment, followers: optimisticCreator.followers, gmvMonth: optimisticCreator.gmvMonth }
+        : assignment),
+    })))
+    try {
+      const savedCreator = await creatorApi.update(creatorId, changes)
+      dispatchCreators({ type: 'replaceOne', creatorId: original.id, creator: savedCreator })
+      setCampaigns((current) => current.map((campaign) => ({
+        ...campaign,
+        creators: (campaign.creators || []).map((assignment) => String(assignment.creatorId) === String(creatorId)
+          ? { ...assignment, followers: savedCreator.followers, gmvMonth: savedCreator.gmvMonth }
+          : assignment),
+      })))
+      setBackendAvailable(true)
+      return savedCreator
+    } catch (error) {
+      dispatchCreators({ type: 'replaceOne', creatorId: original.id, creator: original })
+      setCampaigns((current) => current.map((campaign) => ({
+        ...campaign,
+        creators: (campaign.creators || []).map((assignment) => String(assignment.creatorId) === String(creatorId)
+          ? { ...assignment, followers: original.followers, gmvMonth: original.gmvMonth }
+          : assignment),
+      })))
+      throw new Error(getApiErrorMessage(error, 'Không thể đồng bộ thay đổi về kho Creator.'))
+    }
+  }
+
   const addQuickCreator = () => {
     const creator = createQuickCreator()
     dispatchCreators({ type: 'apply', update: (current) => [creator, ...current] })
@@ -632,7 +704,7 @@ export default function AppProvider({ children }) {
   }
 
   const value = {
-    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, updateCampaignStatus, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
+    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, updateCampaignStatus, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
     undoCreators, redoCreators, canUndo: creatorHistory.past.length > 0, canRedo: creatorHistory.future.length > 0,
     beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession,
   }

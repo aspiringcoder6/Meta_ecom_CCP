@@ -30,6 +30,21 @@ test('only requires TikTok ID and TikTok Link to be non-empty', () => {
   })
 })
 
+test('allows Internal Listings to patch shared Creator metrics without identity fields', () => {
+  const changes = validateCreatorInput({
+    followers: 125000,
+    gmvMonth: 87500000,
+    contact: 'creator@example.com',
+    mcnNote: 'Ưu tiên liên hệ qua email',
+  }, true)
+  assert.deepEqual(changes, {
+    followers: 125000,
+    gmvMonth: 87500000,
+    contact: 'creator@example.com',
+    mcnNote: 'Ưu tiên liên hệ qua email',
+  })
+})
+
 test('defaults an empty category to OTHER', () => {
   const creator = validateCreatorInput({ tiktokId: 'creator.other', tiktokLink: 'creator-link', category: '' })
   assert.deepEqual(creator.category, ['OTHER'])

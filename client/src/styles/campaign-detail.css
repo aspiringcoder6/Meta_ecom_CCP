@@ -277,12 +277,19 @@
 .internal-listings-table thead th:nth-child(1),.internal-listings-table thead th:nth-child(2) { z-index: 6; background: #071f50; }
 .internal-listings-table tbody td:nth-child(1),.internal-listings-table tbody td:nth-child(2) { z-index: 2; background: #fff; }
 .internal-listings-table tbody > tr:not(.campaign-deliverable-editor-row):hover > td { background: #f8fbfe; }
-.internal-listings-table tbody > tr.is-editing > td:nth-child(8),.internal-listings-table tbody > tr.is-editing > td:nth-child(9),.internal-listings-table tbody > tr.is-editing > td:nth-child(13),.internal-listings-table tbody > tr.is-editing > td:nth-child(15) { background: #eef9ff; }
+.internal-listings-table tbody > tr.is-editing > td:nth-child(6),.internal-listings-table tbody > tr.is-editing > td:nth-child(7),.internal-listings-table tbody > tr.is-editing > td:nth-child(8),.internal-listings-table tbody > tr.is-editing > td:nth-child(9),.internal-listings-table tbody > tr.is-editing > td:nth-child(13),.internal-listings-table tbody > tr.is-editing > td:nth-child(14),.internal-listings-table tbody > tr.is-editing > td:nth-child(15),.internal-listings-table tbody > tr.is-editing > td:nth-child(16) { background: #eef9ff; }
 .internal-listings-table tbody > tr.internal-quick-row > td,.internal-listings-table tbody > tr.internal-quick-row:hover > td { background: #effaf3; }
 .internal-listings-table tbody > tr.internal-quick-row > td:first-child { box-shadow: inset 4px 0 #43a56f; }
+.internal-listings-table tbody > tr.internal-quick-row.is-existing-creator > td,.internal-listings-table tbody > tr.internal-quick-row.is-existing-creator:hover > td { background: #eef8ff; }
+.internal-listings-table tbody > tr.internal-quick-row.is-existing-creator > td:first-child { box-shadow: inset 4px 0 #1686d3; }
+.internal-listings-table tbody > tr.internal-quick-row.has-identity-conflict > td,.internal-listings-table tbody > tr.internal-quick-row.has-identity-conflict:hover > td { background: #fff5f6; }
+.internal-listings-table tbody > tr.internal-quick-row.has-identity-conflict > td:first-child { box-shadow: inset 4px 0 #dc5264; }
 .internal-quick-row .internal-edit-cell input,.internal-quick-row .internal-edit-cell select,.internal-quick-identity > input { border-color: #abd8bd; background: #fff; }
 .internal-quick-identity { display: grid; gap: 5px; }
 .internal-quick-identity > input { width: 100%; height: 26px; padding: 0 7px; border: 1px solid #abd8bd; border-radius: 6px; outline: 0; color: #40536b; font-size: 7.5px; }
+.internal-quick-row input:disabled,.internal-quick-row select:disabled { cursor: not-allowed; color: #60758b; border-color: #cfdfeb; background: #edf4f8; opacity: 1; }
+.internal-existing-match { display: inline-flex; align-items: center; gap: 4px; width: max-content; max-width: 100%; padding: 3px 5px; border-radius: 5px; color: #0c6d9f; background: #dff3ff; font-size: 6.2px; font-style: normal; font-weight: 800; line-height: 1.2; }
+.internal-existing-match.is-warning { color: #936315; background: #fff0c7; }
 .internal-edit-cell.has-error input { border-color: #dc5264; background: #fff5f6; box-shadow: 0 0 0 3px rgba(220,82,100,.1); }
 .internal-edit-cell > small { display: block; margin-top: 3px; color: #c33f50; font-size: 6.4px; font-weight: 700; line-height: 1.2; }
 .internal-tiktok-link { display: block; overflow: hidden; color: #087bc2; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
@@ -298,6 +305,8 @@
 .internal-edit-cell { position: relative; display: block; }
 .internal-edit-cell input,.internal-edit-cell select { width: 100%; height: 34px; padding: 0 23px 0 7px; border: 1px solid #80cbf6; border-radius: 7px; outline: 0; color: #28435e; background: white; font-size: 8px; font-weight: 700; }
 .internal-edit-cell input:focus,.internal-edit-cell select:focus { border-color: #1686d3; box-shadow: 0 0 0 3px rgba(82,186,255,.15); }
+.internal-edit-cell.is-creator-master input { border-color: #55b989; background: #f7fffa; }
+.internal-edit-cell.is-creator-master input:focus { border-color: #2d9b67; box-shadow: 0 0 0 3px rgba(45,155,103,.13); }
 .internal-edit-cell > span { position: absolute; top: 0; right: 7px; height: 34px; display: grid; place-items: center; color: #8293a7; font-size: 7px; }
 .internal-text-cell input { padding-right: 7px; font-weight: 500; }
 .internal-select-cell select { padding-right: 5px; }
