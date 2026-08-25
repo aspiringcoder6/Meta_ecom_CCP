@@ -5,6 +5,7 @@ import { calculateBookingPricing } from '../../utils/pricing'
 import { formatCompactCurrency, formatNumber } from '../../utils/formatters'
 import { toCreatorList } from '../../utils/creatorLists'
 import Icon from '../common/Icon'
+import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 
 const KOC_DECISIONS = [
   { value: 'PENDING', label: 'Pending' },
@@ -65,7 +66,7 @@ export default function CampaignDeliverablesPreview({ campaign, creators, canEdi
         <header className="campaign-tab-heading"><div><span className="eyebrow">Brand & KOC Selection</span><h2>External Listings</h2><p>Dữ liệu ở đây sẽ hiển thị cho bên khách hàng, bấm vào link ở phía trên để gửi link cho client duyệt.</p></div><div><span className="brand-selection-count">{campaign.creators?.length || 0} Creator</span></div></header>
         <div className="brand-selection-table-wrap">
           <table className="brand-selection-table">
-            <thead><tr><th>Link TikTok</th><th>ID TikTok</th><th>Expense</th><th>Segment</th><th>Concept</th><th>Type</th><th>Followers</th><th>GMV / Month</th><th>Meta Ecom Note</th><th>Brand Pick</th><th>Brand Note</th><th>KOC Confirm</th></tr></thead>
+            <thead><tr><th>Link TikTok</th><th>ID TikTok</th><th>Expense</th><th>Segment</th><th>Category</th><th>Type</th><th>Followers</th><th>GMV / Month</th><th>Meta Ecom Note</th><th>Brand Pick</th><th>Brand Note</th><th>KOC Confirm</th></tr></thead>
             <tbody>{(campaign.creators || []).map((assignment) => {
               const source = sourceById.get(String(assignment.creatorId)) || assignment
               const cost = assignment.quotedCost !== '' && assignment.quotedCost != null ? assignment.quotedCost : source.cost
@@ -78,7 +79,7 @@ export default function CampaignDeliverablesPreview({ campaign, creators, canEdi
                 <td><strong>@{String(source.tiktokId || '').replace(/^@/, '')}</strong><small>{source.name}</small></td>
                 <td><strong>{formatCompactCurrency(expense)}</strong></td>
                 <td><span className="segment-tag">{source.segment || '—'}</span></td>
-                <td><span className="brand-selection-text" title={source.concept}>{source.concept || '—'}</span></td>
+                <td className="brand-selection-category"><CategoryPathRibbons values={source.category || []} level={2} /></td>
                 <td><div className="internal-type-list">{toCreatorList(source.type, ['—']).map((type) => <span key={type}>{type}</span>)}</div></td>
                 <td>{formatNumber(source.followers)}</td>
                 <td><strong>{formatCompactCurrency(source.gmvMonth)}</strong></td>
