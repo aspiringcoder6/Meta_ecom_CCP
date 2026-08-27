@@ -17,7 +17,7 @@ function dueState(date, status) {
   return { label: formatCampaignDate(date), tone: 'upcoming' }
 }
 
-export default function CampaignTimelineTab({ campaign, canEdit, onSave }) {
+export default function CampaignTimelineTab({ campaign, canEdit, onSave, embedded = false }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(campaign.milestones || [])
   const [error, setError] = useState('')
@@ -49,7 +49,7 @@ export default function CampaignTimelineTab({ campaign, canEdit, onSave }) {
   const cancel = () => { setDraft(campaign.milestones || []); setError(''); setEditing(false) }
 
   return (
-    <div className="campaign-detail-tab campaign-timeline-tab">
+    <div className={`${embedded ? 'campaign-overview-embedded-timeline' : 'campaign-detail-tab'} campaign-timeline-tab`}>
       <section className="campaign-detail-card campaign-timeline-card" data-tour="campaign-timeline-workspace">
         <header className="campaign-tab-heading timeline-heading"><div><span className="eyebrow">Campaign Schedule</span><h2>Timeline Campaign</h2><p>Theo dõi các mốc quan trọng, deadline và người phụ trách. Nếu cần chỉnh sửa timeline hãy bấm nút bên cạnh</p></div>{canEdit && !editing && <button type="button" className="secondary-button" onClick={() => setEditing(true)}><Icon name="edit" size={15} />Chỉnh sửa Timeline</button>}</header>
         {editing ? <div className="campaign-timeline-editor">

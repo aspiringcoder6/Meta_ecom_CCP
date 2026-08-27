@@ -6,9 +6,11 @@ test('accepts Campaign categories and subcategories in settings', () => {
   const settings = validateCampaignUpdate({
     name: 'Summer Campaign', client: 'Meta Brand', owner: 'Campaign Owner', description: '',
     category: ['Fashion', 'Newborns & Maternity > Baby Product', 'Fashion'],
+    segmentGoals: { mini: 12, TOP: 5, MASSIVE: 2, FREECAST: 0 },
     startDate: '2026-08-01', endDate: '2026-09-01', totalBudget: 100000000, creatorBudget: null,
   })
   assert.deepEqual(settings.category, ['Fashion', 'Newborns & Maternity > Baby Product'])
+  assert.deepEqual(settings.segmentGoals, { MINI: 12, TOP: 5, MASSIVE: 2, FREECAST: 0 })
 })
 
 test('accepts only the supported Campaign statuses', () => {

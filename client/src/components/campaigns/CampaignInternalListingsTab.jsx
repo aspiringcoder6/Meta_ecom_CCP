@@ -6,6 +6,7 @@ import { parseCategoryPaths } from '../../utils/creatorCategoryPaths'
 import Icon from '../common/Icon'
 import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 import CampaignCreatorSelector from './CampaignCreatorSelector'
+import CampaignSegmentGoalProgress from './CampaignSegmentGoalProgress'
 
 const CAMPAIGN_EDITABLE_FIELDS = ['quotedCost', 'quotedExtraCost', 'scope', 'pic']
 const CREATOR_EDITABLE_FIELDS = ['followers', 'gmvMonth', 'contact', 'mcnNote']
@@ -296,6 +297,8 @@ export default function CampaignInternalListingsTab({ campaign, creators, canEdi
             {canEdit && <button type="button" className="primary-button" onClick={() => setSelectorOpen(true)}><Icon name="users" size={15} />Thêm Creator</button>}
           </div>
         </header>
+
+        <CampaignSegmentGoalProgress campaign={campaign} compact />
 
         {isEditing && <div className="internal-edit-notice"><Icon name="edit" size={15} /><span>Cost, Extra/FOC, Scope và PIC chỉ áp dụng cho Campaign. Followers, GMV, Contact và MCN Note sẽ được đồng bộ về hồ sơ trong kho Creator sau khi bấm Hoàn tất.</span></div>}
 

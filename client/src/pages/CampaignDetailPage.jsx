@@ -7,7 +7,6 @@ import CampaignFinalCreatorsTab from '../components/campaigns/CampaignFinalCreat
 import CampaignOverviewTab from '../components/campaigns/CampaignOverviewTab'
 import CampaignSettingsTab from '../components/campaigns/CampaignSettingsTab'
 import CampaignStatusControl from '../components/campaigns/CampaignStatusControl'
-import CampaignTimelineTab from '../components/campaigns/CampaignTimelineTab'
 import Icon from '../components/common/Icon'
 import { useApp } from '../hooks/useApp'
 import { useAuth } from '../hooks/useAuth'
@@ -18,10 +17,9 @@ const TABS = [
   { value: 'overview', label: 'Tổng quan', icon: 'dashboard' },
   { value: 'internal-listings', label: 'Internal Listings', icon: 'fileSpreadsheet' },
   { value: 'external-listings', label: 'External Listings', icon: 'users' },
-  { value: 'timeline', label: 'Timeline', icon: 'clock' },
   { value: 'deliverables', label: 'Deliverables', icon: 'checkSquare' },
-  { value: 'final-creators', label: 'Final Creators', icon: 'userCheck' },
-  { value: 'settings', label: 'Settings', icon: 'settings' },
+  { value: 'financial-listings', label: 'Financial Listings', icon: 'trending' },
+  { value: 'information', label: 'Thông tin', icon: 'briefcase' },
 ]
 
 export default function CampaignDetailPage() {
@@ -31,7 +29,8 @@ export default function CampaignDetailPage() {
   const { user } = useAuth()
   const { campaigns, creators, isLoadingCampaigns, campaignBackendAvailable, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, updateCampaignStatus, updateCampaignInformation, markCampaignClientChangesRead, refreshCampaign, ensureCampaignReviewLink, showToast } = useApp()
   const campaign = campaigns.find((item) => item.id === campaignId)
-  const requestedTab = searchParams.get('tab') === 'creators' ? 'internal-listings' : searchParams.get('tab')
+  const rawTab = searchParams.get('tab')
+  const requestedTab = rawTab === 'creators' ? 'internal-listings' : rawTab === 'timeline' ? 'overview' : rawTab === 'final-creators' ? 'financial-listings' : rawTab === 'settings' ? 'information' : rawTab
   const activeTab = TABS.some((tab) => tab.value === requestedTab) ? requestedTab : 'overview'
   const canEdit = ['ADMIN', 'CAMPAIGN_MANAGER'].includes(user?.role)
   const changeTab = (tab) => setSearchParams(tab === 'overview' ? {} : { tab })
@@ -54,14 +53,13 @@ export default function CampaignDetailPage() {
         <div><p className="page-kicker">{campaign.id} · {campaign.client}</p><h1>{campaign.name}</h1><p>{campaign.owner} · {campaign.creators?.length || 0} Creator</p></div>
         <CampaignStatusControl status={campaign.status} canEdit={canEdit} onChange={(status) => updateCampaignStatus(campaign.id, status)} />
       </section>
-      <nav className="campaign-detail-tabs" data-tour="campaign-tabs" aria-label="Các phần của Campaign">{TABS.map((tab) => <button type="button" data-tour={`campaign-tab-${tab.value}`} className={activeTab === tab.value ? 'is-active' : ''} aria-current={activeTab === tab.value ? 'page' : undefined} onClick={() => changeTab(tab.value)} key={tab.value}><Icon name={tab.icon} size={16} />{tab.label}{tab.value === 'final-creators' && <span>{finalCampaignCreators(campaign).length}</span>}</button>)}</nav>
-      {activeTab === 'overview' && <CampaignOverviewTab campaign={campaign} onOpenTab={changeTab} />}
+      <nav className="campaign-detail-tabs" data-tour="campaign-tabs" aria-label="Các phần của Campaign">{TABS.map((tab) => <button type="button" data-tour={`campaign-tab-${tab.value}`} className={activeTab === tab.value ? 'is-active' : ''} aria-current={activeTab === tab.value ? 'page' : undefined} onClick={() => changeTab(tab.value)} key={tab.value}><Icon name={tab.icon} size={16} />{tab.label}{tab.value === 'financial-listings' && <span>{finalCampaignCreators(campaign).length}</span>}</button>)}</nav>
+      {activeTab === 'overview' && <CampaignOverviewTab campaign={campaign} canEdit={canEdit} onOpenTab={changeTab} onSaveTimeline={(milestones) => updateCampaignMilestones(campaign.id, milestones)} />}
       {activeTab === 'internal-listings' && <CampaignInternalListingsTab campaign={campaign} creators={creators} canEdit={canEdit} onAddCreators={(ids) => addCampaignCreators(campaign.id, ids)} onAssignExisting={(creatorId, changes) => assignExistingCampaignCreator(campaign.id, creatorId, changes)} onQuickAdd={(form) => createAndAssignCampaignCreator(campaign.id, form)} onRemoveCreator={(creatorId) => removeCampaignCreator(campaign.id, creatorId)} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onUpdateSourceCreator={updateCampaignSourceCreator} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onNotify={showToast} />}
-      {activeTab === 'timeline' && <CampaignTimelineTab campaign={campaign} canEdit={canEdit} onSave={(milestones) => updateCampaignMilestones(campaign.id, milestones)} />}
       {activeTab === 'external-listings' && <CampaignDeliverablesPreview campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onEnsureLink={() => ensureCampaignReviewLink(campaign.id)} onNotify={showToast} />}
-      {activeTab === 'deliverables' && <CampaignDeliverablesTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} />}
-      {activeTab === 'final-creators' && <CampaignFinalCreatorsTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} />}
-      {activeTab === 'settings' && <CampaignSettingsTab campaign={campaign} creators={creators} canEdit={canEdit} onSave={(changes) => updateCampaignInformation(campaign.id, changes)} key={campaign.id} />}
+      {activeTab === 'deliverables' && <CampaignDeliverablesTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onNotify={showToast} />}
+      {activeTab === 'financial-listings' && <CampaignFinalCreatorsTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} />}
+      {activeTab === 'information' && <CampaignSettingsTab campaign={campaign} creators={creators} canEdit={canEdit} onSave={(changes) => updateCampaignInformation(campaign.id, changes)} key={campaign.id} />}
     </main>
   )
 }

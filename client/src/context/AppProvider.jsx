@@ -30,6 +30,7 @@ function normalizeCampaign(campaign) {
   return {
     ...campaign,
     category: Array.isArray(campaign.category) ? campaign.category : [],
+    segmentGoals: campaign.segmentGoals && typeof campaign.segmentGoals === 'object' && !Array.isArray(campaign.segmentGoals) ? campaign.segmentGoals : {},
     creators: (campaign.creators || []).map((creator) => campaignCreatorAssignment(undefined, campaign.deliverables, creator)),
   }
 }

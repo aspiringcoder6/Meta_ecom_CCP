@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { formatCompactCurrency } from '../../utils/formatters'
 import Icon from '../common/Icon'
 import CampaignCategoryField from './CampaignCategoryField'
+import CampaignSegmentGoalsField from './CampaignSegmentGoalsField'
 
 function settingsFromCampaign(campaign) {
   return {
@@ -10,6 +11,7 @@ function settingsFromCampaign(campaign) {
     owner: campaign.owner || '',
     description: campaign.description || '',
     category: Array.isArray(campaign.category) ? campaign.category : [],
+    segmentGoals: campaign.segmentGoals && typeof campaign.segmentGoals === 'object' ? campaign.segmentGoals : {},
     startDate: campaign.startDate || '',
     endDate: campaign.endDate || '',
     totalBudget: campaign.totalBudget ?? '',
@@ -83,7 +85,7 @@ export default function CampaignSettingsTab({ campaign, creators, canEdit, onSav
     <div className="campaign-detail-tab campaign-settings-tab">
       <form className="campaign-detail-card campaign-settings-card" onSubmit={submit} noValidate>
         <header className="campaign-tab-heading">
-          <div><span className="eyebrow">Campaign Configuration</span><h2>Settings</h2><p>Chỉnh sửa thông tin chung, Category, thời gian và ngân sách của Campaign.</p></div>
+          <div><span className="eyebrow">Campaign Information</span><h2>Thông tin Campaign</h2><p>Xem và chỉnh sửa thông tin chung, mục tiêu, Category, thời gian và ngân sách.</p></div>
           {canEdit && <div className="campaign-settings-actions"><button type="button" className="secondary-button" disabled={!dirty || saving} onClick={reset}>Hoàn tác</button><button type="submit" className="primary-button" disabled={!dirty || saving}><Icon name="check" size={15} />{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</button></div>}
         </header>
 
@@ -99,11 +101,12 @@ export default function CampaignSettingsTab({ campaign, creators, canEdit, onSav
               <label className={`campaign-field ${errors.owner ? 'has-error' : ''}`}><span>Owner <b>*</b></span><input value={form.owner} onChange={(event) => update('owner', event.target.value)} /><SettingsFieldError message={errors.owner} /></label>
               <label className="campaign-field campaign-field-full"><span>Mô tả</span><textarea rows="4" value={form.description} onChange={(event) => update('description', event.target.value)} /></label>
               <div className="campaign-field campaign-field-full"><span>Category <em>Tuỳ chọn</em></span><CampaignCategoryField creators={creators} value={form.category} onChange={(value) => update('category', value)} disabled={!canEdit || saving} /></div>
+              <div className="campaign-field campaign-field-full"><span>Mục tiêu Creator theo Segment <em>Tuỳ chọn</em></span><CampaignSegmentGoalsField value={form.segmentGoals} onChange={(value) => update('segmentGoals', value)} disabled={!canEdit || saving} /></div>
             </div>
           </section>
 
           <section className="campaign-settings-section">
-            <div className="campaign-settings-section-heading"><span><Icon name="clock" size={18} /></span><div><h3>Thời gian & ngân sách</h3><p>Timeline chi tiết vẫn được quản lý riêng trong tab Timeline.</p></div></div>
+            <div className="campaign-settings-section-heading"><span><Icon name="clock" size={18} /></span><div><h3>Thời gian & ngân sách</h3><p>Timeline chi tiết được quản lý trực tiếp trong tab Tổng quan.</p></div></div>
             <div className="campaign-form-grid">
               <label className={`campaign-field ${errors.startDate ? 'has-error' : ''}`}><span>Ngày bắt đầu <b>*</b></span><input type="date" value={form.startDate} onChange={(event) => update('startDate', event.target.value)} /><SettingsFieldError message={errors.startDate} /></label>
               <label className={`campaign-field ${errors.endDate ? 'has-error' : ''}`}><span>Ngày kết thúc <b>*</b></span><input type="date" min={form.startDate || undefined} value={form.endDate} onChange={(event) => update('endDate', event.target.value)} /><SettingsFieldError message={errors.endDate} /></label>

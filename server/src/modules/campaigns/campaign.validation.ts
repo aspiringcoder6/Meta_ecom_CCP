@@ -25,13 +25,26 @@ function categoryValues(value: unknown) {
   return [...new Set(value.map((item) => String(item || '').replace(/\s+/g, ' ').trim()).filter(Boolean))].slice(0, 100)
 }
 
+function segmentGoalValues(value: unknown) {
+  if (value === undefined || value === null) return {}
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    throw new ApiError(422, 'Mục tiêu theo Segment không hợp lệ.', 'INVALID_CAMPAIGN', { segmentGoals: 'Mục tiêu phải là một object.' })
+  }
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).flatMap(([rawSegment, rawTarget]) => {
+    const segment = String(rawSegment || '').trim().toUpperCase().slice(0, 50)
+    const target = Number(rawTarget)
+    if (!segment || !Number.isInteger(target) || target < 0 || target > 100000) return []
+    return [[segment, target]]
+  }).slice(0, 20))
+}
+
 function campaignInformation(input: Record<string, unknown>) {
   const startDate = dateValue(input.startDate, 'Ngày bắt đầu')
   const endDate = dateValue(input.endDate, 'Ngày kết thúc')
   if (endDate < startDate) throw new ApiError(422, 'Ngày kết thúc phải sau ngày bắt đầu.', 'INVALID_CAMPAIGN')
   return {
     name: text(input.name, 'Tên Campaign', true), client: text(input.client, 'Client / Brand', true), owner: text(input.owner, 'Owner', true),
-    description: text(input.description, 'Mô tả'), category: categoryValues(input.category), startDate, endDate,
+    description: text(input.description, 'Mô tả'), category: categoryValues(input.category), segmentGoals: segmentGoalValues(input.segmentGoals), startDate, endDate,
     totalBudget: amount(input.totalBudget) ?? 0, creatorBudget: amount(input.creatorBudget, true),
   }
 }

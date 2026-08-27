@@ -128,6 +128,11 @@
 .campaign-field.has-error input { border-color: #e16a77; background: #fffafb; }
 .campaign-field-error { display: flex; align-items: center; gap: 5px; color: #c74555; font-size: 9.5px; }
 .campaign-field-hint { color: #1180c6; font-size: 9.5px; font-weight: 650; }
+.campaign-segment-goals-field { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 9px; }
+.campaign-segment-goals-field label { min-width: 0; display: grid; grid-template-columns: minmax(0,1fr) 62px auto; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid #dce6ef; border-radius: 10px; background: #f9fbfd; }
+.campaign-segment-goals-field label > span { overflow: hidden; color: #40566e; font-size: 9px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.campaign-segment-goals-field input { width: 62px; height: 34px; padding: 0 7px; border: 1px solid #cfdeea; border-radius: 7px; color: var(--navy); background: #fff; font-weight: 750; text-align: center; }
+.campaign-segment-goals-field small { color: #8a99aa; font-size: 7px; }
 .campaign-money-input { position: relative; }
 .campaign-money-input input { padding-right: 38px; }
 .campaign-money-input i { position: absolute; top: 50%; right: 14px; color: #71839a; font-size: 11px; font-style: normal; transform: translateY(-50%); }
@@ -234,6 +239,7 @@
 }
 
 @media (max-width: 900px) {
+  .campaign-segment-goals-field { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .campaign-form-layout { grid-template-columns: 1fr; }
   .campaign-form-aside { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .campaign-form-actions, .campaign-permission-note { grid-column: 1 / -1; }
@@ -243,6 +249,7 @@
 }
 
 @media (max-width: 680px) {
+  .campaign-segment-goals-field { grid-template-columns: 1fr; }
   .campaigns-heading { align-items: stretch; flex-direction: column; }
   .campaign-create-button { width: 100%; }
   .campaign-metrics { grid-template-columns: 1fr; }

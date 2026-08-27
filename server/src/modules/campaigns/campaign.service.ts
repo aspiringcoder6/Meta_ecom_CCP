@@ -20,6 +20,10 @@ function jsonArray(value: Prisma.JsonValue | null | undefined) {
   return Array.isArray(value) ? value : []
 }
 
+function jsonObject(value: Prisma.JsonValue | null | undefined) {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+}
+
 function toCampaignDto(campaign: CampaignRecord) {
   return {
     id: campaign.externalId,
@@ -29,6 +33,7 @@ function toCampaignDto(campaign: CampaignRecord) {
     owner: campaign.owner,
     description: campaign.description || '',
     category: campaign.category,
+    segmentGoals: jsonObject(campaign.segmentGoals),
     startDate: dateOnly(campaign.startDate),
     endDate: dateOnly(campaign.endDate),
     totalBudget: Number(campaign.budget || 0),
@@ -95,7 +100,7 @@ export async function updateCampaignStatus(identifier: string, status: string) {
 
 export async function createCampaign(input: {
   name: string; client: string; owner: string; description: string; startDate: Date; endDate: Date; totalBudget: number; creatorBudget: number | null;
-  category: string[]; creators: unknown[]; milestones: unknown[]; deliverables: unknown[];
+  category: string[]; segmentGoals: Record<string, number>; creators: unknown[]; milestones: unknown[]; deliverables: unknown[];
 }) {
   const creatorIds = [...new Set(input.creators.map((item) => String((item as Record<string, unknown>)?.creatorId || '')).filter(Boolean))]
   const creators = creatorIds.length ? await prisma.creator.findMany({ where: { id: { in: creatorIds } } }) : []
@@ -110,7 +115,7 @@ export async function createCampaign(input: {
   const campaign = await prisma.campaign.create({
     data: {
       externalId: await nextExternalId(), name: input.name, client: input.client, owner: input.owner, description: input.description,
-      category: input.category, startDate: input.startDate, endDate: input.endDate, budget: input.totalBudget, creatorBudget: input.creatorBudget,
+      category: input.category, segmentGoals: deliverableJson(input.segmentGoals), startDate: input.startDate, endDate: input.endDate, budget: input.totalBudget, creatorBudget: input.creatorBudget,
       defaultDeliverables: deliverableJson(input.deliverables), status: 'DRAFT',
       milestones: { create: milestones },
       creators: { create: creatorIds.flatMap((creatorId) => {
@@ -127,7 +132,7 @@ export async function createCampaign(input: {
 }
 
 export async function updateCampaignInformation(identifier: string, input: {
-  name: string; client: string; owner: string; description: string; category: string[];
+  name: string; client: string; owner: string; description: string; category: string[]; segmentGoals: Record<string, number>;
   startDate: Date; endDate: Date; totalBudget: number; creatorBudget: number | null;
 }) {
   const campaign = await campaignRecord(identifier)
@@ -139,6 +144,7 @@ export async function updateCampaignInformation(identifier: string, input: {
       owner: input.owner,
       description: input.description,
       category: input.category,
+      segmentGoals: deliverableJson(input.segmentGoals),
       startDate: input.startDate,
       endDate: input.endDate,
       budget: input.totalBudget,

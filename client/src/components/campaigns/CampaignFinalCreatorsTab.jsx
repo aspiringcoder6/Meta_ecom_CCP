@@ -32,10 +32,10 @@ export default function CampaignFinalCreatorsTab({ campaign, creators, canEdit, 
   const budgetWithAgencyFee = Math.round(totals.bookingExpense * 1.06)
 
   return (
-    <div className="campaign-detail-tab campaign-final-creators-tab">
+    <div className="campaign-detail-tab campaign-final-creators-tab campaign-financial-listings-tab">
       <section className="campaign-detail-card final-creators-card" data-tour="campaign-final-workspace">
         <header className="campaign-tab-heading">
-          <div><span className="eyebrow">Final KOC & Payment Tracking</span><h2>Final Creators</h2><p>Chỉ hiển thị KOC đã được Brand duyệt, KOC xác nhận và toàn bộ deliverables đều ở trạng thái Done.</p></div>
+          <div><span className="eyebrow">Financial Control & Payment Tracking</span><h2>Financial Listings</h2><p>Theo dõi tài chính của KOC đã được Brand duyệt, KOC xác nhận và hoàn thành toàn bộ deliverables.</p></div>
           <span className="final-creators-count"><Icon name="userCheck" size={16} />{finalCreators.length} Creator</span>
         </header>
 
@@ -60,7 +60,7 @@ export default function CampaignFinalCreatorsTab({ campaign, creators, canEdit, 
           </table>
         </div>}
 
-        {!rows.length && <div className="campaign-tab-empty inline"><span><Icon name="userCheck" size={24} /></span><h2>Chưa có Final Creator</h2><p>KOC sẽ xuất hiện khi Brand Pick và KOC Confirm đều Approved, đồng thời tất cả deliverables của KOC đã chuyển sang Done.</p></div>}
+        {!rows.length && <div className="campaign-tab-empty inline"><span><Icon name="trending" size={24} /></span><h2>Chưa có dữ liệu tài chính</h2><p>KOC sẽ xuất hiện khi Brand Pick và KOC Confirm đều Approved, đồng thời tất cả deliverables của KOC đã chuyển sang Done.</p></div>}
       </section>
     </div>
   )
