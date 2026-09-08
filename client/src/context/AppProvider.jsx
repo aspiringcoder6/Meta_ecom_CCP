@@ -708,16 +708,25 @@ export default function AppProvider({ children }) {
     editSessionSnapshot.current = creatorHistory
   }
 
-  const commitCreatorEditSession = () => {
+  const commitCreatorEditSession = async () => {
     const snapshot = editSessionSnapshot.current
-    editSessionSnapshot.current = null
-    if (!snapshot) return
+    if (!snapshot) return creators
     const changes = getCreatorBatchChanges(snapshot.present, creatorHistory.present)
-    if (!changes.creates.length && !changes.updates.length && !changes.deletes.length) return
-    void creatorApi.batch(changes).then((serverCreators) => {
+    if (!changes.creates.length && !changes.updates.length && !changes.deletes.length) {
+      editSessionSnapshot.current = null
+      return creators
+    }
+    try {
+      const serverCreators = await creatorApi.batch(changes)
       dispatchCreators({ type: 'hydrate', creators: serverCreators })
+      editSessionSnapshot.current = null
       setBackendAvailable(true)
-    }).catch((error) => showToast(getApiErrorMessage(error, 'Thay đổi chưa được lưu vào backend.')))
+      return serverCreators
+    } catch (error) {
+      const message = getApiErrorMessage(error, 'Thay đổi chưa được lưu vào backend.')
+      showToast(message)
+      throw new Error(message)
+    }
   }
 
   const cancelCreatorEditSession = () => {

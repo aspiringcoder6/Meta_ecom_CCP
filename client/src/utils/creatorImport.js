@@ -2,6 +2,7 @@ import Papa from 'papaparse'
 import readXlsxFile from 'read-excel-file/browser'
 import { CREATOR_SEGMENTS, CREATOR_TYPES } from '../config/labels'
 import { mergeCategoryPaths, parseCategoryPaths } from './creatorCategoryPaths'
+import { normalizeTikTokLink } from './creatorValidation'
 
 const HEADER_FIELDS = [
   { field: 'tiktokLink', matches: ['link tiktok', 'tiktok link'] },
@@ -169,7 +170,9 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
   const headers = rows[headerIndex].map(getHeaderField)
   if (!headers.includes('tiktokLink')) throw new Error('Không tìm thấy cột “Link Tiktok” trong file.')
   const existingById = new Map(existingCreators.map((creator) => [normalizeTikTokId(creator.tiktokId), creator]))
+  const existingByLink = new Map(existingCreators.map((creator) => [normalizeTikTokLink(creator.tiktokLink), creator]).filter(([link]) => link))
   const importedIds = new Set()
+  const importedLinks = new Set()
   const creators = []
   const createdIds = []
   const updatedIds = []
@@ -190,7 +193,8 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
     if ((instructionId === 'text' && instructionLink === 'link') || instructionId.startsWith('bat buoc') || instructionLink.startsWith('bat buoc')) return
     const parsed = createImportedCreator(values, rowIndex)
     const normalizedId = normalizeTikTokId(parsed.creator.tiktokId)
-    if (normalizedId && importedIds.has(normalizedId)) {
+    const normalizedLink = normalizeTikTokLink(parsed.creator.tiktokLink)
+    if ((normalizedId && importedIds.has(normalizedId)) || (normalizedLink && importedLinks.has(normalizedLink))) {
       duplicateCount += 1
       return
     }
@@ -202,8 +206,18 @@ export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {
       })
       return
     }
-    importedIds.add(normalizedId)
     const existing = existingById.get(normalizedId)
+    const linkOwner = existingByLink.get(normalizedLink)
+    if (linkOwner && String(linkOwner.id) !== String(existing?.id ?? '')) {
+      errors.push({
+        row: headerIndex + rowIndex + 2,
+        identifier: String(values.tiktokId || values.tiktokLink || '').trim(),
+        messages: [`Link TikTok đã được sử dụng bởi ${linkOwner.tiktokId}.`],
+      })
+      return
+    }
+    importedIds.add(normalizedId)
+    if (normalizedLink) importedLinks.add(normalizedLink)
     if (mode === 'append' && existing) {
       const merged = mergeImportedCreator(existing, parsed.creator, values)
       if (JSON.stringify(merged) === JSON.stringify(existing)) {

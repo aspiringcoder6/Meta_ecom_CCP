@@ -1,4 +1,5 @@
 import { toCreatorList } from './creatorLists'
+import { formatCategoryPaths } from './creatorCategoryPaths'
 
 const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' })
 
@@ -44,7 +45,7 @@ function groupValue(group, key) {
     tiktokId: source.tiktokId,
     expense: group.expense,
     segment: source.segment,
-    concept: source.concept,
+    category: formatCategoryPaths(source.category || []),
     type: toCreatorList(source.type).join(', '),
     gmvMonth: source.gmvMonth,
     followers: source.followers,
@@ -91,7 +92,7 @@ function matchesAny(sourceValues, selectedValues) {
 function creatorSearchText(group) {
   const { source } = group
   return cleanText([
-    source.name, source.tiktokId, source.tiktokLink, source.segment, source.concept,
+    source.name, source.tiktokId, source.tiktokLink, source.segment, formatCategoryPaths(source.category || []),
     ...toCreatorList(source.type),
   ].join(' '))
 }

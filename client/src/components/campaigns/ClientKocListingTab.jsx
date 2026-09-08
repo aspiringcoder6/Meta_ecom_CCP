@@ -1,13 +1,26 @@
+import { useMemo, useState } from 'react'
 import { clientReviewDecisionLabel } from '../../config/campaigns'
 import { formatCompactCurrency, formatNumber } from '../../utils/formatters'
 import { toCreatorList } from '../../utils/creatorLists'
+import { projectCategoryPaths } from '../../utils/creatorCategoryPaths'
+import { cycleCreatorSort } from '../../utils/creatorSorting'
+import { EMPTY_CLIENT_KOC_FILTERS, filterAndSortClientKocs } from '../../utils/clientReviewTables'
 import Icon from '../common/Icon'
 import CategoryPathRibbons from '../creators/CategoryPathRibbons'
+import CreatorSortableHeader from '../creators/CreatorSortableHeader'
+import ClientReviewFilterBar from './ClientReviewFilterBar'
 
 const DECISIONS = [
   { value: 'APPROVED', label: 'Đồng ý', icon: 'check' },
   { value: 'PENDING', label: 'Pending', icon: 'clock' },
   { value: 'REJECTED', label: 'Từ chối', icon: 'close' },
+]
+
+const KOC_COLUMNS = [
+  ['Link TikTok', 'tiktokLink'], ['ID TikTok', 'tiktokId'], ['Expense', 'expense'],
+  ['Segment', 'segment'], ['Category', 'category'], ['Type', 'type'],
+  ['Followers', 'followers'], ['GMV / Month', 'gmvMonth'], ['Meta Ecom Note', 'metaEcomNote'],
+  ['Brand Pick', 'brandPick'], ['Brand Note', 'brandNote'], ['KOC Confirm', 'kocConfirm'],
 ]
 
 function decisionTone(value) {
@@ -28,12 +41,25 @@ function creatorTikTokLink(creator) {
 }
 
 export default function ClientKocListingTab({ campaign, responses, onUpdate, changedCount, savedMessage, saving, onSubmit }) {
-  const creators = campaign.creators || []
+  const [filters, setFilters] = useState(EMPTY_CLIENT_KOC_FILTERS)
+  const [sortCriteria, setSortCriteria] = useState([])
+  const creators = useMemo(() => campaign.creators || [], [campaign.creators])
   const counts = creators.reduce((result, creator) => {
     const decision = responses[String(creator.creatorId)]?.decision || 'PENDING'
     result[decision] = (result[decision] || 0) + 1
     return result
   }, { APPROVED: 0, PENDING: 0, REJECTED: 0 })
+  const filterOptions = useMemo(() => ({
+    segment: [...new Set(creators.map((creator) => creator.segment).filter(Boolean))].sort(),
+    category: [...new Set(creators.flatMap((creator) => projectCategoryPaths(creator.category || [], 2)))].sort(),
+    type: [...new Set(creators.flatMap((creator) => toCreatorList(creator.type)))].sort(),
+    brandPick: [...new Set(creators.map((creator) => clientReviewDecisionLabel(responses[String(creator.creatorId)]?.decision || 'PENDING')))],
+    kocConfirm: [...new Set(creators.map((creator) => clientReviewDecisionLabel(kocDecision(creator))))],
+  }), [creators, responses])
+  const visibleCreators = useMemo(() => filterAndSortClientKocs(creators, responses, filters, sortCriteria), [creators, filters, responses, sortCriteria])
+  const changeFilter = (key, value) => setFilters((current) => ({ ...current, [key]: value }))
+  const clearFilters = () => setFilters(EMPTY_CLIENT_KOC_FILTERS)
+  const sortBy = (key) => setSortCriteria((current) => cycleCreatorSort(current, key))
 
   return <>
     <section className="client-review-instruction"><Icon name="users" size={19} /><div><strong>Duyệt danh sách KOC cho Campaign</strong><p>Toàn bộ thông tin từ External Listings được hiển thị bên dưới. Bạn có thể xem hồ sơ, chọn Brand Pick và để lại Brand Note trước khi gửi một lần cho Meta Ecom.</p></div></section>
@@ -45,10 +71,28 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
     </section>
     <section className="client-koc-listing-card">
       <header><div><span className="client-listing-eyebrow">External Listings</span><h2>Danh sách KOC</h2><p>Cuộn ngang để xem đầy đủ thông tin. Link và ID TikTok được giữ cố định.</p></div><span>{creators.length} Creator</span></header>
+      <ClientReviewFilterBar
+        search={filters.search}
+        filters={[
+          { key: 'segment', label: 'Segment', values: filters.segment, options: filterOptions.segment },
+          { key: 'category', label: 'Category', values: filters.category, options: filterOptions.category },
+          { key: 'type', label: 'Type', values: filters.type, options: filterOptions.type },
+          { key: 'brandPick', label: 'Brand Pick', values: filters.brandPick, options: filterOptions.brandPick },
+          { key: 'kocConfirm', label: 'KOC Confirm', values: filters.kocConfirm, options: filterOptions.kocConfirm },
+        ]}
+        resultLabel={`${visibleCreators.length}/${creators.length} Creator`}
+        onSearch={(value) => changeFilter('search', value)}
+        onChange={changeFilter}
+        onClear={clearFilters}
+      />
+      <div className="client-review-sort-hint">Bấm header để sort nhiều tiêu chí · tiêu chí chọn trước được ưu tiên cao hơn</div>
       <div className="client-koc-listing-table-wrap">
         <table className="client-koc-listing-table">
-          <thead><tr><th>Link TikTok</th><th>ID TikTok</th><th>Expense</th><th>Segment</th><th>Category</th><th>Type</th><th>Followers</th><th>GMV / Month</th><th>Meta Ecom Note</th><th>Brand Pick</th><th>Brand Note</th><th>KOC Confirm</th></tr></thead>
-          <tbody>{creators.map((creator) => {
+          <thead><tr>{KOC_COLUMNS.map(([label, key]) => {
+            const sortIndex = sortCriteria.findIndex((criterion) => criterion.key === key)
+            return <th key={key}><CreatorSortableHeader label={label} sortKey={key} criterion={sortCriteria[sortIndex]} priority={sortIndex + 1} onSort={sortBy} /></th>
+          })}</tr></thead>
+          <tbody>{visibleCreators.map((creator) => {
             const response = responses[String(creator.creatorId)] || { decision: 'PENDING', note: '' }
             const tone = decisionTone(response.decision)
             const confirm = kocDecision(creator)
@@ -70,6 +114,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
           })}</tbody>
         </table>
         {!creators.length && <div className="client-review-no-listing"><Icon name="users" size={24} /><strong>Chưa có KOC trong danh sách</strong><span>Meta Ecom chưa thêm Creator vào External Listings.</span></div>}
+        {creators.length > 0 && !visibleCreators.length && <div className="client-review-no-listing"><Icon name="search" size={24} /><strong>Không có KOC phù hợp</strong><span>Hãy thử thay đổi hoặc xóa các bộ lọc hiện tại.</span><button type="button" onClick={clearFilters}>Xóa bộ lọc</button></div>}
       </div>
     </section>
     <footer className="client-review-submit"><div><strong>{changedCount} thay đổi chưa gửi</strong><small>{savedMessage || 'Phản hồi sẽ được gom và gửi một lần đến Meta Ecom.'}</small></div><button type="button" disabled={!changedCount || saving} onClick={onSubmit}><Icon name="check" size={17} />{saving ? 'Đang gửi...' : 'Gửi phản hồi'}</button></footer>

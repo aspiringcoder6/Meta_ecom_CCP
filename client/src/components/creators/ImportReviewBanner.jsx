@@ -15,6 +15,7 @@ export default function ImportReviewBanner({ review }) {
           <button className="section-visibility-toggle" onClick={() => setShowPreview((visible) => !visible)} aria-expanded={showPreview}><Icon name="chevronDown" size={14} />{showPreview ? 'Ẩn preview' : 'Hiện preview'}</button>
         </div>
       </div>
+      {review.saveError && <section className="import-save-error" role="alert"><Icon name="warning" size={17} /><div><strong>Import chưa được lưu vào database</strong><p>{review.saveError}</p><small>Dữ liệu preview vẫn được giữ lại. Hãy kiểm tra lỗi rồi bấm “Chấp nhận tất cả” để thử lại, hoặc hủy import.</small></div></section>}
       {review.errors.length > 0 && (
         <section className="import-error-panel">
           <div className="import-error-heading"><Icon name="warning" size={16} /><strong>{review.errors.length} dòng không được import</strong>{showErrors && <span>— xem nguyên nhân bên dưới</span>}<button className="section-visibility-toggle is-error" onClick={() => setShowErrors((visible) => !visible)} aria-expanded={showErrors}><Icon name="chevronDown" size={14} />{showErrors ? 'Ẩn lỗi' : 'Hiện lỗi'}</button></div>

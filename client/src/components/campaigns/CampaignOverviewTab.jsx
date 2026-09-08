@@ -1,5 +1,12 @@
 import { effectiveClientDecision } from '../../config/campaigns'
-import { acceptedCampaignCreators, campaignCreatorDeliverables, finalCampaignCreators } from '../../utils/campaignDeliverables'
+import {
+  acceptedCampaignCreators,
+  campaignCreatorDeliverables,
+  DELIVERABLE_TRACKED_STATUSES,
+  finalCampaignCreators,
+  normalizedDeliverableProgress,
+  trackedDeliverableCounts,
+} from '../../utils/campaignDeliverables'
 import { formatCompactCurrency } from '../../utils/formatters'
 import Icon from '../common/Icon'
 import CampaignSegmentGoalProgress from './CampaignSegmentGoalProgress'
@@ -11,7 +18,7 @@ function deliverablesForOverview(campaign, creator) {
 }
 
 function isDeliverableDone(deliverable) {
-  return deliverable.progress === 'Done' || deliverable.status === 'COMPLETED'
+  return normalizedDeliverableProgress(deliverable) === 'Done'
 }
 
 function WorkflowStage({ icon, label, value, detail, tone, onClick }) {
@@ -24,7 +31,7 @@ function WorkflowStage({ icon, label, value, detail, tone, onClick }) {
   )
 }
 
-export default function CampaignOverviewTab({ campaign, canEdit, onOpenTab, onSaveTimeline }) {
+export default function CampaignOverviewTab({ campaign, canEdit, onOpenTab, onOpenDeliverables, onSaveTimeline }) {
   const creators = campaign.creators || []
   const brandDecisions = creators.reduce((counts, creator) => {
     const decision = effectiveClientDecision(creator)
@@ -35,10 +42,8 @@ export default function CampaignOverviewTab({ campaign, canEdit, onOpenTab, onSa
   const financialCreators = finalCampaignCreators(campaign)
   const deliverables = acceptedCreators.flatMap((creator) => deliverablesForOverview(campaign, creator))
   const doneDeliverables = deliverables.filter(isDeliverableDone).length
-  const cancelledDeliverables = deliverables.filter((item) => item.progress === 'Cancel' || item.status === 'CANCELLED').length
-  const activeDeliverables = Math.max(0, deliverables.length - doneDeliverables - cancelledDeliverables)
+  const trackedCounts = trackedDeliverableCounts(deliverables)
   const deliverableProgress = deliverables.length ? Math.round((doneDeliverables / deliverables.length) * 100) : 0
-  const totalPerformance = deliverables.reduce((total, item) => total + (Number(item.performance) || 0), 0)
   const financialExpense = financialCreators.reduce((total, creator) => total + (Number(creator.expense) || Number(creator.suggestedPrice) || 0), 0)
   const metrics = [
     { icon: 'fileSpreadsheet', label: 'Internal Listings', value: creators.length, detail: `${brandDecisions.PENDING} đang chờ Brand Pick` },
@@ -54,10 +59,7 @@ export default function CampaignOverviewTab({ campaign, canEdit, onOpenTab, onSa
         <div className="overview-deliverable-progress"><i style={{ width: `${deliverableProgress}%` }} /></div>
         <div className="overview-deliverable-hero-body">
           <div className="overview-deliverable-counts">
-            <div><span className="is-done"><Icon name="check" size={14} /></span><strong>{doneDeliverables}</strong><small>Done</small></div>
-            <div><span className="is-active"><Icon name="clock" size={14} /></span><strong>{activeDeliverables}</strong><small>Đang xử lý</small></div>
-            <div><span className="is-cancel"><Icon name="close" size={14} /></span><strong>{cancelledDeliverables}</strong><small>Cancel</small></div>
-            <div><span className="is-performance"><Icon name="trending" size={14} /></span><strong>{formatCompactCurrency(totalPerformance)}</strong><small>Performance (GMV)</small></div>
+            {DELIVERABLE_TRACKED_STATUSES.map((status) => <button type="button" className={`is-${status.tone}`} onClick={() => onOpenDeliverables(status.value)} key={status.value}><span><Icon name={status.icon} size={14} /></span><strong>{trackedCounts[status.value]}</strong><small>{status.label}</small><Icon name="chevronRight" size={12} /></button>)}
           </div>
           <button type="button" className="overview-open-tab" onClick={() => onOpenTab('deliverables')}>Mở bảng Deliverables <Icon name="chevronRight" size={14} /></button>
         </div>
@@ -73,7 +75,7 @@ export default function CampaignOverviewTab({ campaign, canEdit, onOpenTab, onSa
           <WorkflowStage icon="fileSpreadsheet" label="Internal Listings" value={creators.length} detail="Creator nội bộ" onClick={() => onOpenTab('internal-listings')} />
           <WorkflowStage icon="message" label="Brand Pick" value={brandDecisions.APPROVED} detail={`${brandDecisions.CONSIDER} đang cân nhắc`} tone="brand" onClick={() => onOpenTab('external-listings')} />
           <WorkflowStage icon="userCheck" label="KOC Confirm" value={acceptedCreators.length} detail="Brand và KOC cùng duyệt" tone="accepted" onClick={() => onOpenTab('deliverables')} />
-          <WorkflowStage icon="trending" label="Financial Listings" value={financialCreators.length} detail="Hoàn tất mọi deliverable" tone="final" onClick={() => onOpenTab('financial-listings')} />
+          <WorkflowStage icon="trending" label="Financial Listings" value={financialCreators.length} detail="Brand và KOC đã duyệt" tone="final" onClick={() => onOpenTab('financial-listings')} />
         </div>
         <div className="campaign-brand-breakdown" aria-label="Phân bổ Brand Pick">
           <span><i className="is-approved" />Approved <strong>{brandDecisions.APPROVED}</strong></span>

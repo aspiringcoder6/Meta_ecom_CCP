@@ -17,11 +17,11 @@ export const creatorApi = {
     await apiClient.delete(`/creators/${creatorId}`)
   },
   async batch(changes) {
-    const response = await apiClient.post('/creators/batch', changes)
+    const response = await apiClient.post('/creators/batch', changes, { timeout: 180000 })
     return response.data.data
   },
   async import(creators, mode) {
-    const response = await apiClient.post('/creators/import', { creators, mode })
+    const response = await apiClient.post('/creators/import', { creators, mode }, { timeout: 180000 })
     return response.data.data
   },
   async metrics() {

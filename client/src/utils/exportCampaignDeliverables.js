@@ -1,3 +1,5 @@
+import { formatCategoryPaths } from './creatorCategoryPaths'
+
 function csvCell(value) {
   return `"${String(value ?? '').replaceAll('"', '""')}"`
 }
@@ -7,9 +9,9 @@ function safeFilename(value) {
 }
 
 export function exportCampaignDeliverablesToCsv(campaign, rows) {
-  const headers = ['Link TikTok', 'ID TikTok', 'Expense', 'Segment', 'Concept', 'Type', 'GMV / Month', 'Followers', 'Quantity', 'Tiến độ', 'SDHA', 'Product', 'KB, DEMO KOC', 'Meta Ecom Note', 'Brand Feedback', 'Performance (GMV)', 'Air Time', 'Link Air', 'Code Ads', 'Expiry Date Code Ads']
+  const headers = ['Link TikTok', 'ID TikTok', 'Expense', 'Segment', 'Category', 'Type', 'GMV / Month', 'Followers', 'Quantity', 'Tiến độ', 'SDHA', 'Product', 'KB, DEMO KOC', 'Meta Ecom Note', 'Brand Feedback', 'Performance (GMV)', 'Air Time', 'Link Air', 'Code Ads', 'Expiry Date Code Ads']
   const values = rows.map((row) => [
-    row.tiktokLink, row.tiktokId, row.expense, row.segment, row.concept, row.type, row.gmvMonth, row.followers,
+    row.tiktokLink, row.tiktokId, row.expense, row.segment, formatCategoryPaths(row.category || []), row.type, row.gmvMonth, row.followers,
     row.quantity, row.progress, row.sdha ? 'Có' : 'Không', row.product, row.demoLink, row.metaEcomNote,
     row.brandFeedback, row.performance, row.airTime, row.airLink, row.codeAds, row.codeAdsExpiry,
   ])

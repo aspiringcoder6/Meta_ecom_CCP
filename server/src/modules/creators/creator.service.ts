@@ -4,6 +4,7 @@ import { calculateBookingPricing } from '../../utils/pricing.js'
 import { validateCreatorArray, validateCreatorInput, type CreatorInput } from './creator.validation.js'
 
 const creatorInclude = { _count: { select: { campaigns: true } } } as const
+const BULK_TRANSACTION_OPTIONS = { maxWait: 20_000, timeout: 150_000 } as const
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'CR'
@@ -223,6 +224,10 @@ export async function importCreators(value: unknown, mode: 'append' | 'replace')
       }
     }
 
+    const importedRows = await tx.creator.findMany({ where: { tiktokId: { in: ids } }, select: { id: true } })
+    const affectedIds = new Set(importedRows.map((creator) => creator.id))
+    const identities = await tx.creator.findMany({ select: { id: true, tiktokId: true, tiktokLink: true } })
+    assertCreatorIdentityRowsUnique(identities, affectedIds)
     const result = await tx.creator.findMany({ include: creatorInclude, orderBy: { createdAt: 'desc' } })
     return {
       creators: result.map((creator) => toCreatorDto(creator as unknown as Record<string, unknown>)),
@@ -231,7 +236,7 @@ export async function importCreators(value: unknown, mode: 'append' | 'replace')
       updatedCount: existingCreators.length,
       duplicateCount: 0,
     }
-  }, { maxWait: 10_000, timeout: 60_000 })
+  }, BULK_TRANSACTION_OPTIONS)
 }
 
 interface BatchUpdate { id: string; changes: unknown }
@@ -282,6 +287,6 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
     }
     const identities = await tx.creator.findMany({ select: { id: true, tiktokId: true, tiktokLink: true } })
     assertCreatorIdentityRowsUnique(identities, affectedIds)
-  }, { maxWait: 10_000, timeout: 60_000 })
+  }, BULK_TRANSACTION_OPTIONS)
   return listCreators()
 }

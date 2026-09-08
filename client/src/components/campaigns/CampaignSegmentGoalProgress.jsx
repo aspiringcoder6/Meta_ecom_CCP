@@ -1,9 +1,19 @@
 import Icon from '../common/Icon'
 
+const SEGMENT_ORDER = ['TOP', 'MASSIVE', 'MINI', 'FREECAST']
+
 function campaignSegmentGoalState(campaign) {
   const goals = Object.entries(campaign?.segmentGoals || {})
     .map(([segment, target]) => ({ segment: String(segment).toUpperCase(), target: Math.max(0, Number(target) || 0) }))
     .filter((item) => item.target > 0)
+    .sort((left, right) => {
+      const leftIndex = SEGMENT_ORDER.indexOf(left.segment)
+      const rightIndex = SEGMENT_ORDER.indexOf(right.segment)
+      if (leftIndex === -1 && rightIndex === -1) return left.segment.localeCompare(right.segment, 'vi')
+      if (leftIndex === -1) return 1
+      if (rightIndex === -1) return -1
+      return leftIndex - rightIndex
+    })
   const counts = (campaign?.creators || []).reduce((result, creator) => {
     const segment = String(creator.segment || '').toUpperCase()
     result[segment] = (result[segment] || 0) + 1
@@ -30,7 +40,7 @@ export default function CampaignSegmentGoalProgress({ campaign, compact = false 
           const complete = current >= goal.target
           return <article className={complete ? 'is-complete' : ''} key={goal.segment}><span>{goal.segment}</span><strong>{current}<small>/{goal.target}</small></strong><i style={{ width: `${Math.min(100, Math.round(current / goal.target * 100))}%` }} /></article>
         })}</div>
-      </> : <p>Thiết lập số lượng MINI, TOP, MASSIVE hoặc FREECAST trong tab Thông tin.</p>}
+      </> : <p>Thiết lập số lượng TOP, MASSIVE, MINI hoặc FREECAST trong tab Thông tin.</p>}
     </section>
   )
 }

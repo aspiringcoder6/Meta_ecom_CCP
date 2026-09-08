@@ -81,10 +81,16 @@ export default function CreatorsPage() {
       showToast(error instanceof Error ? error.message : 'Không thể đọc file import.')
     }
   }
-  const acceptImport = () => {
-    commitCreatorEditSession()
-    showToast(`Đã áp dụng ${importReview?.createdCount || 0} Creator mới và ${importReview?.updatedCount || 0} Creator cập nhật`)
-    setImportReview(null)
+  const acceptImport = async () => {
+    setImportReview((current) => current ? { ...current, saveError: '' } : current)
+    try {
+      await commitCreatorEditSession()
+      showToast(`Đã lưu ${importReview?.createdCount || 0} Creator mới và ${importReview?.updatedCount || 0} Creator cập nhật vào database`)
+      setImportReview(null)
+    } catch (error) {
+      setImportReview((current) => current ? { ...current, saveError: error instanceof Error ? error.message : 'Không thể lưu import vào database.' } : current)
+      throw error
+    }
   }
   const cancelImport = () => {
     cancelCreatorEditSession()

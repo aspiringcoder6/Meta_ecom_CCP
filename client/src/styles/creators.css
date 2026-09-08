@@ -182,6 +182,10 @@
 .import-review-stats .has-warning strong { color: #8b681f; }
 .import-review-stats .has-error { color: #9d3547; background: #fff0f2; }
 .import-review-stats .has-error strong { color: #9d3547; }
+.import-save-error { display: flex; align-items: flex-start; gap: 9px; margin: 0 18px 10px; padding: 10px 12px; border: 1px solid #e9a8b4; border-radius: 10px; color: #9d3547; background: #fff0f2; }
+.import-save-error > svg { flex: 0 0 auto; margin-top: 1px; }
+.import-save-error > div { min-width: 0; display: grid; gap: 3px; }
+.import-save-error strong { font-size: 9px; }.import-save-error p { margin: 0; color: #a33d4d; font-size: 8px; }.import-save-error small { color: #b05e6c; font-size: 7.5px; }
 .import-error-panel { margin: 0 18px; overflow: hidden; border: 1px solid #efb7c0; border-radius: 11px; color: #872b3c; background: #fff7f8; }
 .import-error-heading { min-height: 38px; display: flex; align-items: center; gap: 7px; padding: 8px 12px; color: #9d3547; background: #ffedf0; }
 .import-error-heading strong { font-size: 9px; }
@@ -212,6 +216,8 @@
 .mode-toggle-button, .quick-add-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 13px; border: 1px solid #b8d9ef; border-radius: 11px; color: #0f6fae; background: #edf8ff; font-size: 10px; font-weight: 750; white-space: nowrap; }
 .mode-toggle-button:hover, .quick-add-button:hover { border-color: #6bb7e8; color: var(--navy); background: #ddf2ff; }
 .mode-toggle-button.is-editing { border-color: #1d8d64; color: #126d4c; background: #e5f6ef; }
+.creator-fullscreen-view.is-saving .creator-table-wrap { opacity: .72; }
+.creator-fullscreen-view.is-saving button:disabled { cursor: wait; }
 .cancel-edit-button { min-height: 42px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 11px; border: 1px solid #edc9cf; border-radius: 11px; color: #a13749; background: #fff7f8; font-size: 9px; font-weight: 750; white-space: nowrap; }
 .cancel-edit-button:hover { border-color: #da8996; color: #842638; background: #ffebee; }
 .history-actions { height: 42px; display: flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid #dce6ef; border-radius: 11px; background: #f8fafc; }
