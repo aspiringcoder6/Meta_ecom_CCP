@@ -241,6 +241,11 @@ export async function importCreators(value: unknown, mode: 'append' | 'replace')
 
 interface BatchUpdate { id: string; changes: unknown }
 
+interface ValidatedBatchCreate {
+  creator: CreatorInput
+  index: number
+}
+
 interface ValidatedBatchUpdate {
   id: string
   changes: ReturnType<typeof validateCreatorInput>
@@ -274,10 +279,10 @@ function validationMessages(error: ApiError) {
 function validateBatchCreates(value: unknown, issues: CreatorBatchIssue[]) {
   if (!Array.isArray(value)) throw new ApiError(400, 'Danh sách Creator cần tạo phải là một mảng.', 'INVALID_CREATOR_LIST')
   if (value.length > 5000) throw new ApiError(413, 'Mỗi lần chỉ được xử lý tối đa 5.000 Creator.', 'CREATOR_LIMIT_EXCEEDED')
-  const creators: CreatorInput[] = []
+  const creators: ValidatedBatchCreate[] = []
   value.forEach((creator, index) => {
     try {
-      creators.push(validateCreatorInput(creator) as CreatorInput)
+      creators.push({ creator: validateCreatorInput(creator) as CreatorInput, index })
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       issues.push({
@@ -319,7 +324,7 @@ function validateBatchUpdates(value: unknown, issues: CreatorBatchIssue[]) {
 
 export async function applyCreatorBatch(value: { creates?: unknown; updates?: unknown; deletes?: unknown }) {
   const issues: CreatorBatchIssue[] = []
-  const creates = validateBatchCreates(value.creates || [], issues)
+  const createCandidates = validateBatchCreates(value.creates || [], issues)
   const updates = validateBatchUpdates(value.updates || [], issues)
   const deletes = Array.isArray(value.deletes) ? value.deletes.filter((id): id is string => typeof id === 'string') : []
   let createdCount = 0
@@ -327,18 +332,7 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
   let deletedCount = 0
 
   await prisma.$transaction(async (tx) => {
-    const requestedUpdateIds = updates.map((update) => update.id)
-    const existingUpdateRows = requestedUpdateIds.length
-      ? await tx.creator.findMany({ where: { id: { in: requestedUpdateIds } }, select: { id: true } })
-      : []
-    const existingUpdateIds = new Set(existingUpdateRows.map((creator) => creator.id))
-    const applicableUpdates = updates.filter((update) => {
-      if (existingUpdateIds.has(update.id)) return true
-      issues.push({ operation: 'update', index: update.index, identifier: update.id, messages: ['Creator không còn tồn tại trong database.'] })
-      return false
-    })
-    const affectedIds = new Set(applicableUpdates.map((update) => update.id))
-    const createIds = creates.map((creator) => creator.tiktokId)
+    const createIds = createCandidates.map(({ creator }) => creator.tiktokId)
     const protectedCreators = deletes.length && createIds.length ? await tx.creator.findMany({ where: { id: { in: deletes }, tiktokId: { in: createIds } }, select: { id: true } }) : []
     const protectedIds = new Set(protectedCreators.map((creator) => creator.id))
     const deletableIds = deletes.filter((id) => !protectedIds.has(id))
@@ -349,8 +343,102 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
       const archived = await tx.creator.updateMany({ where: { id: { in: [...linkedIds] } }, data: { status: 'Archived' } })
       deletedCount += deleted.count + archived.count
     }
+
+    const currentIdentities = await tx.creator.findMany({ select: { id: true, tiktokId: true, tiktokLink: true } })
+    const identitiesById = new Map<string, CreatorIdentity>()
+    const exactIdOwners = new Map<string, CreatorIdentity>()
+    const normalizedIdOwners = new Map<string, CreatorIdentity>()
+    const normalizedLinkOwners = new Map<string, CreatorIdentity>()
+    currentIdentities.forEach((creator) => {
+      identitiesById.set(creator.id, creator)
+      exactIdOwners.set(creator.tiktokId, creator)
+      const idKey = normalizedTikTokId(creator.tiktokId)
+      const linkKey = normalizedTikTokLink(creator.tiktokLink)
+      if (idKey) normalizedIdOwners.set(idKey, creator)
+      if (linkKey) normalizedLinkOwners.set(linkKey, creator)
+    })
+    const createTargets = new Set<string>()
+
+    const removeIdentity = (identity: CreatorIdentity) => {
+      if (exactIdOwners.get(identity.tiktokId)?.id === identity.id) exactIdOwners.delete(identity.tiktokId)
+      const idKey = normalizedTikTokId(identity.tiktokId)
+      const linkKey = normalizedTikTokLink(identity.tiktokLink)
+      if (normalizedIdOwners.get(idKey)?.id === identity.id) normalizedIdOwners.delete(idKey)
+      if (normalizedLinkOwners.get(linkKey)?.id === identity.id) normalizedLinkOwners.delete(linkKey)
+    }
+    const addIdentity = (identity: CreatorIdentity) => {
+      exactIdOwners.set(identity.tiktokId, identity)
+      const idKey = normalizedTikTokId(identity.tiktokId)
+      const linkKey = normalizedTikTokLink(identity.tiktokLink)
+      if (idKey) normalizedIdOwners.set(idKey, identity)
+      if (linkKey) normalizedLinkOwners.set(linkKey, identity)
+      identitiesById.set(identity.id, identity)
+    }
+    const addIdentityIssue = (operation: 'create' | 'update', index: number, creator: Pick<CreatorInput, 'tiktokId' | 'tiktokLink'>, field: 'id' | 'link', owner: CreatorIdentity) => {
+      issues.push({
+        operation,
+        index,
+        identifier: creator.tiktokId || creator.tiktokLink,
+        messages: [field === 'id' ? `ID TikTok đã được sử dụng bởi ${owner.tiktokId}.` : `Link TikTok đã được sử dụng bởi ${owner.tiktokId}.`],
+      })
+    }
+
+    const acceptedCreates = createCandidates.filter(({ creator, index }) => {
+      const exactOwner = exactIdOwners.get(creator.tiktokId)
+      const targetId = exactOwner?.id
+      const idOwner = normalizedIdOwners.get(normalizedTikTokId(creator.tiktokId))
+      const linkOwner = normalizedLinkOwners.get(normalizedTikTokLink(creator.tiktokLink))
+      if (idOwner && idOwner.id !== targetId) {
+        addIdentityIssue('create', index, creator, 'id', idOwner)
+        return false
+      }
+      if (linkOwner && linkOwner.id !== targetId) {
+        addIdentityIssue('create', index, creator, 'link', linkOwner)
+        return false
+      }
+      if (exactOwner && createTargets.has(exactOwner.id)) {
+        addIdentityIssue('create', index, creator, 'id', exactOwner)
+        return false
+      }
+      const identityId = targetId || `__batch_create_${index}`
+      if (exactOwner) removeIdentity(exactOwner)
+      addIdentity({ id: identityId, tiktokId: creator.tiktokId, tiktokLink: creator.tiktokLink })
+      createTargets.add(identityId)
+      return true
+    })
+
+    const applicableUpdates = updates.filter((update) => {
+      const current = identitiesById.get(update.id)
+      if (!current) {
+        issues.push({ operation: 'update', index: update.index, identifier: update.id, messages: ['Creator không còn tồn tại trong database.'] })
+        return false
+      }
+      const candidate = {
+        id: update.id,
+        tiktokId: update.changes.tiktokId ?? current.tiktokId,
+        tiktokLink: update.changes.tiktokLink ?? current.tiktokLink,
+      }
+      removeIdentity(current)
+      const idOwner = normalizedIdOwners.get(normalizedTikTokId(candidate.tiktokId))
+      const linkOwner = normalizedLinkOwners.get(normalizedTikTokLink(candidate.tiktokLink))
+      if (idOwner) {
+        addIdentityIssue('update', update.index, candidate, 'id', idOwner)
+        addIdentity(current)
+        return false
+      }
+      if (linkOwner) {
+        addIdentityIssue('update', update.index, candidate, 'link', linkOwner)
+        addIdentity(current)
+        return false
+      }
+      addIdentity(candidate)
+      return true
+    })
+    const affectedIds = new Set(applicableUpdates.map((update) => update.id))
+    const creates = acceptedCreates.map(({ creator }) => creator)
+    const acceptedCreateIds = creates.map((creator) => creator.tiktokId)
     if (creates.length) {
-      const existingCreators = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { tiktokId: true, category: true, type: true } })
+      const existingCreators = await tx.creator.findMany({ where: { tiktokId: { in: acceptedCreateIds } }, select: { tiktokId: true, category: true, type: true } })
       const existingById = new Map(existingCreators.map((creator) => [creator.tiktokId, creator]))
       const existingIds = new Set(existingCreators.map((creator) => creator.tiktokId))
       const newCreators = creates.filter((creator) => !existingIds.has(creator.tiktokId))
@@ -372,7 +460,7 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
           updatedCount += 1
         }
       }
-      const createdOrUpdated = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { id: true } })
+      const createdOrUpdated = await tx.creator.findMany({ where: { tiktokId: { in: acceptedCreateIds } }, select: { id: true } })
       createdOrUpdated.forEach((creator) => affectedIds.add(creator.id))
     }
     for (const update of applicableUpdates) {

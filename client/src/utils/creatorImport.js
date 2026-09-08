@@ -27,7 +27,7 @@ function normalizeText(value) {
 }
 
 function normalizeTikTokId(value) {
-  return String(value ?? '').trim().toLowerCase()
+  return String(value ?? '').trim().toLowerCase().replace(/^@+/, '')
 }
 
 function getHeaderField(header) {
