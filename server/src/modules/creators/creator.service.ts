@@ -241,13 +241,103 @@ export async function importCreators(value: unknown, mode: 'append' | 'replace')
 
 interface BatchUpdate { id: string; changes: unknown }
 
+interface ValidatedBatchUpdate {
+  id: string
+  changes: ReturnType<typeof validateCreatorInput>
+  index: number
+}
+
+interface CreatorBatchIssue {
+  operation: 'create' | 'update'
+  index: number
+  identifier: string
+  messages: string[]
+}
+
+function batchIdentifier(value: unknown, fallback: string) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return fallback
+  const creator = value as Record<string, unknown>
+  return String(creator.tiktokId || creator.tiktokLink || creator.id || fallback).trim()
+}
+
+function validationMessages(error: ApiError) {
+  const messages: string[] = []
+  const visit = (value: unknown) => {
+    if (typeof value === 'string' && value.trim()) messages.push(value.trim())
+    else if (Array.isArray(value)) value.forEach(visit)
+    else if (value && typeof value === 'object') Object.values(value as Record<string, unknown>).forEach(visit)
+  }
+  visit(error.details)
+  return [...new Set(messages.length ? messages : [error.message])]
+}
+
+function validateBatchCreates(value: unknown, issues: CreatorBatchIssue[]) {
+  if (!Array.isArray(value)) throw new ApiError(400, 'Danh sách Creator cần tạo phải là một mảng.', 'INVALID_CREATOR_LIST')
+  if (value.length > 5000) throw new ApiError(413, 'Mỗi lần chỉ được xử lý tối đa 5.000 Creator.', 'CREATOR_LIMIT_EXCEEDED')
+  const creators: CreatorInput[] = []
+  value.forEach((creator, index) => {
+    try {
+      creators.push(validateCreatorInput(creator) as CreatorInput)
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      issues.push({
+        operation: 'create',
+        index,
+        identifier: batchIdentifier(creator, `Creator ${index + 1}`),
+        messages: validationMessages(error),
+      })
+    }
+  })
+  return creators
+}
+
+function validateBatchUpdates(value: unknown, issues: CreatorBatchIssue[]) {
+  if (!Array.isArray(value)) throw new ApiError(400, 'Danh sách Creator cần cập nhật phải là một mảng.', 'INVALID_CREATOR_LIST')
+  if (value.length > 5000) throw new ApiError(413, 'Mỗi lần chỉ được xử lý tối đa 5.000 Creator.', 'CREATOR_LIMIT_EXCEEDED')
+  const updates: ValidatedBatchUpdate[] = []
+  value.forEach((rawUpdate, index) => {
+    const update = rawUpdate as BatchUpdate | null
+    if (!update || typeof update.id !== 'string' || !update.id.trim()) {
+      issues.push({ operation: 'update', index, identifier: batchIdentifier(rawUpdate, `Creator ${index + 1}`), messages: ['Thiếu ID hệ thống của Creator cần cập nhật.'] })
+      return
+    }
+    try {
+      const changes = validateCreatorInput(update.changes, true)
+      if (Object.keys(changes).length) updates.push({ id: update.id, changes, index })
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      issues.push({
+        operation: 'update',
+        index,
+        identifier: batchIdentifier(update.changes, update.id),
+        messages: validationMessages(error),
+      })
+    }
+  })
+  return updates
+}
+
 export async function applyCreatorBatch(value: { creates?: unknown; updates?: unknown; deletes?: unknown }) {
-  const creates = validateCreatorArray(value.creates || [])
-  const updates = Array.isArray(value.updates) ? value.updates as BatchUpdate[] : []
+  const issues: CreatorBatchIssue[] = []
+  const creates = validateBatchCreates(value.creates || [], issues)
+  const updates = validateBatchUpdates(value.updates || [], issues)
   const deletes = Array.isArray(value.deletes) ? value.deletes.filter((id): id is string => typeof id === 'string') : []
+  let createdCount = 0
+  let updatedCount = 0
+  let deletedCount = 0
 
   await prisma.$transaction(async (tx) => {
-    const affectedIds = new Set(updates.map((update) => update?.id).filter((id): id is string => typeof id === 'string'))
+    const requestedUpdateIds = updates.map((update) => update.id)
+    const existingUpdateRows = requestedUpdateIds.length
+      ? await tx.creator.findMany({ where: { id: { in: requestedUpdateIds } }, select: { id: true } })
+      : []
+    const existingUpdateIds = new Set(existingUpdateRows.map((creator) => creator.id))
+    const applicableUpdates = updates.filter((update) => {
+      if (existingUpdateIds.has(update.id)) return true
+      issues.push({ operation: 'update', index: update.index, identifier: update.id, messages: ['Creator không còn tồn tại trong database.'] })
+      return false
+    })
+    const affectedIds = new Set(applicableUpdates.map((update) => update.id))
     const createIds = creates.map((creator) => creator.tiktokId)
     const protectedCreators = deletes.length && createIds.length ? await tx.creator.findMany({ where: { id: { in: deletes }, tiktokId: { in: createIds } }, select: { id: true } }) : []
     const protectedIds = new Set(protectedCreators.map((creator) => creator.id))
@@ -255,15 +345,19 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
     if (deletableIds.length) {
       const linked = await tx.campaignCreator.findMany({ where: { creatorId: { in: deletableIds } }, select: { creatorId: true } })
       const linkedIds = new Set(linked.map((item) => item.creatorId))
-      await tx.creator.deleteMany({ where: { id: { in: deletableIds.filter((id) => !linkedIds.has(id)) } } })
-      await tx.creator.updateMany({ where: { id: { in: [...linkedIds] } }, data: { status: 'Archived' } })
+      const deleted = await tx.creator.deleteMany({ where: { id: { in: deletableIds.filter((id) => !linkedIds.has(id)) } } })
+      const archived = await tx.creator.updateMany({ where: { id: { in: [...linkedIds] } }, data: { status: 'Archived' } })
+      deletedCount += deleted.count + archived.count
     }
     if (creates.length) {
       const existingCreators = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { tiktokId: true, category: true, type: true } })
       const existingById = new Map(existingCreators.map((creator) => [creator.tiktokId, creator]))
       const existingIds = new Set(existingCreators.map((creator) => creator.tiktokId))
       const newCreators = creates.filter((creator) => !existingIds.has(creator.tiktokId))
-      if (newCreators.length) await tx.creator.createMany({ data: newCreators, skipDuplicates: true })
+      if (newCreators.length) {
+        const created = await tx.creator.createMany({ data: newCreators, skipDuplicates: true })
+        createdCount += created.count
+      }
       for (const creator of creates) {
         if (existingIds.has(creator.tiktokId)) {
           const current = existingById.get(creator.tiktokId)
@@ -275,18 +369,25 @@ export async function applyCreatorBatch(value: { creates?: unknown; updates?: un
               type: [...new Set([...(current?.type || []), ...creator.type])],
             },
           })
+          updatedCount += 1
         }
       }
       const createdOrUpdated = await tx.creator.findMany({ where: { tiktokId: { in: createIds } }, select: { id: true } })
       createdOrUpdated.forEach((creator) => affectedIds.add(creator.id))
     }
-    for (const update of updates) {
-      if (!update || typeof update.id !== 'string') continue
-      const changes = validateCreatorInput(update.changes, true)
-      if (Object.keys(changes).length) await tx.creator.update({ where: { id: update.id }, data: changes })
+    for (const update of applicableUpdates) {
+      await tx.creator.update({ where: { id: update.id }, data: update.changes })
+      updatedCount += 1
     }
     const identities = await tx.creator.findMany({ select: { id: true, tiktokId: true, tiktokLink: true } })
     assertCreatorIdentityRowsUnique(identities, affectedIds)
   }, BULK_TRANSACTION_OPTIONS)
-  return listCreators()
+  return {
+    creators: await listCreators(),
+    createdCount,
+    updatedCount,
+    deletedCount,
+    skippedCount: issues.length,
+    errors: issues,
+  }
 }

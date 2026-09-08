@@ -710,18 +710,22 @@ export default function AppProvider({ children }) {
 
   const commitCreatorEditSession = async () => {
     const snapshot = editSessionSnapshot.current
-    if (!snapshot) return creators
+    if (!snapshot) return { creators, createdCount: 0, updatedCount: 0, deletedCount: 0, skippedCount: 0, errors: [] }
     const changes = getCreatorBatchChanges(snapshot.present, creatorHistory.present)
     if (!changes.creates.length && !changes.updates.length && !changes.deletes.length) {
       editSessionSnapshot.current = null
-      return creators
+      return { creators, createdCount: 0, updatedCount: 0, deletedCount: 0, skippedCount: 0, errors: [] }
     }
     try {
-      const serverCreators = await creatorApi.batch(changes)
+      const batchResult = await creatorApi.batch(changes)
+      const serverCreators = Array.isArray(batchResult) ? batchResult : batchResult?.creators
+      if (!Array.isArray(serverCreators)) throw new Error('Server không trả về danh sách Creator sau khi lưu.')
       dispatchCreators({ type: 'hydrate', creators: serverCreators })
       editSessionSnapshot.current = null
       setBackendAvailable(true)
-      return serverCreators
+      return Array.isArray(batchResult)
+        ? { creators: serverCreators, createdCount: changes.creates.length, updatedCount: changes.updates.length, deletedCount: changes.deletes.length, skippedCount: 0, errors: [] }
+        : batchResult
     } catch (error) {
       const message = getApiErrorMessage(error, 'Thay đổi chưa được lưu vào backend.')
       showToast(message)

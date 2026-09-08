@@ -84,9 +84,28 @@ export default function CreatorsPage() {
   const acceptImport = async () => {
     setImportReview((current) => current ? { ...current, saveError: '' } : current)
     try {
-      await commitCreatorEditSession()
-      showToast(`Đã lưu ${importReview?.createdCount || 0} Creator mới và ${importReview?.updatedCount || 0} Creator cập nhật vào database`)
-      setImportReview(null)
+      const result = await commitCreatorEditSession()
+      const skippedErrors = (result?.errors || []).map((error) => ({
+        row: error.index + 1,
+        identifier: error.identifier,
+        messages: error.messages,
+      }))
+      const skippedCount = Number(result?.skippedCount) || 0
+      const createdCount = Number(result?.createdCount) || 0
+      const updatedCount = Number(result?.updatedCount) || 0
+      showToast(`Đã lưu ${createdCount} Creator mới và ${updatedCount} Creator cập nhật${skippedCount ? ` · Bỏ qua ${skippedCount} dòng không hợp lệ` : ''}`)
+      if (skippedCount) {
+        setImportReview((current) => current ? {
+          ...current,
+          completed: true,
+          savedCreatedCount: createdCount,
+          savedUpdatedCount: updatedCount,
+          skippedOnSave: skippedCount,
+          errors: [...current.errors, ...skippedErrors],
+          errorCount: current.errors.length + skippedErrors.length,
+          saveError: '',
+        } : current)
+      } else setImportReview(null)
     } catch (error) {
       setImportReview((current) => current ? { ...current, saveError: error instanceof Error ? error.message : 'Không thể lưu import vào database.' } : current)
       throw error
