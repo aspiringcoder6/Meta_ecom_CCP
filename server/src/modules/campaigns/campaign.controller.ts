@@ -1,5 +1,7 @@
 import type { RequestHandler } from 'express'
 import * as service from './campaign.service.js'
+import { importInternalListings } from './campaign-import.service.js'
+import { validateInternalImport } from './campaign-import.validation.js'
 import { validateCampaignCreate, validateCampaignCreatorChanges, validateCampaignStatus, validateCampaignUpdate, validateClientResponses, validateCreatorIds, validateDeliverableFeedback, validateMilestones } from './campaign.validation.js'
 
 export const list: RequestHandler = async (_request, response) => response.json({ data: await service.listCampaigns() })
@@ -8,6 +10,7 @@ export const updateInformation: RequestHandler = async (request, response) => re
 export const updateStatus: RequestHandler = async (request, response) => response.json({ data: await service.updateCampaignStatus(String(request.params.id), validateCampaignStatus(request.body)) })
 export const create: RequestHandler = async (request, response) => response.status(201).json({ data: await service.createCampaign(validateCampaignCreate(request.body)) })
 export const addCreators: RequestHandler = async (request, response) => response.json({ data: await service.addCreators(String(request.params.id), validateCreatorIds(request.body)) })
+export const importCreators: RequestHandler = async (request, response) => response.json({ data: await importInternalListings(String(request.params.id), validateInternalImport(request.body)) })
 export const updateCreator: RequestHandler = async (request, response) => response.json({ data: await service.updateCampaignCreator(String(request.params.id), String(request.params.creatorId), validateCampaignCreatorChanges(request.body)) })
 export const removeCreator: RequestHandler = async (request, response) => response.json({ data: await service.removeCreator(String(request.params.id), String(request.params.creatorId)) })
 export const replaceMilestones: RequestHandler = async (request, response) => response.json({ data: await service.replaceMilestones(String(request.params.id), validateMilestones(request.body)) })

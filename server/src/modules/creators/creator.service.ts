@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma.js'
 import { ApiError } from '../../utils/api-error.js'
 import { calculateBookingPricing } from '../../utils/pricing.js'
+import { normalizedTikTokId, normalizedTikTokLink } from '../../utils/creator-identity.js'
 import { validateCreatorArray, validateCreatorInput, type CreatorInput } from './creator.validation.js'
 
 const creatorInclude = { _count: { select: { campaigns: true } } } as const
@@ -8,23 +9,6 @@ const BULK_TRANSACTION_OPTIONS = { maxWait: 20_000, timeout: 150_000 } as const
 
 function initials(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((word) => word[0]).join('').toUpperCase() || 'CR'
-}
-
-function normalizedTikTokId(value: unknown) {
-  return String(value ?? '').trim().toLowerCase().replace(/^@+/, '')
-}
-
-function normalizedTikTokLink(value: unknown) {
-  const text = String(value ?? '').trim().toLowerCase()
-  if (!text) return ''
-  try {
-    const url = new URL(text)
-    const host = url.hostname.replace(/^www\./, '')
-    const path = url.pathname.replace(/\/+$/, '') || '/'
-    return `${host}${path}`
-  } catch {
-    return text.replace(/\/+$/, '')
-  }
 }
 
 type CreatorIdentity = { id: string; tiktokId: string; tiktokLink: string }
@@ -81,7 +65,7 @@ function categoryPathMatches(candidate: unknown, selected: unknown) {
   return Boolean(candidateKey && selectedKey && (candidateKey === selectedKey || candidateKey.startsWith(`${selectedKey}>`)))
 }
 
-function mergeCategoryLists(current: string[], imported: string[]) {
+export function mergeCategoryLists(current: string[], imported: string[]) {
   let merged = normalizeCategoryList(current)
   for (const importedPath of normalizeCategoryList(imported)) {
     const importedParts = importedPath.split(/\s*>\s*/).filter(Boolean)

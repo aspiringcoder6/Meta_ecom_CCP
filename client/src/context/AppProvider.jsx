@@ -35,8 +35,22 @@ function normalizeCampaign(campaign) {
   }
 }
 
-function replaceCampaign(current, campaign) {
-  const normalized = normalizeCampaign(campaign)
+function campaignWithUnsyncedCreatorChanges(campaign, unsyncedCreatorChanges) {
+  let normalized = normalizeCampaign(campaign)
+  if (unsyncedCreatorChanges?.size) {
+    normalized = {
+      ...normalized,
+      creators: (normalized.creators || []).map((creator) => {
+        const pending = unsyncedCreatorChanges.get(`${normalized.id}:${creator.creatorId}`)
+        return pending ? { ...creator, ...pending } : creator
+      }),
+    }
+  }
+  return normalized
+}
+
+function replaceCampaign(current, campaign, unsyncedCreatorChanges) {
+  const normalized = campaignWithUnsyncedCreatorChanges(campaign, unsyncedCreatorChanges)
   return current.some((item) => item.id === normalized.id)
     ? current.map((item) => item.id === normalized.id ? normalized : item)
     : [normalized, ...current]
@@ -157,6 +171,11 @@ export default function AppProvider({ children }) {
   const campaignHighlightTimer = useRef(null)
   const campaignUpdateTimers = useRef(new Map())
   const pendingCampaignCreatorChanges = useRef(new Map())
+  const unsyncedCampaignCreatorChanges = useRef(new Map())
+  const campaignCreatorEditRevisions = useRef(new Map())
+  const campaignEditEpochs = useRef(new Map())
+  const campaignImportsInFlight = useRef(new Set())
+  const campaignCreatorUpdatesInFlight = useRef(new Set())
   const editSessionSnapshot = useRef(null)
   const creators = creatorHistory.present
 
@@ -217,14 +236,17 @@ export default function AppProvider({ children }) {
 
   useEffect(() => {
     const sourceById = new Map(creators.map((creator) => [String(creator.id), creator]))
-    writeStoredCampaigns(campaigns.map((campaign) => ({
-      ...campaign,
-      creators: (campaign.creators || []).map((assignment) => campaignCreatorAssignment(
-        sourceById.get(String(assignment.creatorId)),
-        campaign.deliverables,
-        assignment,
-      )),
-    })))
+    const timer = window.setTimeout(() => {
+      writeStoredCampaigns(campaigns.map((campaign) => ({
+        ...campaign,
+        creators: (campaign.creators || []).map((assignment) => campaignCreatorAssignment(
+          sourceById.get(String(assignment.creatorId)),
+          campaign.deliverables,
+          assignment,
+        )),
+      })))
+    }, 250)
+    return () => window.clearTimeout(timer)
   }, [campaigns, creators])
 
   useEffect(() => {
@@ -232,7 +254,9 @@ export default function AppProvider({ children }) {
       if (event.key === CAMPAIGN_STORAGE_KEY && event.newValue) {
         try {
           const nextCampaigns = JSON.parse(event.newValue)
-          if (Array.isArray(nextCampaigns)) setCampaigns(nextCampaigns)
+          if (Array.isArray(nextCampaigns)) {
+            setCampaigns(nextCampaigns.map((campaign) => campaignWithUnsyncedCreatorChanges(campaign, unsyncedCampaignCreatorChanges.current)))
+          }
         } catch { /* Ignore incomplete storage events. */ }
       }
       if (event.key === NOTIFICATION_STORAGE_KEY && event.newValue) {
@@ -324,9 +348,13 @@ export default function AppProvider({ children }) {
   }
 
   const refreshCampaign = useCallback(async (campaignId) => {
+    if (campaignImportsInFlight.current.has(campaignId)) return null
+    const requestEpoch = campaignEditEpochs.current.get(campaignId) || 0
+    const hadUnsyncedChanges = [...unsyncedCampaignCreatorChanges.current.keys()].some((key) => key.startsWith(`${campaignId}:`))
     try {
       const campaign = await campaignApi.get(campaignId)
-      setCampaigns((current) => replaceCampaign(current, campaign))
+      if (hadUnsyncedChanges || (campaignEditEpochs.current.get(campaignId) || 0) !== requestEpoch) return normalizeCampaign(campaign)
+      setCampaigns((current) => replaceCampaign(current, campaign, unsyncedCampaignCreatorChanges.current))
       setCampaignBackendAvailable(true)
       return normalizeCampaign(campaign)
     } catch {
@@ -335,6 +363,38 @@ export default function AppProvider({ children }) {
     }
   }, [])
 
+  const importCampaignCreators = async (campaignId, rows) => {
+    if ([...unsyncedCampaignCreatorChanges.current.keys()].some((key) => key.startsWith(`${campaignId}:`))) {
+      throw new Error('Các chỉnh sửa trước đang chờ lưu. Đợi vài giây rồi thử import lại; nếu còn lỗi, hãy kiểm tra kết nối backend.')
+    }
+    campaignImportsInFlight.current.add(campaignId)
+    campaignEditEpochs.current.set(campaignId, (campaignEditEpochs.current.get(campaignId) || 0) + 1)
+    try {
+      const result = await campaignApi.importCreators(campaignId, rows)
+      const touched = new Map(result.creators.map((creator) => [String(creator.id), creator]))
+      dispatchCreators({ type: 'apply', update: (current) => [
+        ...result.creators.filter((creator) => !current.some((item) => String(item.id) === String(creator.id))),
+        ...current.map((creator) => touched.get(String(creator.id)) || creator),
+      ] })
+      setCampaigns((current) => replaceCampaign(current.map((campaign) => ({
+        ...campaign,
+        creators: (campaign.creators || []).map((assignment) => {
+          const source = touched.get(String(assignment.creatorId))
+          return source ? { ...assignment, name: source.name, tiktokId: source.tiktokId, tiktokLink: source.tiktokLink, segment: source.segment, category: source.category, type: source.type, followers: source.followers, gmvMonth: source.gmvMonth } : assignment
+        }),
+      })), result.campaign, unsyncedCampaignCreatorChanges.current))
+      setBackendAvailable(true)
+      setCampaignBackendAvailable(true)
+      showToast(`Đã lưu: ${result.addedCount} Creator thêm vào Campaign · ${result.updatedCount} cập nhật${result.skippedCount ? ` · ${result.skippedCount} dòng bỏ qua` : ''}`)
+      return result
+    } catch (error) {
+      throw new Error(getApiErrorMessage(error, 'Chưa lưu được import vào database. Preview được giữ để bạn thử lại.'))
+    } finally {
+      campaignImportsInFlight.current.delete(campaignId)
+      campaignEditEpochs.current.set(campaignId, (campaignEditEpochs.current.get(campaignId) || 0) + 1)
+    }
+  }
+
   const updateCampaignStatus = async (campaignId, status) => {
     const campaign = campaigns.find((item) => item.id === campaignId)
     if (!campaign || campaign.status === status) return true
@@ -342,7 +402,7 @@ export default function AppProvider({ children }) {
     setCampaigns((current) => current.map((item) => item.id === campaignId ? { ...item, status } : item))
     try {
       const saved = await campaignApi.updateStatus(campaignId, status)
-      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
       setCampaignBackendAvailable(true)
       showToast(`Đã chuyển Campaign sang ${campaignStatusLabel(status)}`)
       return true
@@ -364,7 +424,7 @@ export default function AppProvider({ children }) {
     setCampaigns((current) => current.map((item) => item.id === campaignId ? optimistic : item))
     try {
       const saved = await campaignApi.update(campaignId, changes)
-      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
       setCampaignBackendAvailable(true)
       showToast('Đã cập nhật thông tin Campaign')
       return normalizeCampaign(saved)
@@ -396,7 +456,7 @@ export default function AppProvider({ children }) {
       ? { ...item, creators: [...(item.creators || []), assignment] }
       : item))
     void campaignApi.addCreators(campaignId, [String(creatorId)]).then((saved) => {
-      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
     }).catch((error) => {
       if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Creator chưa được lưu vào Campaign trên backend.'))
     })
@@ -417,7 +477,7 @@ export default function AppProvider({ children }) {
       ? { ...item, creators: [...(item.creators || []), ...additions] }
       : item))
     void campaignApi.addCreators(campaignId, additions.map((item) => String(item.creatorId))).then((saved) => {
-      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
     }).catch((error) => {
       if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Danh sách Creator chưa được lưu vào backend.'))
     })
@@ -455,10 +515,10 @@ export default function AppProvider({ children }) {
       const finalCampaign = hasCampaignChanges
         ? await campaignApi.updateCreator(campaignId, creatorId, campaignChanges)
         : savedCampaign
-      setCampaigns((current) => replaceCampaign(current, finalCampaign))
+      setCampaigns((current) => replaceCampaign(current, finalCampaign, unsyncedCampaignCreatorChanges.current))
       return creator
     } catch (error) {
-      setCampaigns((current) => replaceCampaign(current, savedCampaign))
+      setCampaigns((current) => replaceCampaign(current, savedCampaign, unsyncedCampaignCreatorChanges.current))
       throw new Error(getApiErrorMessage(error, 'Creator đã được thêm nhưng các thông tin riêng của Campaign chưa được lưu.'))
     }
   }
@@ -471,11 +531,33 @@ export default function AppProvider({ children }) {
       ? { ...item, creators: (item.creators || []).filter((creator) => String(creator.creatorId) !== String(creatorId)) }
       : item))
     void campaignApi.removeCreator(campaignId, creatorId).then((saved) => {
-      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
     }).catch((error) => {
       if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Chưa thể xoá Creator trên backend.'))
     })
     showToast(`Đã xoá ${assignment.name} khỏi ${campaign.name}`)
+  }
+
+  const flushCampaignCreatorUpdate = (campaignId, creatorId, key) => {
+    if (campaignCreatorUpdatesInFlight.current.has(key)) return
+    const pending = pendingCampaignCreatorChanges.current.get(key)
+    if (!pending || !Object.keys(pending).length) return
+    const requestRevision = campaignCreatorEditRevisions.current.get(key)
+    pendingCampaignCreatorChanges.current.delete(key)
+    campaignCreatorUpdatesInFlight.current.add(key)
+    void campaignApi.updateCreator(campaignId, creatorId, pending).then((saved) => {
+      if (campaignCreatorEditRevisions.current.get(key) !== requestRevision) return
+      unsyncedCampaignCreatorChanges.current.delete(key)
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
+    }).catch((error) => {
+      if (campaignCreatorEditRevisions.current.get(key) !== requestRevision) return
+      if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Thay đổi Creator chưa được lưu vào backend.'))
+    }).finally(() => {
+      campaignCreatorUpdatesInFlight.current.delete(key)
+      if (pendingCampaignCreatorChanges.current.has(key) && !campaignUpdateTimers.current.has(key)) {
+        flushCampaignCreatorUpdate(campaignId, creatorId, key)
+      }
+    })
   }
 
   const updateCampaignCreator = (campaignId, creatorId, changes) => {
@@ -483,24 +565,23 @@ export default function AppProvider({ children }) {
       ? { ...campaign, creators: (campaign.creators || []).map((creator) => String(creator.creatorId) === String(creatorId) ? { ...creator, ...changes } : creator) }
       : campaign))
     const key = `${campaignId}:${creatorId}`
-    pendingCampaignCreatorChanges.current.set(key, { ...(pendingCampaignCreatorChanges.current.get(key) || {}), ...changes })
+    campaignEditEpochs.current.set(campaignId, (campaignEditEpochs.current.get(campaignId) || 0) + 1)
+    const revision = (campaignCreatorEditRevisions.current.get(key) || 0) + 1
+    campaignCreatorEditRevisions.current.set(key, revision)
+    const unsynced = { ...(unsyncedCampaignCreatorChanges.current.get(key) || {}), ...changes }
+    unsyncedCampaignCreatorChanges.current.set(key, unsynced)
+    pendingCampaignCreatorChanges.current.set(key, { ...unsynced })
     window.clearTimeout(campaignUpdateTimers.current.get(key))
     campaignUpdateTimers.current.set(key, window.setTimeout(() => {
-      const pending = pendingCampaignCreatorChanges.current.get(key) || {}
-      pendingCampaignCreatorChanges.current.delete(key)
       campaignUpdateTimers.current.delete(key)
-      void campaignApi.updateCreator(campaignId, creatorId, pending).then((saved) => {
-        setCampaigns((current) => replaceCampaign(current, saved))
-      }).catch((error) => {
-        if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Thay đổi Creator chưa được lưu vào backend.'))
-      })
+      flushCampaignCreatorUpdate(campaignId, creatorId, key)
     }, 650))
   }
 
   const updateCampaignMilestones = (campaignId, milestones) => {
     setCampaigns((current) => current.map((campaign) => campaign.id === campaignId ? { ...campaign, milestones } : campaign))
     void campaignApi.updateMilestones(campaignId, milestones).then((saved) => {
-      setCampaigns((current) => replaceCampaign(current, saved))
+      setCampaigns((current) => replaceCampaign(current, saved, unsyncedCampaignCreatorChanges.current))
     }).catch((error) => {
       if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Timeline chưa được lưu vào backend.'))
     })
@@ -512,7 +593,16 @@ export default function AppProvider({ children }) {
       ? { ...campaign, creators: (campaign.creators || []).map((creator) => creator.clientChangeUnread ? { ...creator, clientChangeUnread: false } : creator) }
       : campaign))
     void campaignApi.markClientChangesRead(campaignId).then((saved) => {
-      setCampaigns((current) => replaceCampaign(current, saved))
+      const savedByCreatorId = new Map((saved.creators || []).map((creator) => [String(creator.creatorId), creator]))
+      setCampaigns((current) => current.map((campaign) => campaign.id === campaignId
+        ? {
+          ...campaign,
+          creators: (campaign.creators || []).map((creator) => ({
+            ...creator,
+            clientChangeUnread: Boolean(savedByCreatorId.get(String(creator.creatorId))?.clientChangeUnread),
+          })),
+        }
+        : campaign))
     }).catch(() => { /* The optimistic read state is kept while offline. */ })
   }
 
@@ -575,7 +665,7 @@ export default function AppProvider({ children }) {
         : item))
       try {
         const savedCampaign = await campaignApi.addCreators(campaignId, [String(savedCreator.id)])
-        setCampaigns((current) => replaceCampaign(current, savedCampaign))
+        setCampaigns((current) => replaceCampaign(current, savedCampaign, unsyncedCampaignCreatorChanges.current))
         setCampaignBackendAvailable(true)
       } catch (campaignError) {
         if (!shouldUseLocalCampaignFallback(campaignError)) {
@@ -742,7 +832,7 @@ export default function AppProvider({ children }) {
   }
 
   const value = {
-    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, updateCampaignStatus, updateCampaignInformation, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
+    creators, campaigns, notifications, isLoadingCreators, isLoadingCampaigns, backendAvailable, campaignBackendAvailable, toastMessage, recentlyAddedCreatorId, recentlyCreatedCampaignId, showToast, createCampaign, refreshCampaign, importCampaignCreators, updateCampaignStatus, updateCampaignInformation, ensureCampaignReviewLink, assignCreatorToCampaign, addCampaignCreators, assignExistingCampaignCreator, createAndAssignCampaignCreator, removeCampaignCreator, updateCampaignCreator, updateCampaignSourceCreator, updateCampaignMilestones, markCampaignClientChangesRead, markAllNotificationsRead, markNotificationRead, addCreator, saveCreatorDetails, addQuickCreator, applyCreatorImport, updateCreator, deleteCreator, toggleArchive,
     undoCreators, redoCreators, canUndo: creatorHistory.past.length > 0, canRedo: creatorHistory.future.length > 0,
     beginCreatorEditSession, commitCreatorEditSession, cancelCreatorEditSession,
   }

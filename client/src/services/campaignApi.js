@@ -25,6 +25,10 @@ export const campaignApi = {
     const response = await apiClient.post(`/campaigns/${campaignId}/creators`, { creatorIds })
     return response.data.data
   },
+  async importCreators(campaignId, rows) {
+    const response = await apiClient.post(`/campaigns/${campaignId}/creators/import`, { rows }, { timeout: 300000 })
+    return response.data.data
+  },
   async updateCreator(campaignId, creatorId, changes) {
     const response = await apiClient.patch(`/campaigns/${campaignId}/creators/${creatorId}`, changes)
     return response.data.data

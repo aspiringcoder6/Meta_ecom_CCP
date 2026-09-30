@@ -7,6 +7,7 @@ import Icon from '../common/Icon'
 import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 import CampaignCreatorSelector from './CampaignCreatorSelector'
 import CampaignSegmentGoalProgress from './CampaignSegmentGoalProgress'
+import CampaignInternalFileActions from './CampaignInternalFileActions'
 
 const CAMPAIGN_EDITABLE_FIELDS = ['quotedCost', 'quotedExtraCost', 'scope', 'pic']
 const CREATOR_EDITABLE_FIELDS = ['followers', 'gmvMonth', 'contact', 'mcnNote']
@@ -135,7 +136,7 @@ function ReadonlyValue({ children, hint }) {
   return <span className="internal-readonly-value"><strong>{children}</strong>{hint && <small>{hint}</small>}</span>
 }
 
-export default function CampaignInternalListingsTab({ campaign, creators, canEdit, onAddCreators, onAssignExisting, onQuickAdd, onRemoveCreator, onUpdateCreator, onUpdateSourceCreator, onMarkChangesRead, onNotify }) {
+export default function CampaignInternalListingsTab({ campaign, creators, canEdit, canImport, onAddCreators, onAssignExisting, onQuickAdd, onRemoveCreator, onUpdateCreator, onUpdateSourceCreator, onMarkChangesRead, onImport, onNotify }) {
   const [selectorOpen, setSelectorOpen] = useState(false)
   const [highlightedIds, setHighlightedIds] = useState([])
   const [isEditing, setIsEditing] = useState(false)
@@ -143,6 +144,7 @@ export default function CampaignInternalListingsTab({ campaign, creators, canEdi
   const [drafts, setDrafts] = useState({})
   const [quickRows, setQuickRows] = useState([])
   const [quickErrors, setQuickErrors] = useState({})
+  const [importedRows, setImportedRows] = useState({ added: [], updated: [] })
 
   useEffect(() => {
     const unreadIds = (campaign.creators || []).filter((creator) => creator.clientChangeUnread).map((creator) => String(creator.creatorId))
@@ -291,6 +293,7 @@ export default function CampaignInternalListingsTab({ campaign, creators, canEdi
           <div className="internal-listings-toolbar" data-tour="campaign-internal-actions">
             <span className="internal-listings-total"><small>Tổng Expense</small><strong>{formatCompactCurrency(totals.expense)}</strong></span>
             <span className="internal-listings-total"><small>Tổng AGI</small><strong>{formatCompactCurrency(totals.agi)}</strong></span>
+            <CampaignInternalFileActions campaign={campaign} creators={creators} canEdit={canEdit} canImport={canImport} disabled={isEditing || isSaving} onImport={onImport} onApplied={(result) => setImportedRows({ added: result.addedCreatorIds || [], updated: result.updatedCreatorIds || [] })} onNotify={onNotify} />
             {canEdit && !isEditing && <button type="button" className="secondary-button" onClick={beginEditing}><Icon name="edit" size={15} />Chỉnh sửa</button>}
             {canEdit && isEditing && <><button type="button" className="secondary-button is-danger-soft" disabled={isSaving} onClick={cancelEditing}><Icon name="close" size={15} />Hủy thay đổi</button><button type="button" className="primary-button is-success" disabled={isSaving} onClick={saveEditing}><Icon name="check" size={15} />{isSaving ? 'Đang lưu...' : 'Hoàn tất'}</button></>}
             {canEdit && <button type="button" className="secondary-button" onClick={addQuickRow}><Icon name="plus" size={15} />Thêm nhanh</button>}
@@ -335,9 +338,10 @@ export default function CampaignInternalListingsTab({ campaign, creators, canEdi
                 const effectiveExtraCost = draft.quotedExtraCost !== '' ? draft.quotedExtraCost : assignment.quotedExtraCost !== '' && assignment.quotedExtraCost != null ? assignment.quotedExtraCost : source.extraCost
                 const pricing = calculateBookingPricing(effectiveCost, effectiveExtraCost)
                 const highlighted = highlightedIds.includes(creatorId)
-                return <tr className={`${highlighted ? 'is-client-updated' : ''} ${isEditing ? 'is-editing' : ''}`} key={creatorId}>
+                const imported = importedRows.added.includes(creatorId) ? 'added' : importedRows.updated.includes(creatorId) ? 'updated' : ''
+                return <tr className={`${highlighted ? 'is-client-updated' : ''} ${isEditing ? 'is-editing' : ''} ${imported ? `is-import-${imported}` : ''}`} key={creatorId}>
                   <td><a className="internal-tiktok-link" href={source.tiktokLink || '#'} target="_blank" rel="noreferrer" title={source.tiktokLink}>{source.tiktokLink || '—'}</a></td>
-                  <td><ReadonlyValue hint={source.name}>@{String(source.tiktokId || assignment.tiktokId || '').replace(/^@/, '')}</ReadonlyValue>{highlighted && <em className="internal-updated-badge">Brand vừa cập nhật</em>}</td>
+                  <td><ReadonlyValue hint={source.name}>@{String(source.tiktokId || assignment.tiktokId || '').replace(/^@/, '')}</ReadonlyValue>{highlighted && <em className="internal-updated-badge">Brand vừa cập nhật</em>}{imported && <em className="internal-import-badge">{imported === 'added' ? 'Mới thêm từ import' : 'Đã cập nhật từ import'}</em>}</td>
                   <td><span className="segment-tag">{source.segment || '—'}</span></td><td className="internal-listing-category-cell"><CategoryPathRibbons values={source.category || []} level={2} /></td><td><div className="internal-type-list">{toCreatorList(source.type, ['—']).map((type) => <span key={type}>{type}</span>)}</div></td>
                   <td>{isEditing ? <label className="internal-edit-cell is-creator-master" title="Đồng bộ về kho Creator"><input type="number" min="0" step="1" value={draft.followers} onChange={(event) => updateDraft(creatorId, 'followers', event.target.value)} placeholder="0" /></label> : <ReadonlyValue>{formatNumber(source.followers)}</ReadonlyValue>}</td>
                   <td>{isEditing ? <label className="internal-edit-cell is-creator-master" title="Đồng bộ về kho Creator"><input type="number" min="0" value={draft.gmvMonth} onChange={(event) => updateDraft(creatorId, 'gmvMonth', event.target.value)} placeholder="0" /><span>₫</span></label> : <ReadonlyValue>{formatCompactCurrency(source.gmvMonth)}</ReadonlyValue>}</td>

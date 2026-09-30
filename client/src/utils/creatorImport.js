@@ -35,7 +35,7 @@ function getHeaderField(header) {
   return HEADER_FIELDS.find((item) => item.matches.some((match) => normalized === match || normalized.startsWith(`${match} `)))?.field
 }
 
-function parseLocalizedNumber(value) {
+export function parseLocalizedNumber(value) {
   if (typeof value === 'number') return Number.isFinite(value) ? value : NaN
   let text = String(value ?? '').trim().toLowerCase()
   if (!text) return 0
@@ -74,7 +74,7 @@ function normalizeFromOptions(value, options, aliases = {}) {
   return options.find((option) => normalizeText(option) === normalized) || null
 }
 
-function normalizeSegment(value) {
+export function normalizeSegment(value) {
   const normalized = normalizeText(value)
   if (normalized.includes('massive')) return 'MASSIVE'
   if (normalized.includes('top')) return 'TOP'
@@ -83,7 +83,7 @@ function normalizeSegment(value) {
   return normalizeFromOptions(value, CREATOR_SEGMENTS)
 }
 
-function normalizeType(value) {
+export function normalizeType(value) {
   const normalized = normalizeText(value)
   if (normalized.includes('video') && (normalized.includes('live') || normalized.includes('livestream'))) return ['VIDEO', 'LIVESTREAM']
   if (normalized.includes('live')) return 'LIVESTREAM'
@@ -91,7 +91,7 @@ function normalizeType(value) {
   return normalizeFromOptions(value, CREATOR_TYPES)
 }
 
-function normalizeTypeList(value) {
+export function normalizeTypeList(value) {
   const values = String(value ?? '').split(/[,;|\n]+/).flatMap((item) => {
     const normalized = normalizeType(item)
     return Array.isArray(normalized) ? normalized : normalized ? [normalized] : []
@@ -252,7 +252,7 @@ function parseCsvFile(file) {
   return new Promise((resolve, reject) => Papa.parse(file, { skipEmptyLines: false, complete: (result) => resolve(result.data), error: reject }))
 }
 
-export async function parseCreatorImportFile(file, existingCreators, mode) {
+export async function readCreatorImportRows(file) {
   const extension = file.name.split('.').pop()?.toLowerCase()
   let rows
   if (extension === 'csv') rows = await parseCsvFile(file)
@@ -261,5 +261,9 @@ export async function parseCreatorImportFile(file, existingCreators, mode) {
     rows = Array.isArray(workbookResult[0]) ? workbookResult : workbookResult[0]?.data
   }
   if (!Array.isArray(rows)) throw new Error('Không thể đọc sheet dữ liệu đầu tiên trong file Excel.')
-  return parseCreatorRows(rows, existingCreators, mode)
+  return rows
+}
+
+export async function parseCreatorImportFile(file, existingCreators, mode) {
+  return parseCreatorRows(await readCreatorImportRows(file), existingCreators, mode)
 }
