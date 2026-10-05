@@ -1,4 +1,16 @@
 import { ApiError } from '../../utils/api-error.js'
+import { normalizeProducts } from './campaign-products.js'
+
+function productValues(value: unknown) {
+  if (typeof value !== 'string' && (!Array.isArray(value) || value.some((item) => typeof item !== 'string'))) {
+    throw new ApiError(422, 'Danh sách sản phẩm không hợp lệ.', 'INVALID_PRODUCTS')
+  }
+  const products = normalizeProducts(value)
+  if (products.length > 100 || products.some((name) => name.length > 200)) {
+    throw new ApiError(422, 'Tối đa 100 sản phẩm / KOC, mỗi tên không quá 200 ký tự.', 'INVALID_PRODUCTS')
+  }
+  return products
+}
 
 function text(value: unknown, field: string, required = false) {
   const normalized = typeof value === 'string' ? value.trim() : ''
@@ -92,6 +104,7 @@ export function validateCampaignCreatorChanges(value: unknown) {
   if (typeof input.scope === 'string') changes.scope = text(input.scope, 'Scope').slice(0, 2000)
   if (typeof input.pic === 'string') changes.pic = text(input.pic, 'PIC').slice(0, 255)
   if (typeof input.metaEcomNote === 'string') changes.metaEcomNote = text(input.metaEcomNote, 'Meta Ecom Note').slice(0, 2000)
+  if (input.brandProducts !== undefined) changes.brandProducts = productValues(input.brandProducts)
   if (typeof input.finalTracking === 'string') changes.finalTracking = text(input.finalTracking, 'Tracking').slice(0, 2000)
   if (typeof input.finalNote === 'string') changes.finalNote = text(input.finalNote, 'Final Note').slice(0, 2000)
   if (input.kocDecision !== undefined) {
@@ -125,9 +138,16 @@ export function validateClientResponses(value: unknown) {
   const allowed = new Set(['APPROVED', 'REJECTED', 'PENDING'])
   return input.responses.map((raw) => {
     const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
-    const decision = String(item.decision || '')
-    if (!item.creatorId || !allowed.has(decision)) throw new ApiError(422, 'Phản hồi Creator không hợp lệ.', 'INVALID_REVIEW')
-    return { creatorId: String(item.creatorId), decision, note: text(item.note, 'Ghi chú').slice(0, 2000) }
+    const decision = item.decision === undefined ? undefined : String(item.decision)
+    if (!item.creatorId || (decision !== undefined && !allowed.has(decision)) || (decision === undefined && item.note === undefined && item.brandProducts === undefined)) {
+      throw new ApiError(422, 'Phản hồi Creator không hợp lệ.', 'INVALID_REVIEW')
+    }
+    return {
+      creatorId: String(item.creatorId),
+      ...(decision !== undefined ? { decision } : {}),
+      ...(item.note !== undefined ? { note: text(item.note, 'Ghi chú').slice(0, 2000) } : {}),
+      ...(item.brandProducts !== undefined ? { brandProducts: productValues(item.brandProducts) } : {}),
+    }
   })
 }
 

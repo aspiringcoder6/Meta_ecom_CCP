@@ -3,6 +3,7 @@ import { Prisma } from '../../../generated/prisma/client.js'
 import { prisma } from '../../lib/prisma.js'
 import { ApiError } from '../../utils/api-error.js'
 import { calculateBookingPricing } from '../../utils/pricing.js'
+import { normalizeProducts, sameProducts, withProductVideos } from './campaign-products.js'
 
 const campaignInclude = {
   creators: { include: { creator: true }, orderBy: { id: 'asc' as const } },
@@ -48,7 +49,7 @@ function toCampaignDto(campaign: CampaignRecord) {
       suggestedPrice: Number(item.suggestedPrice), actualPrice: item.actualPrice == null ? '' : Number(item.actualPrice),
       expense: calculateBookingPricing(item.quotedCost ?? item.creator.cost, item.quotedExtraCost ?? item.creator.extraCost).bookingExpense,
       quotedCost: item.quotedCost == null ? '' : Number(item.quotedCost), quotedExtraCost: item.quotedExtraCost == null ? '' : Number(item.quotedExtraCost), scope: item.scope || '', pic: item.pic || '',
-      metaEcomNote: item.metaEcomNote || '', finalTracking: item.finalTracking || '', finalNote: item.finalNote || '',
+      metaEcomNote: item.metaEcomNote || '', brandProducts: item.brandProducts, finalTracking: item.finalTracking || '', finalNote: item.finalNote || '',
       kocDecision: item.kocDecision || (item.creatorConfirmed ? 'APPROVED' : 'PENDING'),
       deliverables: jsonArray(item.deliverablesData).length ? jsonArray(item.deliverablesData) : jsonArray(campaign.defaultDeliverables), clientDecision: item.clientDecision, clientNote: item.clientNote || '',
       clientChangedAt: item.clientChangedAt, clientChangeUnread: item.clientChangeUnread, creatorConfirmed: item.creatorConfirmed,
@@ -61,8 +62,8 @@ function toCampaignDto(campaign: CampaignRecord) {
   }
 }
 
-async function campaignRecord(identifier: string) {
-  const campaign = await prisma.campaign.findFirst({ where: { OR: [{ externalId: identifier }, { id: identifier }] }, include: campaignInclude })
+async function campaignRecord(identifier: string, database = prisma) {
+  const campaign = await database.campaign.findFirst({ where: { OR: [{ externalId: identifier }, { id: identifier }] }, include: campaignInclude })
   if (!campaign) throw new ApiError(404, 'Không tìm thấy Campaign.', 'CAMPAIGN_NOT_FOUND')
   return campaign
 }
@@ -84,8 +85,8 @@ export async function listCampaigns() {
   return campaigns.map(toCampaignDto)
 }
 
-export async function getCampaign(identifier: string) {
-  return toCampaignDto(await campaignRecord(identifier))
+export async function getCampaign(identifier: string, database = prisma) {
+  return toCampaignDto(await campaignRecord(identifier, database))
 }
 
 export async function updateCampaignStatus(identifier: string, status: string) {
@@ -167,25 +168,33 @@ export async function addCreators(identifier: string, creatorIds: string[]) {
   return getCampaign(campaign.id)
 }
 
-export async function updateCampaignCreator(identifier: string, creatorId: string, changes: Record<string, unknown>) {
-  const campaign = await campaignRecord(identifier)
-  const assignment = await prisma.campaignCreator.findUnique({ where: { campaignId_creatorId: { campaignId: campaign.id, creatorId } } })
+export async function updateCampaignCreator(identifier: string, creatorId: string, changes: Record<string, unknown>, database = prisma) {
+  const campaign = await campaignRecord(identifier, database)
+  const assignment = await database.campaignCreator.findUnique({ where: { campaignId_creatorId: { campaignId: campaign.id, creatorId } } })
   if (!assignment) throw new ApiError(404, 'Creator không thuộc Campaign.', 'CAMPAIGN_CREATOR_NOT_FOUND')
-  await prisma.campaignCreator.update({ where: { id: assignment.id }, data: {
-    ...(changes.status !== undefined ? { status: String(changes.status) } : {}),
-    ...(Object.hasOwn(changes, 'actualPrice') ? { actualPrice: changes.actualPrice == null ? null : Number(changes.actualPrice) } : {}),
-    ...(Object.hasOwn(changes, 'quotedCost') ? { quotedCost: changes.quotedCost == null ? null : Number(changes.quotedCost) } : {}),
-    ...(Object.hasOwn(changes, 'quotedExtraCost') ? { quotedExtraCost: changes.quotedExtraCost == null ? null : Number(changes.quotedExtraCost) } : {}),
-    ...(changes.scope !== undefined ? { scope: String(changes.scope) } : {}),
-    ...(changes.pic !== undefined ? { pic: String(changes.pic) } : {}),
-    ...(changes.metaEcomNote !== undefined ? { metaEcomNote: String(changes.metaEcomNote) } : {}),
-    ...(changes.finalTracking !== undefined ? { finalTracking: String(changes.finalTracking) } : {}),
-    ...(changes.finalNote !== undefined ? { finalNote: String(changes.finalNote) } : {}),
-    ...(changes.kocDecision !== undefined ? { kocDecision: String(changes.kocDecision), creatorConfirmed: String(changes.kocDecision) === 'APPROVED' } : {}),
-    ...(changes.deliverables !== undefined ? { deliverablesData: deliverableJson(changes.deliverables) } : {}),
-    ...(changes.creatorConfirmed !== undefined && changes.kocDecision === undefined ? { creatorConfirmed: Boolean(changes.creatorConfirmed), kocDecision: Boolean(changes.creatorConfirmed) ? 'APPROVED' : 'PENDING' } : {}),
-  } })
-  return getCampaign(campaign.id)
+  await database.$transaction(async (tx) => {
+    await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "CampaignCreator" WHERE "id" = ${assignment.id} FOR UPDATE`)
+    const current = await tx.campaignCreator.findUniqueOrThrow({ where: { id: assignment.id } })
+    const products = changes.brandProducts !== undefined ? normalizeProducts(changes.brandProducts) : current.brandProducts
+    const stored = jsonArray(current.deliverablesData)
+    const deliverables = changes.deliverables ?? (stored.length ? stored : jsonArray(campaign.defaultDeliverables))
+    await tx.campaignCreator.update({ where: { id: assignment.id }, data: {
+      ...(changes.status !== undefined ? { status: String(changes.status) } : {}),
+      ...(Object.hasOwn(changes, 'actualPrice') ? { actualPrice: changes.actualPrice == null ? null : Number(changes.actualPrice) } : {}),
+      ...(Object.hasOwn(changes, 'quotedCost') ? { quotedCost: changes.quotedCost == null ? null : Number(changes.quotedCost) } : {}),
+      ...(Object.hasOwn(changes, 'quotedExtraCost') ? { quotedExtraCost: changes.quotedExtraCost == null ? null : Number(changes.quotedExtraCost) } : {}),
+      ...(changes.scope !== undefined ? { scope: String(changes.scope) } : {}),
+      ...(changes.pic !== undefined ? { pic: String(changes.pic) } : {}),
+      ...(changes.metaEcomNote !== undefined ? { metaEcomNote: String(changes.metaEcomNote) } : {}),
+      ...(changes.brandProducts !== undefined ? { brandProducts: products } : {}),
+      ...(changes.finalTracking !== undefined ? { finalTracking: String(changes.finalTracking) } : {}),
+      ...(changes.finalNote !== undefined ? { finalNote: String(changes.finalNote) } : {}),
+      ...(changes.kocDecision !== undefined ? { kocDecision: String(changes.kocDecision), creatorConfirmed: String(changes.kocDecision) === 'APPROVED' } : {}),
+      ...(changes.deliverables !== undefined || changes.brandProducts !== undefined ? { deliverablesData: deliverableJson(changes.brandProducts !== undefined ? withProductVideos(deliverables, products) : deliverables) } : {}),
+      ...(changes.creatorConfirmed !== undefined && changes.kocDecision === undefined ? { creatorConfirmed: Boolean(changes.creatorConfirmed), kocDecision: Boolean(changes.creatorConfirmed) ? 'APPROVED' : 'PENDING' } : {}),
+    } })
+  })
+  return getCampaign(campaign.id, database)
 }
 
 export async function removeCreator(identifier: string, creatorId: string) {
@@ -218,8 +227,8 @@ export async function ensureReviewLink(identifier: string) {
   return { token: reviewLink.token, expiresAt: reviewLink.expiresAt }
 }
 
-async function reviewLinkRecord(token: string) {
-  const reviewLink = await prisma.reviewLink.findUnique({ where: { token }, include: { campaign: { include: campaignInclude } } })
+async function reviewLinkRecord(token: string, database = prisma) {
+  const reviewLink = await database.reviewLink.findUnique({ where: { token }, include: { campaign: { include: campaignInclude } } })
   if (!reviewLink || reviewLink.revoked || reviewLink.expiresAt <= new Date()) throw new ApiError(404, 'Link review không hợp lệ hoặc đã hết hạn.', 'REVIEW_LINK_INVALID')
   return reviewLink
 }
@@ -229,68 +238,84 @@ export async function getPublicReview(token: string) {
   return toCampaignDto(reviewLink.campaign)
 }
 
-export async function submitPublicReview(token: string, responses: { creatorId: string; decision: string; note: string }[]) {
-  const reviewLink = await reviewLinkRecord(token)
+export async function submitPublicReview(token: string, responses: { creatorId: string; decision?: string; note?: string; brandProducts?: string[] }[], database = prisma) {
+  const reviewLink = await reviewLinkRecord(token, database)
   const assignmentByCreator = new Map(reviewLink.campaign.creators.map((item) => [item.creatorId, item]))
-  const counts = { APPROVED: 0, REJECTED: 0, PENDING: 0, notes: 0 }
+  const counts = { APPROVED: 0, REJECTED: 0, PENDING: 0, notes: 0, products: 0 }
   const changedAt = new Date()
-  const changes = responses.flatMap((response) => {
-    const assignment = assignmentByCreator.get(response.creatorId)
-    if (!assignment) return []
-    const changed = response.decision !== assignment.clientDecision || response.note !== (assignment.clientNote || '')
-    if (!changed) return []
-    counts[response.decision as keyof Omit<typeof counts, 'notes'>] += 1
-    if (response.note !== (assignment.clientNote || '')) counts.notes += 1
-    return [{ assignment, response }]
-  })
-  if (!changes.length) return toCampaignDto(reviewLink.campaign)
-  await prisma.$transaction(async (tx) => {
-    for (const { assignment, response } of changes) {
-      const status = response.decision === 'APPROVED' ? 'CLIENT_APPROVED' : response.decision === 'REJECTED' ? 'CLIENT_REJECTED' : 'PROPOSED'
-      await tx.campaignCreator.update({ where: { id: assignment.id }, data: { clientDecision: response.decision, clientNote: response.note, clientChangedAt: changedAt, clientChangeUnread: true, status } })
-      await tx.clientFeedback.create({ data: { reviewLinkId: reviewLink.id, campaignCreatorId: assignment.id, action: response.decision, comment: response.note } })
+  await database.$transaction(async (tx) => {
+    // Stable lock order; read current values so product-only edits cannot reset approvals/notes.
+    for (const response of [...responses].sort((a, b) => a.creatorId.localeCompare(b.creatorId))) {
+      const saved = assignmentByCreator.get(response.creatorId)
+      if (!saved) continue
+      await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "CampaignCreator" WHERE "id" = ${saved.id} FOR UPDATE`)
+      const assignment = await tx.campaignCreator.findUniqueOrThrow({ where: { id: saved.id } })
+      const decision = response.decision ?? assignment.clientDecision
+      const note = response.note ?? (assignment.clientNote || '')
+      const products = response.brandProducts === undefined ? assignment.brandProducts : normalizeProducts(response.brandProducts)
+      const decisionChanged = decision !== assignment.clientDecision
+      const noteChanged = note !== (assignment.clientNote || '')
+      const productsChanged = !sameProducts(products, assignment.brandProducts)
+      if (!decisionChanged && !noteChanged && !productsChanged) continue
+      if (decisionChanged) counts[decision as 'APPROVED' | 'REJECTED' | 'PENDING'] += 1
+      if (noteChanged) counts.notes += 1
+      if (productsChanged) counts.products += 1
+      const stored = jsonArray(assignment.deliverablesData)
+      const status = decision === 'APPROVED' ? 'CLIENT_APPROVED' : decision === 'REJECTED' ? 'CLIENT_REJECTED' : 'PROPOSED'
+      await tx.campaignCreator.update({ where: { id: assignment.id }, data: {
+        ...(decisionChanged ? { clientDecision: decision, status } : {}),
+        ...(noteChanged ? { clientNote: note } : {}),
+        ...(productsChanged ? { brandProducts: products, deliverablesData: deliverableJson(withProductVideos(stored.length ? stored : reviewLink.campaign.defaultDeliverables, products)) } : {}),
+        clientChangedAt: changedAt, clientChangeUnread: true,
+      } })
+      await tx.clientFeedback.create({ data: { reviewLinkId: reviewLink.id, campaignCreatorId: assignment.id, action: productsChanged && !decisionChanged ? 'PRODUCT_ASSIGNMENT' : decision, comment: productsChanged ? `Sản phẩm: ${products.join(', ')}${note ? ` · ${note}` : ''}` : note } })
     }
+    if (!Object.values(counts).some(Boolean)) return
     await tx.campaign.update({ where: { id: reviewLink.campaignId }, data: { lastClientReviewAt: changedAt } })
     const recipients = await tx.user.findMany({ where: { status: 'ACTIVE', role: { in: ['ADMIN', 'CAMPAIGN_MANAGER'] } }, select: { id: true } })
-    const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.PENDING && `pending ${counts.PENDING}`, counts.notes && `${counts.notes} ghi chú`].filter(Boolean)
-    const dedupeKey = `client-review:${reviewLink.campaignId}:${changedAt.getTime()}`
+    const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.PENDING && `pending ${counts.PENDING}`, counts.notes && `${counts.notes} ghi chú`, counts.products && `${counts.products} KOC cập nhật sản phẩm`].filter(Boolean)
+    const dedupeKey = `client-review:${reviewLink.campaignId}:${randomUUID()}`
     if (recipients.length) await tx.notification.createMany({ data: recipients.map((user) => ({ userId: user.id, campaignId: reviewLink.campaignId, message: `${reviewLink.campaign.client} đã cập nhật Brand Review`, detail: `${reviewLink.campaign.name} · ${parts.join(' · ')}`, icon: 'userCheck', href: `/campaigns/${reviewLink.campaign.externalId}?tab=external-listings`, dedupeKey })), skipDuplicates: true })
   })
-  return getCampaign(reviewLink.campaignId)
+  return getCampaign(reviewLink.campaignId, database)
 }
 
-export async function submitPublicDeliverableFeedback(token: string, updates: { creatorId: string; deliverables: { id: string; brandFeedback: string }[] }[]) {
-  const reviewLink = await reviewLinkRecord(token)
+export async function submitPublicDeliverableFeedback(token: string, updates: { creatorId: string; deliverables: { id: string; brandFeedback: string }[] }[], database = prisma) {
+  const reviewLink = await reviewLinkRecord(token, database)
   const assignmentByCreator = new Map(reviewLink.campaign.creators.map((item) => [item.creatorId, item]))
   const changedAt = new Date()
-  const changes = updates.flatMap((update) => {
-    const assignment = assignmentByCreator.get(update.creatorId)
-    if (!assignment || assignment.clientDecision !== 'APPROVED' || !assignment.creatorConfirmed) return []
-    const feedbackById = new Map(update.deliverables.map((item) => [item.id, item.brandFeedback]))
-    let changedCount = 0
-    const storedDeliverables = jsonArray(assignment.deliverablesData)
-    const nextDeliverables = (storedDeliverables.length ? storedDeliverables : jsonArray(reviewLink.campaign.defaultDeliverables)).map((raw) => {
-      if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
-      const item = raw as Record<string, Prisma.JsonValue>
-      const id = String(item.id || '')
-      if (!feedbackById.has(id)) return raw
-      const brandFeedback = feedbackById.get(id) || ''
-      if (brandFeedback === String(item.brandFeedback || '')) return raw
-      changedCount += 1
-      return { ...item, brandFeedback }
-    })
-    return changedCount ? [{ assignment, nextDeliverables, changedCount }] : []
-  })
-  if (!changes.length) return toCampaignDto(reviewLink.campaign)
-  const totalDeliverables = changes.reduce((sum, item) => sum + item.changedCount, 0)
-  await prisma.$transaction(async (tx) => {
-    for (const change of changes) {
-      await tx.campaignCreator.update({ where: { id: change.assignment.id }, data: { deliverablesData: deliverableJson(change.nextDeliverables), clientChangedAt: changedAt, clientChangeUnread: true } })
-      await tx.clientFeedback.create({ data: { reviewLinkId: reviewLink.id, campaignCreatorId: change.assignment.id, action: 'DELIVERABLE_FEEDBACK', comment: `${change.changedCount} deliverable được cập nhật` } })
+  let totalDeliverables = 0
+  let changedCreators = 0
+  await database.$transaction(async (tx) => {
+    for (const update of [...updates].sort((a, b) => a.creatorId.localeCompare(b.creatorId))) {
+      const saved = assignmentByCreator.get(update.creatorId)
+      if (!saved) continue
+      await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "CampaignCreator" WHERE "id" = ${saved.id} FOR UPDATE`)
+      const assignment = await tx.campaignCreator.findUniqueOrThrow({ where: { id: saved.id } })
+      if (assignment.clientDecision !== 'APPROVED' || !assignment.creatorConfirmed) continue
+      const feedbackById = new Map(update.deliverables.map((item) => [item.id, item.brandFeedback]))
+      let changedCount = 0
+      const stored = jsonArray(assignment.deliverablesData)
+      const nextDeliverables = (stored.length ? stored : jsonArray(reviewLink.campaign.defaultDeliverables)).map((raw) => {
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw
+        const item = raw as Record<string, Prisma.JsonValue>
+        const id = String(item.id || '')
+        if (!feedbackById.has(id)) return raw
+        const brandFeedback = feedbackById.get(id) || ''
+        if (brandFeedback === String(item.brandFeedback || '')) return raw
+        changedCount += 1
+        return { ...item, brandFeedback }
+      })
+      if (!changedCount) continue
+      totalDeliverables += changedCount
+      changedCreators += 1
+      await tx.campaignCreator.update({ where: { id: assignment.id }, data: { deliverablesData: deliverableJson(nextDeliverables), clientChangedAt: changedAt, clientChangeUnread: true } })
+      await tx.clientFeedback.create({ data: { reviewLinkId: reviewLink.id, campaignCreatorId: assignment.id, action: 'DELIVERABLE_FEEDBACK', comment: `${changedCount} deliverable được cập nhật` } })
     }
+    if (!totalDeliverables) return
     const recipients = await tx.user.findMany({ where: { status: 'ACTIVE', role: { in: ['ADMIN', 'CAMPAIGN_MANAGER'] } }, select: { id: true } })
     const dedupeKey = `deliverable-feedback:${reviewLink.campaignId}:${changedAt.getTime()}`
-    if (recipients.length) await tx.notification.createMany({ data: recipients.map((user) => ({ userId: user.id, campaignId: reviewLink.campaignId, message: `${reviewLink.campaign.client} đã cập nhật Deliverable`, detail: `${reviewLink.campaign.name} · ${totalDeliverables} feedback · ${changes.length} KOC`, icon: 'checkSquare', href: `/campaigns/${reviewLink.campaign.externalId}?tab=deliverables`, dedupeKey })), skipDuplicates: true })
+    if (recipients.length) await tx.notification.createMany({ data: recipients.map((user) => ({ userId: user.id, campaignId: reviewLink.campaignId, message: `${reviewLink.campaign.client} đã cập nhật Deliverable`, detail: `${reviewLink.campaign.name} · ${totalDeliverables} feedback · ${changedCreators} KOC`, icon: 'checkSquare', href: `/campaigns/${reviewLink.campaign.externalId}?tab=deliverables`, dedupeKey })), skipDuplicates: true })
   })
-  return getCampaign(reviewLink.campaignId)
+  return getCampaign(reviewLink.campaignId, database)
 }

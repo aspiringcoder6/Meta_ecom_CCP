@@ -142,6 +142,7 @@ model CampaignCreator {
   deliverablesData   Json             @default("[]")
   clientDecision     String           @default("PENDING")
   clientNote         String?
+  brandProducts      String[]         @default([])
   clientChangedAt    DateTime?
   clientChangeUnread Boolean          @default(false)
   creatorConfirmed   Boolean          @default(false)

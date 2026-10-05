@@ -14,6 +14,8 @@ import Icon from '../common/Icon'
 import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 import CreatorSortableHeader from '../creators/CreatorSortableHeader'
 import CampaignDeliverableFilters from './CampaignDeliverableFilters'
+import ProductAutocompleteInput from '../common/ProductAutocompleteInput'
+import { campaignProductOptions } from '../../utils/campaignProducts'
 
 const PROGRESS_OPTIONS = [
   'Đang liên hệ', 'Đã yêu cầu mẫu', 'Đã duyệt yêu cầu mẫu', 'Đang giao hàng', 'Đã nhận hàng',
@@ -105,7 +107,7 @@ export default function CampaignDeliverablesTab({ campaign, creators, canEdit, i
     product: [...new Set(deliverableGroups.flatMap(({ items }) => items.map((item) => item.product || 'Chưa có Product')))].sort(),
     sdha: ['Có SDHA', 'Không SDHA'],
   }), [deliverableGroups])
-  const productOptions = useMemo(() => filterOptions.product.filter((product) => product !== 'Chưa có Product'), [filterOptions.product])
+  const productOptions = useMemo(() => campaignProductOptions(campaign), [campaign])
   const displayedGroups = useMemo(
     () => filterAndSortDeliverableGroups(deliverableGroups, filters, numericFilters, sortCriteria),
     [deliverableGroups, filters, numericFilters, sortCriteria],
@@ -192,7 +194,7 @@ export default function CampaignDeliverablesTab({ campaign, creators, canEdit, i
                 {index === 0 && <><td className="deliverables-sticky-link" rowSpan={items.length}><a href={source.tiktokLink || '#'} target="_blank" rel="noreferrer" title={source.tiktokLink}>{source.tiktokLink || '—'}</a></td><td className="deliverables-sticky-id" rowSpan={items.length}><strong>@{String(source.tiktokId || '').replace(/^@/, '')}</strong><small>{source.name}</small>{canEdit && <button type="button" className="add-creator-deliverable" onClick={() => addDeliverable(assignment)}><Icon name="plus" size={12} />Deliverable</button>}</td>{showFullDetails && <><td rowSpan={items.length}><strong>{formatCompactCurrency(expense)}</strong></td><td rowSpan={items.length}><span className="segment-tag">{source.segment || '—'}</span></td><td className="deliverable-category-cell" rowSpan={items.length}>{toCreatorList(source.category).length ? <CategoryPathRibbons values={source.category} level={2} /> : '—'}</td><td rowSpan={items.length}><div className="internal-type-list">{toCreatorList(source.type, ['—']).map((type) => <span key={type}>{type}</span>)}</div></td><td rowSpan={items.length}><strong>{formatCompactCurrency(source.gmvMonth)}</strong></td><td rowSpan={items.length}>{formatNumber(source.followers)}</td><td className="deliverable-count-cell" rowSpan={items.length}><strong>{quantity}</strong><small>deliverable</small></td></>}</>}
                 <td>{canEdit ? <div className="deliverable-progress-cell"><select value={item.progress} onChange={(event) => updateDeliverable(assignment, item.id, 'progress', event.target.value)}>{PROGRESS_OPTIONS.map((option) => <option key={option}>{option}</option>)}</select><button type="button" onClick={() => removeDeliverable(assignment, item.id)} title="Xóa deliverable"><Icon name="trash" size={13} /></button></div> : item.progress}</td>
                 {showFullDetails && <td><label className="deliverable-checkbox"><input type="checkbox" disabled={!canEdit} checked={item.sdha} onChange={(event) => updateDeliverable(assignment, item.id, 'sdha', event.target.checked)} /><span><Icon name="check" size={12} /></span></label></td>}
-                <td>{canEdit ? <input list={`products-${campaign.id}`} value={item.product} onChange={(event) => updateDeliverable(assignment, item.id, 'product', event.target.value)} placeholder="Chọn hoặc nhập" /> : item.product || '—'}</td>
+                <td>{canEdit ? <ProductAutocompleteInput multiple={false} label={`Product của @${source.tiktokId} · ${item.id}`} value={item.product} options={productOptions} onChange={(value) => updateDeliverable(assignment, item.id, 'product', value)} placeholder="Chọn hoặc nhập" /> : item.product || '—'}</td>
                 <td>{canEdit ? <input value={item.demoLink} onChange={(event) => updateDeliverable(assignment, item.id, 'demoLink', event.target.value)} placeholder="Link file" /> : item.demoLink ? <a href={item.demoLink} target="_blank" rel="noreferrer">Mở file</a> : '—'}</td>
                 <td>{canEdit ? <textarea rows="2" value={item.metaEcomNote} onChange={(event) => updateDeliverable(assignment, item.id, 'metaEcomNote', event.target.value)} placeholder="ME điền tay" /> : item.metaEcomNote || '—'}</td>
                 <td><span className="deliverable-brand-feedback">{item.brandFeedback || 'Chưa có feedback'}</span></td>
@@ -204,7 +206,6 @@ export default function CampaignDeliverablesTab({ campaign, creators, canEdit, i
               </tr>)
             })}</tbody>
           </table>
-          <datalist id={`products-${campaign.id}`}>{productOptions.map((product) => <option value={product} key={product} />)}</datalist>
           {!acceptedCreators.length && <div className="campaign-inline-empty"><Icon name="checkSquare" size={24} /><strong>Chưa có KOC accepted</strong><span>KOC sẽ xuất hiện khi Brand Pick là Approved và KOC Confirm là Approved.</span></div>}
           {acceptedCreators.length > 0 && displayedGroups.length === 0 && <div className="campaign-inline-empty"><Icon name="search" size={24} /><strong>Không có kết quả phù hợp</strong><span>Hãy thử bỏ bớt tiêu chí hoặc xóa tất cả bộ lọc.</span><button type="button" className="secondary-button" onClick={clearFilters}>Xóa tất cả bộ lọc</button></div>}
         </div>

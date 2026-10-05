@@ -11,6 +11,16 @@ import { campaignStatusLabel } from '../config/campaigns'
 import { CAMPAIGN_STORAGE_KEY, campaignReviewToken, readStoredCampaigns, writeStoredCampaigns } from '../utils/campaignStorage'
 import { NOTIFICATION_STORAGE_KEY, readStoredNotifications, writeStoredNotifications } from '../utils/notificationStorage'
 import { AppContext } from './appContext'
+import { normalizeProducts, withProductVideos } from '../utils/campaignProducts'
+
+function applyCampaignCreatorChanges(creator, changes, defaults = []) {
+  const next = { ...creator, ...changes }
+  if (changes.brandProducts !== undefined) {
+    next.brandProducts = normalizeProducts(changes.brandProducts)
+    next.deliverables = withProductVideos(next.deliverables?.length ? next.deliverables : defaults, next.brandProducts, creator.creatorId)
+  }
+  return next
+}
 
 const HISTORY_LIMIT = 60
 
@@ -42,7 +52,7 @@ function campaignWithUnsyncedCreatorChanges(campaign, unsyncedCreatorChanges) {
       ...normalized,
       creators: (normalized.creators || []).map((creator) => {
         const pending = unsyncedCreatorChanges.get(`${normalized.id}:${creator.creatorId}`)
-        return pending ? { ...creator, ...pending } : creator
+        return pending ? applyCampaignCreatorChanges(creator, pending, normalized.deliverables) : creator
       }),
     }
   }
@@ -89,6 +99,7 @@ function campaignCreatorAssignment(creator, defaults = [], existing = {}) {
     scope: existing.scope || '',
     pic: existing.pic || '',
     metaEcomNote: existing.metaEcomNote || '',
+    brandProducts: normalizeProducts(existing.brandProducts),
     finalTracking: existing.finalTracking || '',
     finalNote: existing.finalNote || '',
     kocDecision: existing.kocDecision || (existing.creatorConfirmed ? 'APPROVED' : 'PENDING'),
@@ -562,7 +573,7 @@ export default function AppProvider({ children }) {
 
   const updateCampaignCreator = (campaignId, creatorId, changes) => {
     setCampaigns((current) => current.map((campaign) => campaign.id === campaignId
-      ? { ...campaign, creators: (campaign.creators || []).map((creator) => String(creator.creatorId) === String(creatorId) ? { ...creator, ...changes } : creator) }
+      ? { ...campaign, creators: (campaign.creators || []).map((creator) => String(creator.creatorId) === String(creatorId) ? applyCampaignCreatorChanges(creator, changes, campaign.deliverables) : creator) }
       : campaign))
     const key = `${campaignId}:${creatorId}`
     campaignEditEpochs.current.set(campaignId, (campaignEditEpochs.current.get(campaignId) || 0) + 1)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import ClientDeliverablesReviewTab from '../components/campaigns/ClientDeliverablesReviewTab'
 import ClientKocListingTab from '../components/campaigns/ClientKocListingTab'
@@ -9,10 +9,13 @@ import { appendStoredNotification } from '../utils/notificationStorage'
 import { effectiveClientDecision } from '../config/campaigns'
 import { publicReviewApi } from '../services/campaignApi'
 import { acceptedCampaignCreators, campaignCreatorDeliverables, deliverableFeedbackState } from '../utils/campaignDeliverables'
+import { normalizeProducts, withProductVideos } from '../utils/campaignProducts'
+import { clientResponseChanges } from '../utils/clientProductResponses'
+import { getApiErrorMessage } from '../services/apiClient'
 
 function initialResponses(campaign) {
   return Object.fromEntries((campaign?.creators || []).map((creator) => [String(creator.creatorId), {
-    decision: effectiveClientDecision(creator), note: creator.clientNote || '',
+    decision: effectiveClientDecision(creator), note: creator.clientNote || '', brandProducts: normalizeProducts(creator.brandProducts).join(', '),
   }]))
 }
 
@@ -28,11 +31,14 @@ export default function ClientReviewPage() {
   const [loading, setLoading] = useState(!initialCampaign)
   const [saving, setSaving] = useState(false)
   const [savingDeliverables, setSavingDeliverables] = useState(false)
+  const remoteLoaded = useRef(false)
 
   useEffect(() => {
     let active = true
+    remoteLoaded.current = false
     publicReviewApi.get(token).then((serverCampaign) => {
       if (!active) return
+      remoteLoaded.current = true
       setCampaign(serverCampaign)
       setResponses(initialResponses(serverCampaign))
       setDeliverableFeedback(deliverableFeedbackState(serverCampaign))
@@ -44,7 +50,7 @@ export default function ClientReviewPage() {
 
   const changedCount = useMemo(() => (campaign?.creators || []).filter((creator) => {
     const response = responses[String(creator.creatorId)]
-    return response && (response.decision !== effectiveClientDecision(creator) || response.note.trim() !== (creator.clientNote || '').trim())
+    return Boolean(clientResponseChanges(creator, response))
   }).length, [campaign, responses])
   const deliverableChangedCount = useMemo(() => acceptedCampaignCreators(campaign).reduce((count, creator) => count + campaignCreatorDeliverables(campaign, creator).filter((item) => (deliverableFeedback[`${creator.creatorId}:${item.id}`] || '').trim() !== (item.brandFeedback || '').trim()).length, 0), [campaign, deliverableFeedback])
   const acceptedCount = useMemo(() => acceptedCampaignCreators(campaign).length, [campaign])
@@ -52,13 +58,16 @@ export default function ClientReviewPage() {
   if (loading) return <main className="client-review-page client-review-not-found"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><h1>Đang tải Client Review...</h1><p>Vui lòng chờ trong giây lát.</p></main>
   if (!campaign) return <main className="client-review-page client-review-not-found"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><h1>Link review không hợp lệ</h1><p>Campaign không tồn tại hoặc link đã hết hiệu lực.</p></main>
 
-  const updateResponse = (creatorId, field, value) => setResponses((current) => ({ ...current, [String(creatorId)]: { ...current[String(creatorId)], [field]: value } }))
+  const updateResponse = (creatorId, field, value) => {
+    setSavedMessage('')
+    setResponses((current) => ({ ...current, [String(creatorId)]: { ...current[String(creatorId)], [field]: value } }))
+  }
   const submitListing = async () => {
     if (!changedCount) { setSavedMessage('Không có thay đổi mới để gửi.'); return }
     const changedResponses = (campaign.creators || []).flatMap((creator) => {
       const response = responses[String(creator.creatorId)]
-      if (!response || (response.decision === effectiveClientDecision(creator) && response.note.trim() === (creator.clientNote || '').trim())) return []
-      return [{ creatorId: creator.creatorId, decision: response.decision, note: response.note.trim() }]
+      const changes = clientResponseChanges(creator, response)
+      return changes ? [changes] : []
     })
     setSaving(true)
     try {
@@ -66,25 +75,37 @@ export default function ClientReviewPage() {
       setCampaign(updatedCampaign); setResponses(initialResponses(updatedCampaign)); setDeliverableFeedback(deliverableFeedbackState(updatedCampaign))
       setSavedMessage(`Đã gửi ${changedResponses.length} thay đổi đến team Campaign.`)
       return
-    } catch { /* Use the same review flow locally when the API is unavailable. */ }
+    } catch (error) {
+      if (remoteLoaded.current || error?.response) {
+        setSavedMessage(`Chưa gửi được: ${getApiErrorMessage(error)}. Nội dung đang nhập vẫn được giữ lại.`)
+        return
+      }
+    }
     finally { setSaving(false) }
     const allCampaigns = readStoredCampaigns(INITIAL_CAMPAIGNS)
     const latest = findCampaignByReviewToken(allCampaigns, token)
     if (!latest) { setSavedMessage('Không thể kết nối hệ thống. Vui lòng thử lại.'); return }
     const changedAt = new Date().toISOString()
-    const counts = { APPROVED: 0, REJECTED: 0, PENDING: 0, notes: 0 }
+    const counts = { APPROVED: 0, REJECTED: 0, PENDING: 0, notes: 0, products: 0 }
+    const changesById = new Map(changedResponses.map((response) => [String(response.creatorId), response]))
     const nextCreators = (latest.creators || []).map((creator) => {
-      const response = responses[String(creator.creatorId)] || { decision: 'PENDING', note: '' }
-      const changed = response.decision !== effectiveClientDecision(creator) || response.note.trim() !== (creator.clientNote || '').trim()
-      if (!changed) return creator
-      if (counts[response.decision] !== undefined) counts[response.decision] += 1
-      if (response.note.trim() !== (creator.clientNote || '').trim()) counts.notes += 1
+      const response = changesById.get(String(creator.creatorId))
+      if (!response) return creator
+      if (response.decision && counts[response.decision] !== undefined) counts[response.decision] += 1
+      if (response.note !== undefined) counts.notes += 1
+      if (response.brandProducts !== undefined) counts.products += 1
       const status = response.decision === 'APPROVED' ? 'CLIENT_APPROVED' : response.decision === 'REJECTED' ? 'CLIENT_REJECTED' : 'PROPOSED'
-      return { ...creator, clientDecision: response.decision, clientNote: response.note.trim(), clientChangedAt: changedAt, clientChangeUnread: true, status }
+      return {
+        ...creator,
+        ...(response.decision !== undefined ? { clientDecision: response.decision, status } : {}),
+        ...(response.note !== undefined ? { clientNote: response.note } : {}),
+        ...(response.brandProducts !== undefined ? { brandProducts: response.brandProducts, deliverables: withProductVideos(campaignCreatorDeliverables(latest, creator), response.brandProducts, creator.creatorId) } : {}),
+        clientChangedAt: changedAt, clientChangeUnread: true,
+      }
     })
     const updatedCampaign = { ...latest, creators: nextCreators, lastClientReviewAt: changedAt }
     writeStoredCampaigns(allCampaigns.map((item) => item.id === latest.id ? updatedCampaign : item))
-    const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.PENDING && `pending ${counts.PENDING}`, counts.notes && `${counts.notes} ghi chú`].filter(Boolean)
+    const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.PENDING && `pending ${counts.PENDING}`, counts.notes && `${counts.notes} ghi chú`, counts.products && `${counts.products} KOC cập nhật sản phẩm`].filter(Boolean)
     appendStoredNotification({ id: `client-review-${latest.id}-${Date.now()}`, icon: 'userCheck', title: `${latest.client} đã cập nhật Brand Review`, detail: `${latest.name} · ${parts.join(' · ')}`, campaignId: latest.id, href: `/campaigns/${latest.id}?tab=external-listings` })
     setCampaign(updatedCampaign); setResponses(initialResponses(updatedCampaign)); setDeliverableFeedback(deliverableFeedbackState(updatedCampaign))
     setSavedMessage(`Đã gửi ${changedCount} thay đổi đến team Campaign.`)
@@ -105,7 +126,12 @@ export default function ClientReviewPage() {
       setCampaign(updatedCampaign); setDeliverableFeedback(deliverableFeedbackState(updatedCampaign))
       setDeliverableSavedMessage(`Đã gửi ${deliverableChangedCount} Brand Feedback đến team Campaign.`)
       return
-    } catch { /* Fall back to local demo storage. */ }
+    } catch (error) {
+      if (remoteLoaded.current || error?.response) {
+        setDeliverableSavedMessage(`Chưa gửi được: ${getApiErrorMessage(error)}. Feedback vẫn được giữ lại.`)
+        return
+      }
+    }
     finally { setSavingDeliverables(false) }
     const allCampaigns = readStoredCampaigns(INITIAL_CAMPAIGNS)
     const latest = findCampaignByReviewToken(allCampaigns, token)

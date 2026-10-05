@@ -1,6 +1,7 @@
 import { clientReviewDecisionLabel, effectiveClientDecision } from '../config/campaigns'
 import { formatCategoryPaths } from './creatorCategoryPaths'
 import { toCreatorList } from './creatorLists'
+import { normalizeProducts } from './campaignProducts'
 
 const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' })
 const KOC_NUMERIC_FIELDS = new Set(['expense', 'followers', 'gmvMonth'])
@@ -50,6 +51,7 @@ function kocValue(creator, responses, key) {
     metaEcomNote: creator.metaEcomNote,
     brandPick: clientReviewDecisionLabel(response.decision || effectiveClientDecision(creator)),
     brandNote: response.note ?? creator.clientNote,
+    brandProducts: normalizeProducts(response.brandProducts ?? creator.brandProducts).join(', '),
     kocConfirm: clientReviewDecisionLabel(kocDecision(creator)),
   }
   return values[key]
@@ -71,7 +73,7 @@ export function filterAndSortClientKocs(creators, responses, filters, sortCriter
     if (!search) return true
     return text([
       creator.name, creator.tiktokId, creator.tiktokLink, creator.segment, category,
-      types.join(' '), creator.metaEcomNote, response.note, brandPick, confirm,
+      types.join(' '), creator.metaEcomNote, response.note, normalizeProducts(response.brandProducts ?? creator.brandProducts).join(' '), brandPick, confirm,
     ].join(' ')).includes(search)
   })
 

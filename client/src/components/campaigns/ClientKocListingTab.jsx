@@ -9,6 +9,8 @@ import Icon from '../common/Icon'
 import CategoryPathRibbons from '../creators/CategoryPathRibbons'
 import CreatorSortableHeader from '../creators/CreatorSortableHeader'
 import ClientReviewFilterBar from './ClientReviewFilterBar'
+import ProductAutocompleteInput from '../common/ProductAutocompleteInput'
+import { campaignProductOptions } from '../../utils/campaignProducts'
 
 const DECISIONS = [
   { value: 'APPROVED', label: 'Đồng ý', icon: 'check' },
@@ -20,7 +22,7 @@ const KOC_COLUMNS = [
   ['Link TikTok', 'tiktokLink'], ['ID TikTok', 'tiktokId'], ['Expense', 'expense'],
   ['Segment', 'segment'], ['Category', 'category'], ['Type', 'type'],
   ['Followers', 'followers'], ['GMV / Month', 'gmvMonth'], ['Meta Ecom Note', 'metaEcomNote'],
-  ['Brand Pick', 'brandPick'], ['Brand Note', 'brandNote'], ['KOC Confirm', 'kocConfirm'],
+  ['Brand Pick', 'brandPick'], ['Brand Note', 'brandNote'], ['Sản phẩm gửi KOC', 'brandProducts'], ['KOC Confirm', 'kocConfirm'],
 ]
 
 function decisionTone(value) {
@@ -44,6 +46,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
   const [filters, setFilters] = useState(EMPTY_CLIENT_KOC_FILTERS)
   const [sortCriteria, setSortCriteria] = useState([])
   const creators = useMemo(() => campaign.creators || [], [campaign.creators])
+  const productOptions = useMemo(() => campaignProductOptions(campaign, responses), [campaign, responses])
   const counts = creators.reduce((result, creator) => {
     const decision = responses[String(creator.creatorId)]?.decision || 'PENDING'
     result[decision] = (result[decision] || 0) + 1
@@ -62,7 +65,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
   const sortBy = (key) => setSortCriteria((current) => cycleCreatorSort(current, key))
 
   return <>
-    <section className="client-review-instruction"><Icon name="users" size={19} /><div><strong>Duyệt danh sách KOC cho Campaign</strong><p>Toàn bộ thông tin từ External Listings được hiển thị bên dưới. Bạn có thể xem hồ sơ, chọn Brand Pick và để lại Brand Note trước khi gửi một lần cho Meta Ecom.</p></div></section>
+    <section className="client-review-instruction"><Icon name="users" size={19} /><div><strong>Duyệt danh sách KOC cho Campaign</strong><p>Chọn Brand Pick, ghi Brand Note và nhập sản phẩm gửi cho từng KOC, ngăn cách bằng dấu phẩy. Dùng ↓ và Tab hoặc click để chọn gợi ý. Bấm “Gửi phản hồi” để đồng bộ; mỗi sản phẩm sẽ có một video mặc định. Deliverables chỉ hiển thị khi Brand và KOC cùng đồng ý.</p></div></section>
     <section className="client-koc-summary" aria-label="Tổng quan Brand Pick">
       <article><span><Icon name="users" size={17} /></span><div><small>Tổng KOC</small><strong>{creators.length}</strong></div></article>
       <article className="is-approved"><span><Icon name="check" size={17} /></span><div><small>Đồng ý</small><strong>{counts.APPROVED}</strong></div></article>
@@ -93,7 +96,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
             return <th key={key}><CreatorSortableHeader label={label} sortKey={key} criterion={sortCriteria[sortIndex]} priority={sortIndex + 1} onSort={sortBy} /></th>
           })}</tr></thead>
           <tbody>{visibleCreators.map((creator) => {
-            const response = responses[String(creator.creatorId)] || { decision: 'PENDING', note: '' }
+            const response = responses[String(creator.creatorId)] || { decision: 'PENDING', note: '', brandProducts: (creator.brandProducts || []).join(', ') }
             const tone = decisionTone(response.decision)
             const confirm = kocDecision(creator)
             const tiktokLink = creatorTikTokLink(creator)
@@ -107,8 +110,9 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
               <td>{formatNumber(creator.followers)}</td>
               <td><strong>{formatCompactCurrency(creator.gmvMonth)}</strong></td>
               <td><span className="client-listing-note-text" title={creator.metaEcomNote}>{creator.metaEcomNote || '—'}</span></td>
-              <td className="client-listing-brand-pick"><div className="client-listing-decisions">{DECISIONS.map((decision) => <button type="button" className={response.decision === decision.value ? 'is-selected' : ''} onClick={() => onUpdate(creator.creatorId, 'decision', decision.value)} title={decision.label} key={decision.value}><Icon name={decision.icon} size={13} /><span>{decision.label}</span></button>)}</div></td>
-              <td className="client-listing-brand-note"><textarea rows="2" value={response.note} onChange={(event) => onUpdate(creator.creatorId, 'note', event.target.value)} placeholder="" /></td>
+              <td className="client-listing-brand-pick"><div className="client-listing-decisions">{DECISIONS.map((decision) => <button type="button" disabled={saving} className={response.decision === decision.value ? 'is-selected' : ''} onClick={() => onUpdate(creator.creatorId, 'decision', decision.value)} title={decision.label} key={decision.value}><Icon name={decision.icon} size={13} /><span>{decision.label}</span></button>)}</div></td>
+              <td className="client-listing-brand-note"><textarea rows="2" disabled={saving} value={response.note} onChange={(event) => onUpdate(creator.creatorId, 'note', event.target.value)} placeholder="" /></td>
+              <td className="client-listing-products"><ProductAutocompleteInput label={`Sản phẩm gửi @${creator.tiktokId}`} value={response.brandProducts || ''} options={productOptions} disabled={saving} onChange={(value) => onUpdate(creator.creatorId, 'brandProducts', value)} /><small className="campaign-product-help">Ngăn cách bằng dấu phẩy</small></td>
               <td className="client-listing-koc-confirm"><span className={`client-listing-status is-${decisionTone(confirm)}`}>{clientReviewDecisionLabel(confirm)}</span></td>
             </tr>
           })}</tbody>

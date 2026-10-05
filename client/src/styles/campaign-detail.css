@@ -381,10 +381,12 @@
 .brand-selection-card { padding-inline: 18px; }
 .brand-selection-count { display: inline-flex; align-items: center; min-height: 32px; padding: 0 10px; border-radius: 8px; color: #087bc2; background: #e4f4fd; font-size: 8px; font-weight: 800; }
 .brand-selection-table-wrap { overflow: auto; border: 1px solid #dfe8f0; border-radius: 12px; }
-.brand-selection-table { width: 100%; min-width: 1840px; table-layout: fixed; border-collapse: collapse; }
+.brand-selection-table { width: 100%; min-width: 2070px; table-layout: fixed; border-collapse: collapse; }
 .brand-selection-table th { position: sticky; z-index: 2; top: 0; padding: 11px 9px; color: #fff; background: #071f50; font-size: 7.5px; text-align: left; white-space: nowrap; }
 .brand-selection-table th:nth-child(1) { width: 175px; }.brand-selection-table th:nth-child(2) { width: 140px; }.brand-selection-table th:nth-child(3) { width: 120px; }.brand-selection-table th:nth-child(4) { width: 90px; }.brand-selection-table th:nth-child(5) { width: 185px; }.brand-selection-table th:nth-child(6) { width: 110px; }.brand-selection-table th:nth-child(7) { width: 90px; }.brand-selection-table th:nth-child(8) { width: 120px; }.brand-selection-table th:nth-child(9) { width: 185px; }.brand-selection-table th:nth-child(10) { width: 120px; }.brand-selection-table th:nth-child(11) { width: 180px; }.brand-selection-table th:nth-child(12) { width: 130px; }
 .brand-selection-table td { min-width: 0; height: 64px; padding: 10px 9px; border-top: 1px solid #e6edf3; color: #42566d; font-size: 8.5px; vertical-align: middle; }
+.brand-selection-table th:nth-child(12) { width: 230px; }
+.brand-selection-table th:nth-child(13) { width: 130px; }
 .brand-selection-table th:nth-child(1),.brand-selection-table td:nth-child(1) { position: sticky; left: 0; }
 .brand-selection-table th:nth-child(2),.brand-selection-table td:nth-child(2) { position: sticky; left: 175px; box-shadow: 8px 0 12px -12px rgba(1,32,82,.7); }
 .brand-selection-table thead th:nth-child(1),.brand-selection-table thead th:nth-child(2) { z-index: 5; background: #071f50; }

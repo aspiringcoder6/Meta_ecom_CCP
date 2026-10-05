@@ -1,0 +1,10 @@
+.product-autocomplete { width: 100%; min-width: 0; }
+.product-autocomplete > input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 38px; padding: 8px; border: 1px solid #d7e3ed; border-radius: 7px; color: #40546c; background: white; outline: none; font: inherit; }
+.product-autocomplete > input:focus { border-color: #52baff; box-shadow: 0 0 0 3px #52baff20; }
+.product-autocomplete > input:disabled { opacity: .65; }
+.product-autocomplete-popup { position: fixed; z-index: 1100; overflow-y: auto; box-sizing: border-box; padding: 6px; border: 1px solid #d7e3ed; border-radius: 9px; background: white; box-shadow: 0 10px 32px #01205226; color: #012052; font-size: 12px; }
+.product-autocomplete-popup > small { display: block; padding: 6px 8px; color: #7489a2; font-size: 10px; }
+.product-autocomplete-popup [role="option"] { display: block; width: 100%; padding: 10px 8px; border: 0; border-radius: 5px; background: white; color: #012052; text-align: left; overflow-wrap: anywhere; font: inherit; cursor: pointer; }
+.product-autocomplete-popup [role="option"][aria-selected="true"] { background: #e5f5ff; color: #087bc2; }
+.campaign-product-help { color: #7489a2; font-size: 10px; line-height: 1.5; }
+.brand-product-update-badge { display: inline-block; margin-top: 5px; color: #956112; font-size: 8px; font-weight: 700; }
