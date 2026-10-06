@@ -2,7 +2,7 @@ import type { RequestHandler } from 'express'
 import * as service from './campaign.service.js'
 import { importInternalListings } from './campaign-import.service.js'
 import { validateInternalImport } from './campaign-import.validation.js'
-import { validateCampaignCreate, validateCampaignCreatorChanges, validateCampaignStatus, validateCampaignUpdate, validateClientResponses, validateCreatorIds, validateDeliverableFeedback, validateMilestones } from './campaign.validation.js'
+import { validateCampaignCreate, validateCampaignCreatorChanges, validateCampaignStatus, validateCampaignUpdate, validateCreatorIds, validateMilestones } from './campaign.validation.js'
 
 export const list: RequestHandler = async (_request, response) => response.json({ data: await service.listCampaigns() })
 export const getOne: RequestHandler = async (request, response) => response.json({ data: await service.getCampaign(String(request.params.id)) })
@@ -17,5 +17,5 @@ export const replaceMilestones: RequestHandler = async (request, response) => re
 export const markClientChangesRead: RequestHandler = async (request, response) => response.json({ data: await service.markClientChangesRead(String(request.params.id)) })
 export const ensureReviewLink: RequestHandler = async (request, response) => response.json({ data: await service.ensureReviewLink(String(request.params.id)) })
 export const publicReview: RequestHandler = async (request, response) => response.json({ data: await service.getPublicReview(String(request.params.token)) })
-export const submitPublicReview: RequestHandler = async (request, response) => response.json({ data: await service.submitPublicReview(String(request.params.token), validateClientResponses(request.body)) })
-export const submitPublicDeliverableFeedback: RequestHandler = async (request, response) => response.json({ data: await service.submitPublicDeliverableFeedback(String(request.params.token), validateDeliverableFeedback(request.body)) })
+export const submitPublicReview: RequestHandler = async (request, response) => response.json({ data: await service.submitPublicReview(String(request.params.token), request.body?.responses) })
+export const submitPublicDeliverableFeedback: RequestHandler = async (request, response) => response.json({ data: await service.submitPublicDeliverableFeedback(String(request.params.token), request.body?.updates) })

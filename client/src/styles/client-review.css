@@ -130,6 +130,16 @@
 .client-review-submit small { color: #8292a5; font-size: 8.5px; }
 .client-review-submit button { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 20px; border-radius: 10px; color: white; background: var(--review-navy); font-size: 10px; font-weight: 750; box-shadow: 0 8px 20px rgba(1,32,82,.16); }
 .client-review-submit button:disabled { cursor: not-allowed; opacity: .42; }
+.client-review-submission-report { width: min(calc(100% - 40px),1180px); margin: 16px auto; padding: 16px; border: 1px solid #f0bcc4; border-radius: 13px; color: #a32b43; background: #fff3f5; font-size: 11px; }
+.client-review-submission-report > div { display: flex; align-items: flex-start; gap: 10px; }
+.client-review-submission-report > div > svg { flex: 0 0 auto; }
+.client-review-submission-report p { margin: 5px 0 12px; line-height: 1.5; }
+.client-review-submission-report summary { cursor: pointer; font-weight: 700; }
+.client-review-submission-report ul { max-height: 230px; overflow-y: auto; margin: 10px 0 0; padding: 0; list-style: none; }
+.client-review-submission-report li { display: grid; gap: 4px; padding: 9px 0; border-top: 1px solid #f2d6dc; overflow-wrap: anywhere; }
+.client-koc-listing-table tbody tr.has-submission-error td,.client-koc-listing-table tbody tr.has-submission-error:hover td,.client-deliverables-review-table-wrap tr.has-submission-error td { background: #fff1f3; }
+.client-review-row-error { display: block; margin-top: 5px; color: #b72e47; font-size: 9px; line-height: 1.4; white-space: normal; overflow-wrap: anywhere; }
+.client-deliverables-review-table-wrap textarea[aria-invalid="true"] { border-color: #dc6078; }
 .client-review-tabs { position: sticky; z-index: 18; top: 0; width: min(calc(100% - 40px),1180px); display: flex; gap: 5px; margin: 18px auto 0; padding: 5px; border: 1px solid #dbe6ef; border-radius: 12px; background: rgba(255,255,255,.96); box-shadow: 0 8px 25px rgba(1,32,82,.06); backdrop-filter: blur(12px); }
 .client-review-tabs button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 16px; border-radius: 8px; color: #60758d; font-size: 9px; font-weight: 800; }
 .client-review-tabs button.is-active { color: #fff; background: var(--review-navy); }

@@ -57,11 +57,11 @@ export const publicReviewApi = {
     return response.data.data
   },
   async submit(token, responses) {
-    const response = await apiClient.post(`/public/reviews/${token}`, { responses })
+    const response = await apiClient.post(`/public/reviews/${token}`, { responses }, { timeout: 120_000 })
     return response.data.data
   },
   async submitDeliverables(token, updates) {
-    const response = await apiClient.post(`/public/reviews/${token}/deliverables`, { updates })
+    const response = await apiClient.post(`/public/reviews/${token}/deliverables`, { updates }, { timeout: 120_000 })
     return response.data.data
   },
 }

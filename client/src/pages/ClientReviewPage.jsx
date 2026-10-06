@@ -6,28 +6,24 @@ import Icon from '../components/common/Icon'
 import { INITIAL_CAMPAIGNS } from '../data/campaigns'
 import { findCampaignByReviewToken, readStoredCampaigns, writeStoredCampaigns } from '../utils/campaignStorage'
 import { appendStoredNotification } from '../utils/notificationStorage'
-import { effectiveClientDecision } from '../config/campaigns'
 import { publicReviewApi } from '../services/campaignApi'
 import { acceptedCampaignCreators, campaignCreatorDeliverables, deliverableFeedbackState } from '../utils/campaignDeliverables'
-import { normalizeProducts, withProductVideos } from '../utils/campaignProducts'
+import { withProductVideos } from '../utils/campaignProducts'
 import { clientResponseChanges } from '../utils/clientProductResponses'
 import { getApiErrorMessage } from '../services/apiClient'
-
-function initialResponses(campaign) {
-  return Object.fromEntries((campaign?.creators || []).map((creator) => [String(creator.creatorId), {
-    decision: effectiveClientDecision(creator), note: creator.clientNote || '', brandProducts: normalizeProducts(creator.brandProducts).join(', '),
-  }]))
-}
+import { initialClientResponses, reconcileFeedbackDrafts, reconcileListingDrafts, reviewSubmissionMessage, reviewSubmissionResult } from '../utils/clientReviewSubmission'
 
 export default function ClientReviewPage() {
   const { token } = useParams()
   const initialCampaign = findCampaignByReviewToken(readStoredCampaigns(INITIAL_CAMPAIGNS), token)
   const [campaign, setCampaign] = useState(initialCampaign)
   const [activeTab, setActiveTab] = useState('listing')
-  const [responses, setResponses] = useState(() => initialResponses(initialCampaign))
+  const [responses, setResponses] = useState(() => initialClientResponses(initialCampaign))
   const [deliverableFeedback, setDeliverableFeedback] = useState(() => deliverableFeedbackState(initialCampaign))
   const [savedMessage, setSavedMessage] = useState('')
   const [deliverableSavedMessage, setDeliverableSavedMessage] = useState('')
+  const [listingResult, setListingResult] = useState(null)
+  const [deliverableResult, setDeliverableResult] = useState(null)
   const [loading, setLoading] = useState(!initialCampaign)
   const [saving, setSaving] = useState(false)
   const [savingDeliverables, setSavingDeliverables] = useState(false)
@@ -40,7 +36,7 @@ export default function ClientReviewPage() {
       if (!active) return
       remoteLoaded.current = true
       setCampaign(serverCampaign)
-      setResponses(initialResponses(serverCampaign))
+      setResponses(initialClientResponses(serverCampaign))
       setDeliverableFeedback(deliverableFeedbackState(serverCampaign))
     }).catch(() => { /* Fall back to the locally stored demo campaign. */ }).finally(() => {
       if (active) setLoading(false)
@@ -63,6 +59,7 @@ export default function ClientReviewPage() {
     setResponses((current) => ({ ...current, [String(creatorId)]: { ...current[String(creatorId)], [field]: value } }))
   }
   const submitListing = async () => {
+    if (saving || savingDeliverables) return
     if (!changedCount) { setSavedMessage('Không có thay đổi mới để gửi.'); return }
     const changedResponses = (campaign.creators || []).flatMap((creator) => {
       const response = responses[String(creator.creatorId)]
@@ -72,8 +69,12 @@ export default function ClientReviewPage() {
     setSaving(true)
     try {
       const updatedCampaign = await publicReviewApi.submit(token, changedResponses)
-      setCampaign(updatedCampaign); setResponses(initialResponses(updatedCampaign)); setDeliverableFeedback(deliverableFeedbackState(updatedCampaign))
-      setSavedMessage(`Đã gửi ${changedResponses.length} thay đổi đến team Campaign.`)
+      const result = reviewSubmissionResult(updatedCampaign, changedResponses)
+      setCampaign(updatedCampaign)
+      setResponses(reconcileListingDrafts(campaign, updatedCampaign, responses, result.savedCreatorIds))
+      setDeliverableFeedback(reconcileFeedbackDrafts(campaign, updatedCampaign, deliverableFeedback))
+      setListingResult(result)
+      setSavedMessage(reviewSubmissionMessage(result))
       return
     } catch (error) {
       if (remoteLoaded.current || error?.response) {
@@ -107,11 +108,12 @@ export default function ClientReviewPage() {
     writeStoredCampaigns(allCampaigns.map((item) => item.id === latest.id ? updatedCampaign : item))
     const parts = [counts.APPROVED && `đồng ý ${counts.APPROVED}`, counts.REJECTED && `từ chối ${counts.REJECTED}`, counts.PENDING && `pending ${counts.PENDING}`, counts.notes && `${counts.notes} ghi chú`, counts.products && `${counts.products} KOC cập nhật sản phẩm`].filter(Boolean)
     appendStoredNotification({ id: `client-review-${latest.id}-${Date.now()}`, icon: 'userCheck', title: `${latest.client} đã cập nhật Brand Review`, detail: `${latest.name} · ${parts.join(' · ')}`, campaignId: latest.id, href: `/campaigns/${latest.id}?tab=external-listings` })
-    setCampaign(updatedCampaign); setResponses(initialResponses(updatedCampaign)); setDeliverableFeedback(deliverableFeedbackState(updatedCampaign))
+    setCampaign(updatedCampaign); setResponses(initialClientResponses(updatedCampaign)); setDeliverableFeedback(reconcileFeedbackDrafts(campaign, updatedCampaign, deliverableFeedback))
     setSavedMessage(`Đã gửi ${changedCount} thay đổi đến team Campaign.`)
   }
 
   const submitDeliverables = async () => {
+    if (saving || savingDeliverables) return
     if (!deliverableChangedCount) { setDeliverableSavedMessage('Không có feedback mới để gửi.'); return }
     const updates = acceptedCampaignCreators(campaign).flatMap((creator) => {
       const deliverables = campaignCreatorDeliverables(campaign, creator).flatMap((item) => {
@@ -123,8 +125,12 @@ export default function ClientReviewPage() {
     setSavingDeliverables(true)
     try {
       const updatedCampaign = await publicReviewApi.submitDeliverables(token, updates)
-      setCampaign(updatedCampaign); setDeliverableFeedback(deliverableFeedbackState(updatedCampaign))
-      setDeliverableSavedMessage(`Đã gửi ${deliverableChangedCount} Brand Feedback đến team Campaign.`)
+      const result = reviewSubmissionResult(updatedCampaign, updates, true)
+      setCampaign(updatedCampaign)
+      setDeliverableFeedback(reconcileFeedbackDrafts(campaign, updatedCampaign, deliverableFeedback, result.savedDeliverables))
+      setResponses(reconcileListingDrafts(campaign, updatedCampaign, responses))
+      setDeliverableResult(result)
+      setDeliverableSavedMessage(reviewSubmissionMessage(result, true))
       return
     } catch (error) {
       if (remoteLoaded.current || error?.response) {
@@ -149,9 +155,9 @@ export default function ClientReviewPage() {
     <main className="client-review-page">
       <header className="client-review-topbar"><div><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><span><strong>Meta Ecom</strong><small>Client Selection Portal</small></span></div><em>Kết nối bảo mật</em></header>
       <section className="client-review-hero"><p className="page-kicker">Client Review · {campaign.id}</p><h1>{campaign.name}</h1><p>{campaign.description}</p><div><span>Client / Brand <strong>{campaign.client}</strong></span><span>Creators <strong>{campaign.creators?.length || 0}</strong></span></div></section>
-      <nav className="client-review-tabs" aria-label="Client Review"><button type="button" className={activeTab === 'listing' ? 'is-active' : ''} onClick={() => setActiveTab('listing')}><Icon name="users" size={16} />KOC Listing<span>{campaign.creators?.length || 0}</span></button><button type="button" className={activeTab === 'deliverables' ? 'is-active' : ''} onClick={() => setActiveTab('deliverables')}><Icon name="checkSquare" size={16} />Deliverables<span>{acceptedCount}</span></button></nav>
-      {activeTab === 'listing' && <ClientKocListingTab campaign={campaign} responses={responses} onUpdate={updateResponse} changedCount={changedCount} savedMessage={savedMessage} saving={saving} onSubmit={submitListing} />}
-      {activeTab === 'deliverables' && <ClientDeliverablesReviewTab campaign={campaign} feedback={deliverableFeedback} onChange={(key, value) => setDeliverableFeedback((current) => ({ ...current, [key]: value }))} changedCount={deliverableChangedCount} savedMessage={deliverableSavedMessage} saving={savingDeliverables} onSubmit={submitDeliverables} />}
+      <nav className="client-review-tabs" aria-label="Client Review"><button type="button" disabled={saving || savingDeliverables} className={activeTab === 'listing' ? 'is-active' : ''} onClick={() => setActiveTab('listing')}><Icon name="users" size={16} />KOC Listing<span>{campaign.creators?.length || 0}</span></button><button type="button" disabled={saving || savingDeliverables} className={activeTab === 'deliverables' ? 'is-active' : ''} onClick={() => setActiveTab('deliverables')}><Icon name="checkSquare" size={16} />Deliverables<span>{acceptedCount}</span></button></nav>
+      {activeTab === 'listing' && <ClientKocListingTab campaign={campaign} responses={responses} onUpdate={updateResponse} changedCount={changedCount} savedMessage={savedMessage} submissionResult={listingResult} saving={saving} onSubmit={submitListing} />}
+      {activeTab === 'deliverables' && <ClientDeliverablesReviewTab campaign={campaign} feedback={deliverableFeedback} onChange={(key, value) => setDeliverableFeedback((current) => ({ ...current, [key]: value }))} changedCount={deliverableChangedCount} savedMessage={deliverableSavedMessage} submissionResult={deliverableResult} saving={savingDeliverables} onSubmit={submitDeliverables} />}
     </main>
   )
 }

@@ -11,6 +11,8 @@ import CreatorSortableHeader from '../creators/CreatorSortableHeader'
 import ClientReviewFilterBar from './ClientReviewFilterBar'
 import ProductAutocompleteInput from '../common/ProductAutocompleteInput'
 import { campaignProductOptions } from '../../utils/campaignProducts'
+import { reviewIssuesFor } from '../../utils/clientReviewSubmission'
+import ClientReviewSubmissionReport from './ClientReviewSubmissionReport'
 
 const DECISIONS = [
   { value: 'APPROVED', label: 'Đồng ý', icon: 'check' },
@@ -42,7 +44,7 @@ function creatorTikTokLink(creator) {
   return tiktokId ? `https://www.tiktok.com/@${tiktokId}` : ''
 }
 
-export default function ClientKocListingTab({ campaign, responses, onUpdate, changedCount, savedMessage, saving, onSubmit }) {
+export default function ClientKocListingTab({ campaign, responses, onUpdate, changedCount, savedMessage, submissionResult, saving, onSubmit }) {
   const [filters, setFilters] = useState(EMPTY_CLIENT_KOC_FILTERS)
   const [sortCriteria, setSortCriteria] = useState([])
   const creators = useMemo(() => campaign.creators || [], [campaign.creators])
@@ -72,6 +74,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
       <article className="is-pending"><span><Icon name="clock" size={17} /></span><div><small>Pending</small><strong>{counts.PENDING}</strong></div></article>
       <article className="is-rejected"><span><Icon name="close" size={17} /></span><div><small>Từ chối</small><strong>{counts.REJECTED}</strong></div></article>
     </section>
+    <ClientReviewSubmissionReport result={submissionResult} campaign={campaign} />
     <section className="client-koc-listing-card">
       <header><div><span className="client-listing-eyebrow">External Listings</span><h2>Danh sách KOC</h2><p>Cuộn ngang để xem đầy đủ thông tin. ID TikTok và Brand Pick luôn được giữ cố định.</p></div><span>{creators.length} Creator</span></header>
       <ClientReviewFilterBar
@@ -100,9 +103,10 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
             const tone = decisionTone(response.decision)
             const confirm = kocDecision(creator)
             const tiktokLink = creatorTikTokLink(creator)
-            return <tr className={`is-${tone}`} key={creator.creatorId}>
+            const issues = reviewIssuesFor(submissionResult, creator.creatorId)
+            return <tr className={`is-${tone}${issues.length ? ' has-submission-error' : ''}`} key={creator.creatorId}>
               <td className="client-listing-sticky-link">{tiktokLink ? <a href={tiktokLink} target="_blank" rel="noreferrer" title={tiktokLink}>{tiktokLink}</a> : <span>Chưa có link</span>}</td>
-              <td className="client-listing-sticky-id"><strong title={`@${String(creator.tiktokId || '').replace(/^@/, '')}`}>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small title={creator.name}>{creator.name || 'Creator'}</small></td>
+              <td className="client-listing-sticky-id"><strong title={`@${String(creator.tiktokId || '').replace(/^@/, '')}`}>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small title={creator.name}>{creator.name || 'Creator'}</small>{issues.length > 0 && <span className="client-review-row-error" title={issues.map((issue) => issue.message).join('\n')}>Chưa lưu · xem lỗi</span>}</td>
               <td><strong>{formatCompactCurrency(creator.expense ?? creator.suggestedPrice)}</strong></td>
               <td><span className="client-listing-segment">{creator.segment || '—'}</span></td>
               <td className="client-listing-category"><CategoryPathRibbons values={creator.category || []} level={2} /></td>
@@ -121,6 +125,6 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
         {creators.length > 0 && !visibleCreators.length && <div className="client-review-no-listing"><Icon name="search" size={24} /><strong>Không có KOC phù hợp</strong><span>Hãy thử thay đổi hoặc xóa các bộ lọc hiện tại.</span><button type="button" onClick={clearFilters}>Xóa bộ lọc</button></div>}
       </div>
     </section>
-    <footer className="client-review-submit"><div><strong>{changedCount} thay đổi chưa gửi</strong><small>{savedMessage || 'Phản hồi sẽ được gom và gửi một lần đến Meta Ecom.'}</small></div><button type="button" disabled={!changedCount || saving} onClick={onSubmit}><Icon name="check" size={17} />{saving ? 'Đang gửi...' : 'Gửi phản hồi'}</button></footer>
+    <footer className="client-review-submit"><div aria-live="polite"><strong>{changedCount} thay đổi chưa gửi</strong><small>{saving ? `Đang gửi ${changedCount} thay đổi. Vui lòng giữ trang mở...` : savedMessage || 'Phản hồi sẽ được gom và gửi một lần đến Meta Ecom.'}</small></div><button type="button" disabled={!changedCount || saving} onClick={onSubmit}><Icon name="check" size={17} />{saving ? 'Đang gửi...' : 'Gửi phản hồi'}</button></footer>
   </>
 }

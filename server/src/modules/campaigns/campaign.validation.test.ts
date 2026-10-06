@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { validateCampaignCreatorChanges, validateCampaignStatus, validateCampaignUpdate, validateClientResponses, validateDeliverableFeedback } from './campaign.validation.js'
+import { parseClientResponses, parseDeliverableFeedback, validateCampaignCreatorChanges, validateCampaignStatus, validateCampaignUpdate, validateClientResponses, validateDeliverableFeedback } from './campaign.validation.js'
 
 test('accepts Campaign categories and subcategories in settings', () => {
   const settings = validateCampaignUpdate({
@@ -67,4 +67,28 @@ test('accepts batched Brand Feedback for multiple deliverables', () => {
     creatorId: 'creator-1',
     deliverables: [{ id: 'video-1', brandFeedback: 'Sửa CTA' }, { id: 'video-2', brandFeedback: '' }],
   }])
+})
+
+test('accepts one Brand submission containing 200 creators', () => {
+  const responses = Array.from({ length: 200 }, (_, index) => ({ creatorId: `c${index}`, decision: 'APPROVED', note: 'Brand note', brandProducts: ['A', 'B'] }))
+  assert.equal(validateClientResponses({ responses }).length, 200)
+  const updates = responses.map(({ creatorId }) => ({ creatorId, deliverables: [{ id: `video-${creatorId}`, brandFeedback: 'Sửa CTA' }] }))
+  assert.equal(validateDeliverableFeedback({ updates }).length, 200)
+})
+
+test('partial response parser identifies bad rows without discarding valid ones', () => {
+  const result = parseClientResponses([{ creatorId: 'good', decision: 'APPROVED' }, { creatorId: 'bad', decision: 'INVALID' }, null, { creatorId: 'also-good', note: 'Updated' }])
+  assert.deepEqual(result.items.map(({ creatorId }) => creatorId), ['good', 'also-good'])
+  assert.deepEqual(result.errors.map(({ row }) => row), [2, 3])
+  assert.ok(result.errors.every((issue) => issue.message && issue.code))
+  assert.throws(() => parseClientResponses({}), /Phản hồi không hợp lệ/)
+})
+
+test('partial feedback parser retains valid deliverables within a malformed group', () => {
+  const result = parseDeliverableFeedback([{ creatorId: 'c1', deliverables: [{ id: 'valid', brandFeedback: 'OK' }, { brandFeedback: 'Missing ID' }] }, { deliverables: [] }])
+  assert.equal(result.items[0]?.deliverables.length, 1)
+  assert.equal(result.items[0]?.deliverables[0]?.id, 'valid')
+  assert.equal(result.errors.length, 2)
+  assert.equal(result.errors[0]?.creatorId, 'c1')
+  assert.throws(() => parseDeliverableFeedback(null), /Brand Feedback không hợp lệ/)
 })

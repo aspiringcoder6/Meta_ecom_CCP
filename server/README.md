@@ -33,6 +33,9 @@ Client không có account Role `CLIENT`; khách hàng chỉ dùng review link ri
 - Migration `20261006090000_permanent_brand_review_links` bỏ thời hạn của các link chưa bị thu hồi, không thay đổi token. Chạy `npm run prisma:deploy` trước khi khởi động bản backend mới.
 - Link chỉ ngừng hoạt động nếu bị thu hồi, Campaign/database bị xóa, hoặc địa chỉ frontend không còn được duy trì. Khi đổi domain cần giữ domain cũ hoặc cấu hình chuyển hướng.
 - Link cho phép Brand xem và cập nhật dữ liệu Campaign mà không cần đăng nhập; chỉ chia sẻ với người được phép truy cập. Link demo lưu trên trình duyệt không thay thế link backend.
+- Brand có thể gửi 200 Creator trong một lần, bao gồm Brand Pick, Brand Note, sản phẩm và Brand Feedback. Server xử lý theo lô 50 KOC, khóa/đọc/cập nhật và lưu feedback theo lô. Các lô thành công được commit riêng. Lỗi dữ liệu được tách nhỏ để bỏ qua dòng lỗi và tiếp tục lưu phần còn lại; lỗi kết nối/hệ thống dừng xử lý, không hoàn tác các lô đã lưu.
+- Hai API trả thêm `submissionResult` gồm số mục đã lưu, ID đã lưu, danh sách lỗi theo KOC/Deliverable và trạng thái gián đoạn. Frontend chỉ xóa draft đã được xác nhận lưu, giữ phần lỗi để sửa/gửi lại, bôi đỏ và hiển thị lý do. HTTP 200 có thể là thành công một phần; luôn kiểm tra `submissionResult.errors`.
+- Mỗi giao dịch có giới hạn 15 giây (chờ kết nối tối đa 5 giây), toàn bộ xử lý giới hạn khoảng 60 giây trước khi bắt đầu lô tiếp theo. Frontend chờ tối đa 120 giây. Thông báo được cộng dồn bằng một khóa riêng cho lần gửi, chỉ có một thông báo tổng hợp cho mỗi người nhận và chỉ đếm phần đã commit.
 
 ### Google Sign-In
 

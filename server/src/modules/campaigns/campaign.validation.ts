@@ -1,5 +1,6 @@
 import { ApiError } from '../../utils/api-error.js'
 import { normalizeProducts } from './campaign-products.js'
+import type { ReviewIssue } from './campaign-review-submission.js'
 
 function productValues(value: unknown) {
   if (typeof value !== 'string' && (!Array.isArray(value) || value.some((item) => typeof item !== 'string'))) {
@@ -166,4 +167,42 @@ export function validateDeliverableFeedback(value: unknown) {
       }),
     }
   })
+}
+
+function validationIssue(error: unknown, identity: Omit<ReviewIssue, 'code' | 'message'>): ReviewIssue {
+  return { ...identity, code: error instanceof ApiError ? error.code : 'INVALID_REVIEW', message: error instanceof ApiError ? error.message : 'Dữ liệu phản hồi không hợp lệ.' }
+}
+
+export function parseClientResponses(responses: unknown) {
+  if (!Array.isArray(responses)) throw new ApiError(422, 'Phản hồi không hợp lệ.', 'INVALID_REVIEW')
+  const items: (ReturnType<typeof validateClientResponses>[number] & { row: number })[] = []
+  const errors: ReviewIssue[] = []
+  responses.forEach((raw, index) => {
+    const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+    try { items.push({ ...validateClientResponses({ responses: [raw] })[0]!, row: index + 1 }) }
+    catch (error) { errors.push(validationIssue(error, { row: index + 1, creatorId: String(item.creatorId || '') })) }
+  })
+  return { items, errors }
+}
+
+export function parseDeliverableFeedback(updates: unknown) {
+  if (!Array.isArray(updates)) throw new ApiError(422, 'Brand Feedback không hợp lệ.', 'INVALID_DELIVERABLE_FEEDBACK')
+  const items: (ReturnType<typeof validateDeliverableFeedback>[number] & { row: number })[] = []
+  const errors: ReviewIssue[] = []
+  updates.forEach((raw, index) => {
+    const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+    const creatorId = String(item.creatorId || '')
+    if (!creatorId || !Array.isArray(item.deliverables)) {
+      errors.push({ row: index + 1, creatorId, code: 'INVALID_DELIVERABLE_FEEDBACK', message: 'KOC hoặc danh sách Deliverable không hợp lệ.' })
+      return
+    }
+    const deliverables: ReturnType<typeof validateDeliverableFeedback>[number]['deliverables'] = []
+    item.deliverables.forEach((rawDeliverable) => {
+      const deliverable = (rawDeliverable && typeof rawDeliverable === 'object' ? rawDeliverable : {}) as Record<string, unknown>
+      try { deliverables.push(validateDeliverableFeedback({ updates: [{ creatorId, deliverables: [rawDeliverable] }] })[0]!.deliverables[0]!) }
+      catch (error) { errors.push(validationIssue(error, { row: index + 1, creatorId, deliverableId: String(deliverable.id || '') })) }
+    })
+    if (deliverables.length) items.push({ creatorId, deliverables, row: index + 1 })
+  })
+  return { items, errors }
 }
