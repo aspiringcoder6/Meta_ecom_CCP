@@ -22,7 +22,7 @@ const KOC_COLUMNS = [
   ['Link TikTok', 'tiktokLink'], ['ID TikTok', 'tiktokId'], ['Expense', 'expense'],
   ['Segment', 'segment'], ['Category', 'category'], ['Type', 'type'],
   ['Followers', 'followers'], ['GMV / Month', 'gmvMonth'], ['Meta Ecom Note', 'metaEcomNote'],
-  ['Brand Pick', 'brandPick'], ['Brand Note', 'brandNote'], ['Sản phẩm gửi KOC', 'brandProducts'], ['KOC Confirm', 'kocConfirm'],
+  ['Brand Note', 'brandNote'], ['Sản phẩm gửi KOC', 'brandProducts'], ['KOC Confirm', 'kocConfirm'], ['Brand Pick', 'brandPick'],
 ]
 
 function decisionTone(value) {
@@ -73,7 +73,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
       <article className="is-rejected"><span><Icon name="close" size={17} /></span><div><small>Từ chối</small><strong>{counts.REJECTED}</strong></div></article>
     </section>
     <section className="client-koc-listing-card">
-      <header><div><span className="client-listing-eyebrow">External Listings</span><h2>Danh sách KOC</h2><p>Cuộn ngang để xem đầy đủ thông tin. Link và ID TikTok được giữ cố định.</p></div><span>{creators.length} Creator</span></header>
+      <header><div><span className="client-listing-eyebrow">External Listings</span><h2>Danh sách KOC</h2><p>Cuộn ngang để xem đầy đủ thông tin. ID TikTok và Brand Pick luôn được giữ cố định.</p></div><span>{creators.length} Creator</span></header>
       <ClientReviewFilterBar
         search={filters.search}
         filters={[
@@ -102,7 +102,7 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
             const tiktokLink = creatorTikTokLink(creator)
             return <tr className={`is-${tone}`} key={creator.creatorId}>
               <td className="client-listing-sticky-link">{tiktokLink ? <a href={tiktokLink} target="_blank" rel="noreferrer" title={tiktokLink}>{tiktokLink}</a> : <span>Chưa có link</span>}</td>
-              <td className="client-listing-sticky-id"><strong>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small>{creator.name || 'Creator'}</small></td>
+              <td className="client-listing-sticky-id"><strong title={`@${String(creator.tiktokId || '').replace(/^@/, '')}`}>@{String(creator.tiktokId || '').replace(/^@/, '')}</strong><small title={creator.name}>{creator.name || 'Creator'}</small></td>
               <td><strong>{formatCompactCurrency(creator.expense ?? creator.suggestedPrice)}</strong></td>
               <td><span className="client-listing-segment">{creator.segment || '—'}</span></td>
               <td className="client-listing-category"><CategoryPathRibbons values={creator.category || []} level={2} /></td>
@@ -110,10 +110,10 @@ export default function ClientKocListingTab({ campaign, responses, onUpdate, cha
               <td>{formatNumber(creator.followers)}</td>
               <td><strong>{formatCompactCurrency(creator.gmvMonth)}</strong></td>
               <td><span className="client-listing-note-text" title={creator.metaEcomNote}>{creator.metaEcomNote || '—'}</span></td>
-              <td className="client-listing-brand-pick"><div className="client-listing-decisions">{DECISIONS.map((decision) => <button type="button" disabled={saving} className={response.decision === decision.value ? 'is-selected' : ''} onClick={() => onUpdate(creator.creatorId, 'decision', decision.value)} title={decision.label} key={decision.value}><Icon name={decision.icon} size={13} /><span>{decision.label}</span></button>)}</div></td>
               <td className="client-listing-brand-note"><textarea rows="2" disabled={saving} value={response.note} onChange={(event) => onUpdate(creator.creatorId, 'note', event.target.value)} placeholder="" /></td>
               <td className="client-listing-products"><ProductAutocompleteInput label={`Sản phẩm gửi @${creator.tiktokId}`} value={response.brandProducts || ''} options={productOptions} disabled={saving} onChange={(value) => onUpdate(creator.creatorId, 'brandProducts', value)} /><small className="campaign-product-help">Ngăn cách bằng dấu phẩy</small></td>
               <td className="client-listing-koc-confirm"><span className={`client-listing-status is-${decisionTone(confirm)}`}>{clientReviewDecisionLabel(confirm)}</span></td>
+              <td className="client-listing-brand-pick"><div className="client-listing-decisions">{DECISIONS.map((decision) => <button type="button" disabled={saving} className={response.decision === decision.value ? 'is-selected' : ''} onClick={() => onUpdate(creator.creatorId, 'decision', decision.value)} title={decision.label} key={decision.value}><Icon name={decision.icon} size={13} /><span>{decision.label}</span></button>)}</div></td>
             </tr>
           })}</tbody>
         </table>

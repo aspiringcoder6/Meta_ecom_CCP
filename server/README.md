@@ -26,6 +26,14 @@ Server tạo hoặc đồng bộ default Admin từ `ADMIN_EMAIL`, `ADMIN_USERNA
 
 Client không có account Role `CLIENT`; khách hàng chỉ dùng review link riêng trong module Client Review. Các request thay đổi dữ liệu dùng session cookie `HttpOnly` và CSRF token. Production cần HTTPS, đồng thời `CLIENT_ORIGIN` phải đúng origin frontend.
 
+### Link Brand Review
+
+- Link `/client-review/:token` được lưu trong database, không hết hạn và không tự đổi khi chỉnh sửa thông tin/trạng thái Campaign hoặc restart/deploy ứng dụng.
+- Mỗi lần lấy link sẽ dùng lại token hiện có. Các link cũ chưa bị thu hồi vẫn hoạt động, kể cả khi trước đây đã hết hạn.
+- Migration `20261006090000_permanent_brand_review_links` bỏ thời hạn của các link chưa bị thu hồi, không thay đổi token. Chạy `npm run prisma:deploy` trước khi khởi động bản backend mới.
+- Link chỉ ngừng hoạt động nếu bị thu hồi, Campaign/database bị xóa, hoặc địa chỉ frontend không còn được duy trì. Khi đổi domain cần giữ domain cũ hoặc cấu hình chuyển hướng.
+- Link cho phép Brand xem và cập nhật dữ liệu Campaign mà không cần đăng nhập; chỉ chia sẻ với người được phép truy cập. Link demo lưu trên trình duyệt không thay thế link backend.
+
 ### Google Sign-In
 
 Tạo một **OAuth 2.0 Web Client** trong Google Cloud Console. Dùng cùng Client ID cho:

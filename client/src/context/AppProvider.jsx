@@ -625,8 +625,15 @@ export default function AppProvider({ children }) {
       setCampaigns((items) => items.map((campaign) => campaign.id === campaignId ? { ...campaign, reviewToken: reviewLink.token, reviewExpiresAt: reviewLink.expiresAt } : campaign))
       return reviewLink.token
     } catch (error) {
-      if (!shouldUseLocalCampaignFallback(error)) showToast(getApiErrorMessage(error, 'Không thể tạo link Client Review.'))
-      return current ? campaignReviewToken(current) : ''
+      // Never share a locally generated token for a real campaign when the API fails.
+      if (current?.databaseId || !shouldUseLocalCampaignFallback(error)) {
+        const message = getApiErrorMessage(error, 'Không thể lấy link Brand Review. Vui lòng thử lại.')
+        showToast(message)
+        throw new Error(message)
+      }
+      const token = current ? campaignReviewToken(current) : ''
+      if (token) setCampaigns((items) => items.map((campaign) => campaign.id === campaignId ? { ...campaign, reviewToken: token, reviewExpiresAt: null } : campaign))
+      return token
     }
   }
 

@@ -179,7 +179,8 @@ model ReviewLink {
   token      String           @unique
   campaign   Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
   campaignId String
-  expiresAt  DateTime
+  // Brand Review links are permanent; null means no expiry.
+  expiresAt  DateTime?
   revoked    Boolean          @default(false)
   createdAt  DateTime         @default(now())
   feedback   ClientFeedback[]

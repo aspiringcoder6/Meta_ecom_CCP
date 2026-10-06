@@ -8,8 +8,8 @@ import { normalizeProducts, sameProducts, withProductVideos } from './campaign-p
 const campaignInclude = {
   creators: { include: { creator: true }, orderBy: { id: 'asc' as const } },
   milestones: { orderBy: { dueDate: 'asc' as const } },
-  reviewLinks: { where: { revoked: false }, orderBy: { createdAt: 'desc' as const }, take: 1 },
-} as const
+  reviewLinks: { where: { revoked: false }, orderBy: [{ createdAt: 'desc' as const }, { id: 'desc' as const }], take: 1 },
+} satisfies Prisma.CampaignInclude
 
 type CampaignRecord = Awaited<ReturnType<typeof prisma.campaign.findFirstOrThrow<{ include: typeof campaignInclude }>>>
 
@@ -55,7 +55,7 @@ function toCampaignDto(campaign: CampaignRecord) {
       clientChangedAt: item.clientChangedAt, clientChangeUnread: item.clientChangeUnread, creatorConfirmed: item.creatorConfirmed,
     })),
     reviewToken: campaign.reviewLinks[0]?.token || null,
-    reviewExpiresAt: campaign.reviewLinks[0]?.expiresAt || null,
+    reviewExpiresAt: null,
     lastClientReviewAt: campaign.lastClientReviewAt,
     createdAt: campaign.createdAt,
     updatedAt: campaign.updatedAt,
@@ -68,10 +68,10 @@ async function campaignRecord(identifier: string, database = prisma) {
   return campaign
 }
 
-async function nextExternalId() {
+async function nextExternalId(database = prisma) {
   const year = new Date().getFullYear()
   const prefix = `CMP-${year}-`
-  const rows = await prisma.campaign.findMany({ where: { externalId: { startsWith: prefix } }, select: { externalId: true } })
+  const rows = await database.campaign.findMany({ where: { externalId: { startsWith: prefix } }, select: { externalId: true } })
   const highest = rows.reduce((max, row) => Math.max(max, Number(row.externalId.slice(prefix.length)) || 0), 0)
   return `${prefix}${String(highest + 1).padStart(3, '0')}`
 }
@@ -102,9 +102,9 @@ export async function updateCampaignStatus(identifier: string, status: string) {
 export async function createCampaign(input: {
   name: string; client: string; owner: string; description: string; startDate: Date; endDate: Date; totalBudget: number; creatorBudget: number | null;
   category: string[]; segmentGoals: Record<string, number>; creators: unknown[]; milestones: unknown[]; deliverables: unknown[];
-}) {
+}, database = prisma) {
   const creatorIds = [...new Set(input.creators.map((item) => String((item as Record<string, unknown>)?.creatorId || '')).filter(Boolean))]
-  const creators = creatorIds.length ? await prisma.creator.findMany({ where: { id: { in: creatorIds } } }) : []
+  const creators = creatorIds.length ? await database.creator.findMany({ where: { id: { in: creatorIds } } }) : []
   const creatorById = new Map(creators.map((creator) => [creator.id, creator]))
   const milestones = input.milestones.flatMap((raw) => {
     const item = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
@@ -112,10 +112,9 @@ export async function createCampaign(input: {
     if (!item.title || Number.isNaN(dueDate.getTime())) return []
     return [{ title: String(item.title), dueDate, owner: String(item.owner || input.owner), status: String(item.status || 'UPCOMING') }]
   })
-  const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 1)
-  const campaign = await prisma.campaign.create({
+  const campaign = await database.campaign.create({
     data: {
-      externalId: await nextExternalId(), name: input.name, client: input.client, owner: input.owner, description: input.description,
+      externalId: await nextExternalId(database), name: input.name, client: input.client, owner: input.owner, description: input.description,
       category: input.category, segmentGoals: deliverableJson(input.segmentGoals), startDate: input.startDate, endDate: input.endDate, budget: input.totalBudget, creatorBudget: input.creatorBudget,
       defaultDeliverables: deliverableJson(input.deliverables), status: 'DRAFT',
       milestones: { create: milestones },
@@ -125,7 +124,7 @@ export async function createCampaign(input: {
         const pricing = calculateBookingPricing(creator.cost, creator.extraCost)
         return [{ creatorId, status: 'PROPOSED', suggestedPrice: pricing.bookingExpense, deliverablesData: deliverableJson(input.deliverables) }]
       }) },
-      reviewLinks: { create: { token: randomUUID(), expiresAt } },
+      reviewLinks: { create: { token: randomUUID(), expiresAt: null } },
     },
     include: campaignInclude,
   })
@@ -218,23 +217,33 @@ export async function markClientChangesRead(identifier: string) {
   return getCampaign(campaign.id)
 }
 
-export async function ensureReviewLink(identifier: string) {
-  const campaign = await campaignRecord(identifier)
-  const active = campaign.reviewLinks[0]
-  if (active && active.expiresAt > new Date()) return { token: active.token, expiresAt: active.expiresAt }
-  const expiresAt = new Date(); expiresAt.setFullYear(expiresAt.getFullYear() + 1)
-  const reviewLink = await prisma.reviewLink.create({ data: { campaignId: campaign.id, token: randomUUID(), expiresAt } })
-  return { token: reviewLink.token, expiresAt: reviewLink.expiresAt }
+export async function ensureReviewLink(identifier: string, database = prisma) {
+  const campaign = await campaignRecord(identifier, database)
+  return database.$transaction(async (tx) => {
+    // Serialize requests for the same campaign so concurrent opens cannot create different links.
+    await tx.$queryRaw(Prisma.sql`SELECT "id" FROM "Campaign" WHERE "id" = ${campaign.id} FOR UPDATE`)
+    const active = await tx.reviewLink.findFirst({
+      where: { campaignId: campaign.id, revoked: false },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+    })
+    if (active) {
+      if (active.expiresAt !== null) await tx.reviewLink.update({ where: { id: active.id }, data: { expiresAt: null } })
+      return { token: active.token, expiresAt: null }
+    }
+    const reviewLink = await tx.reviewLink.create({ data: { campaignId: campaign.id, token: randomUUID(), expiresAt: null } })
+    return { token: reviewLink.token, expiresAt: null }
+  })
 }
 
 async function reviewLinkRecord(token: string, database = prisma) {
   const reviewLink = await database.reviewLink.findUnique({ where: { token }, include: { campaign: { include: campaignInclude } } })
-  if (!reviewLink || reviewLink.revoked || reviewLink.expiresAt <= new Date()) throw new ApiError(404, 'Link review không hợp lệ hoặc đã hết hạn.', 'REVIEW_LINK_INVALID')
+  // Also honor previously shared, non-revoked links even if their legacy expiry is in the past.
+  if (!reviewLink || reviewLink.revoked) throw new ApiError(404, 'Link review không hợp lệ hoặc đã bị thu hồi.', 'REVIEW_LINK_INVALID')
   return reviewLink
 }
 
-export async function getPublicReview(token: string) {
-  const reviewLink = await reviewLinkRecord(token)
+export async function getPublicReview(token: string, database = prisma) {
+  const reviewLink = await reviewLinkRecord(token, database)
   return toCampaignDto(reviewLink.campaign)
 }
 
