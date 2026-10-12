@@ -154,7 +154,11 @@ export default function CampaignInternalListingsTab({ campaign, creators, canEdi
   }, [campaign.creators, onMarkChangesRead])
 
   const sourceById = useMemo(() => new Map(creators.map((creator) => [String(creator.id), creator])), [creators])
-  const orderedCreators = useMemo(() => [...(campaign.creators || [])].sort((left, right) => Number(highlightedIds.includes(String(right.creatorId))) - Number(highlightedIds.includes(String(left.creatorId)))), [campaign.creators, highlightedIds])
+  const orderedCreators = useMemo(() => [...(campaign.creators || [])].sort((left, right) => {
+    const unreadPriority = Number(highlightedIds.includes(String(right.creatorId))) - Number(highlightedIds.includes(String(left.creatorId)))
+    const createdTime = (item) => Date.parse(sourceById.get(String(item.creatorId))?.createdAt || item.createdAt) || 0
+    return unreadPriority || createdTime(right) - createdTime(left)
+  }), [campaign.creators, highlightedIds, sourceById])
   const picOptions = useMemo(() => [...new Set([campaign.owner, ...orderedCreators.map((item) => item.pic)].filter(Boolean))], [campaign.owner, orderedCreators])
   const assignedIds = useMemo(() => new Set((campaign.creators || []).map((creator) => String(creator.creatorId))), [campaign.creators])
 

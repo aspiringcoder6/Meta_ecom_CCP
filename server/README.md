@@ -24,7 +24,9 @@ API mặc định chạy tại `http://localhost:4000`. Vite development server 
 
 Server tạo hoặc đồng bộ default Admin từ `ADMIN_EMAIL`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_NAME` mỗi lần khởi động. `ADMIN_PASSWORD` cần tối thiểu 12 ký tự. Admin có thể tạo Admin khác trong màn hình **Tài khoản & phân quyền**.
 
-Client không có account Role `CLIENT`; khách hàng chỉ dùng review link riêng trong module Client Review. Các request thay đổi dữ liệu dùng session cookie `HttpOnly` và CSRF token. Production cần HTTPS, đồng thời `CLIENT_ORIGIN` phải đúng origin frontend.
+Client không có account Role `CLIENT`; khách hàng chỉ dùng review link riêng trong module Client Review. Các request nội bộ thay đổi dữ liệu dùng session cookie `HttpOnly` và CSRF token; API public review dùng token của link, không yêu cầu session/CSRF của nhân viên. Production cần HTTPS, đồng thời `CLIENT_ORIGIN` phải đúng origin frontend.
+
+Campaign Manager có quyền thao tác toàn bộ dữ liệu Creator/Campaign, gồm import vào Internal Listings và chỉnh sửa hồ sơ Creator dùng chung. Quản lý tài khoản và phân quyền vẫn chỉ dành cho Admin.
 
 ### Link Brand Review
 
@@ -33,6 +35,8 @@ Client không có account Role `CLIENT`; khách hàng chỉ dùng review link ri
 - Migration `20261006090000_permanent_brand_review_links` bỏ thời hạn của các link chưa bị thu hồi, không thay đổi token. Chạy `npm run prisma:deploy` trước khi khởi động bản backend mới.
 - Link chỉ ngừng hoạt động nếu bị thu hồi, Campaign/database bị xóa, hoặc địa chỉ frontend không còn được duy trì. Khi đổi domain cần giữ domain cũ hoặc cấu hình chuyển hướng.
 - Link cho phép Brand xem và cập nhật dữ liệu Campaign mà không cần đăng nhập; chỉ chia sẻ với người được phép truy cập. Link demo lưu trên trình duyệt không thay thế link backend.
+- Frontend không tạo link demo khi backend lỗi, không kiểm tra phiên đăng nhập nhân viên trên trang public, chờ tối đa 90 giây cho mỗi lần tải và thử lại một lần với lỗi mạng/5xx. Lỗi kết nối không bị hiển thị nhầm thành link không hợp lệ. Render Free có cold start sau thời gian không sử dụng; xem `DEPLOYMENT.md`.
+- Bản nháp Brand Pick, Brand Note, sản phẩm và Brand Feedback được lưu trong local storage theo từng token. Mở lại cùng link trên cùng trình duyệt sẽ khôi phục phần chưa gửi. Chỉ xóa phần đã được server xác nhận lưu; không tự gửi nháp và không chia sẻ giữa thiết bị.
 - Brand có thể gửi 200 Creator trong một lần, bao gồm Brand Pick, Brand Note, sản phẩm và Brand Feedback. Server xử lý theo lô 50 KOC, khóa/đọc/cập nhật và lưu feedback theo lô. Các lô thành công được commit riêng. Lỗi dữ liệu được tách nhỏ để bỏ qua dòng lỗi và tiếp tục lưu phần còn lại; lỗi kết nối/hệ thống dừng xử lý, không hoàn tác các lô đã lưu.
 - Hai API trả thêm `submissionResult` gồm số mục đã lưu, ID đã lưu, danh sách lỗi theo KOC/Deliverable và trạng thái gián đoạn. Frontend chỉ xóa draft đã được xác nhận lưu, giữ phần lỗi để sửa/gửi lại, bôi đỏ và hiển thị lý do. HTTP 200 có thể là thành công một phần; luôn kiểm tra `submissionResult.errors`.
 - Mỗi giao dịch có giới hạn 15 giây (chờ kết nối tối đa 5 giây), toàn bộ xử lý giới hạn khoảng 60 giây trước khi bắt đầu lô tiếp theo. Frontend chờ tối đa 120 giây. Thông báo được cộng dồn bằng một khóa riêng cho lần gửi, chỉ có một thông báo tổng hợp cho mỗi người nhận và chỉ đếm phần đã commit.
@@ -51,8 +55,11 @@ Thêm `http://localhost:5173` và URL frontend production vào **Authorized Java
 - `GET /api/creators` — Admin, Campaign Manager, Member và Viewer; Viewer nhận dữ liệu đã ẩn contact.
 - `GET /api/creators/metrics` — các Role nội bộ đã đăng nhập.
 - `GET /api/creators/:id` — Admin, Campaign Manager và Member.
-- `POST/PATCH/DELETE /api/creators` — Admin.
-- `POST /api/creators/import` và `POST /api/creators/batch` — Admin.
+- `POST/PATCH/DELETE /api/creators` — Admin và Campaign Manager.
+- `POST /api/creators/import` và `POST /api/creators/batch` — Admin và Campaign Manager.
+- `POST /api/campaigns/:id/creators/import` — Admin và Campaign Manager.
+
+Danh sách mặc định xếp Creator mới tạo trước, theo `createdAt` gốc, không theo thời gian sửa/import (`updatedAt`). Sort do người dùng chọn vẫn được ưu tiên; cập nhật Creator cũ không biến thành Creator mới.
 
 Backend trả lỗi validation theo field trong `error.details`. TikTok ID được chuẩn hóa chữ thường và có unique constraint ở database.
 

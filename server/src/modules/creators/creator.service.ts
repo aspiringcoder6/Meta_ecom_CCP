@@ -117,7 +117,7 @@ export async function listCreators(filters: CreatorFilters = {}) {
     ...(filters.type?.length ? { type: { hasSome: filters.type } } : {}),
     ...(filters.status ? { status: filters.status } : {}),
   }
-  const creators = await prisma.creator.findMany({ where, include: creatorInclude, orderBy: { createdAt: 'desc' } })
+  const creators = await prisma.creator.findMany({ where, include: creatorInclude, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }] })
   const categoryFiltered = filters.category?.length
     ? creators.filter((creator) => filters.category?.some((selected) => creator.category.some((category) => categoryPathMatches(category, selected))))
     : creators

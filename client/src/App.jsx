@@ -47,10 +47,10 @@ export default function App() {
               <Route element={<RequireRole roles={['ADMIN', 'CAMPAIGN_MANAGER']} />}>
                 <Route path="campaigns/new" element={<CreateCampaignPage />} />
                 <Route path="reviews" element={<PlaceholderPage />} />
+                <Route path="settings" element={<PlaceholderPage />} />
               </Route>
               <Route element={<RequireRole roles={['ADMIN']} />}>
                 <Route path="team" element={<UserManagementPage />} />
-                <Route path="settings" element={<PlaceholderPage />} />
               </Route>
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>

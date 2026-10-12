@@ -9,7 +9,7 @@ import { persistReviewChunks, type ReviewIssue } from './campaign-review-submiss
 import { parseClientResponses, parseDeliverableFeedback } from './campaign.validation.js'
 
 const campaignInclude = {
-  creators: { include: { creator: true }, orderBy: { id: 'asc' as const } },
+  creators: { include: { creator: true }, orderBy: [{ creator: { createdAt: 'desc' as const } }, { id: 'asc' as const }] },
   milestones: { orderBy: { dueDate: 'asc' as const } },
   reviewLinks: { where: { revoked: false }, orderBy: [{ createdAt: 'desc' as const }, { id: 'desc' as const }], take: 1 },
 } satisfies Prisma.CampaignInclude
@@ -46,7 +46,7 @@ function toCampaignDto(campaign: CampaignRecord) {
     deliverables: jsonArray(campaign.defaultDeliverables),
     milestones: campaign.milestones.map((milestone) => ({ id: milestone.id, title: milestone.title, date: dateOnly(milestone.dueDate), owner: milestone.owner, status: milestone.status })),
     creators: campaign.creators.map((item) => ({
-      creatorId: item.creatorId, name: item.creator.name, tiktokLink: item.creator.tiktokLink, tiktokId: item.creator.tiktokId, segment: item.creator.segment || '',
+      creatorId: item.creatorId, createdAt: item.creator.createdAt, name: item.creator.name, tiktokLink: item.creator.tiktokLink, tiktokId: item.creator.tiktokId, segment: item.creator.segment || '',
       category: item.creator.category, type: item.creator.type, concept: item.creator.concept || '', followers: item.creator.followers,
       gmvMonth: Number(item.creator.gmvMonth), status: item.status,
       suggestedPrice: Number(item.suggestedPrice), actualPrice: item.actualPrice == null ? '' : Number(item.actualPrice),

@@ -1,5 +1,5 @@
-import { calculateBookingPricing } from './pricing'
-import { formatCreatorList } from './creatorLists'
+import { calculateBookingPricing } from './pricing.js'
+import { formatCreatorList } from './creatorLists.js'
 
 const NUMBER_FIELDS = new Set(['cost', 'extraCost', 'totalCast', 'bookingExpense', 'agi', 'followers', 'gmvMonth'])
 const collator = new Intl.Collator('vi', { numeric: true, sensitivity: 'base' })
@@ -28,8 +28,6 @@ function compareValues(left, right, key, direction) {
 }
 
 export function sortCreators(creators, criteria) {
-  if (!criteria.length) return creators
-
   return creators
     .map((creator, originalIndex) => ({ creator, originalIndex }))
     .sort((left, right) => {
@@ -42,7 +40,11 @@ export function sortCreators(creators, criteria) {
         )
         if (comparison !== 0) return comparison
       }
-      return left.originalIndex - right.originalIndex
+      // Original creation time, never the last edit/import time. Missing legacy
+      // timestamps retain their relative order below dated profiles.
+      const leftTime = Date.parse(left.creator.createdAt) || 0
+      const rightTime = Date.parse(right.creator.createdAt) || 0
+      return rightTime - leftTime || left.originalIndex - right.originalIndex
     })
     .map(({ creator }) => creator)
 }

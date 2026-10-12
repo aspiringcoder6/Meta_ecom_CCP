@@ -8,7 +8,7 @@ import { getApiErrorMessage } from '../services/apiClient'
 import { calculateBookingPricing } from '../utils/pricing'
 import { nextCampaignId } from '../utils/campaigns'
 import { campaignStatusLabel } from '../config/campaigns'
-import { CAMPAIGN_STORAGE_KEY, campaignReviewToken, readStoredCampaigns, writeStoredCampaigns } from '../utils/campaignStorage'
+import { CAMPAIGN_STORAGE_KEY, readStoredCampaigns, writeStoredCampaigns } from '../utils/campaignStorage'
 import { NOTIFICATION_STORAGE_KEY, readStoredNotifications, writeStoredNotifications } from '../utils/notificationStorage'
 import { AppContext } from './appContext'
 import { normalizeProducts, withProductVideos } from '../utils/campaignProducts'
@@ -82,6 +82,7 @@ function campaignCreatorAssignment(creator, defaults = [], existing = {}) {
   const clientDecision = existing.clientDecision || (existing.status === 'CLIENT_APPROVED' || existing.status === 'CONFIRMED' ? 'APPROVED' : existing.status === 'CLIENT_REJECTED' ? 'REJECTED' : 'PENDING')
   return {
     creatorId: creator?.id ?? existing.creatorId,
+    createdAt: creator?.createdAt ?? existing.createdAt,
     name: creator?.name || existing.name,
     tiktokLink: creator?.tiktokLink || existing.tiktokLink || '',
     tiktokId: creator?.tiktokId || existing.tiktokId,
@@ -162,7 +163,7 @@ function createQuickCreator() {
     cost: 0, extraCost: 0, followers: 0, gmvMonth: 0, scope: '', contact: '', concept: '', productFocus: '',
     historicalCampaign: 'Đã hợp tác', mcnNote: '', engagement: 0, status: 'Available',
     email: 'Chưa cung cấp', phone: 'Chưa cung cấp', bookingPrice: 0, campaigns: 0,
-    color: '#dcecff', accent: '#1769aa',
+    color: '#dcecff', accent: '#1769aa', createdAt: new Date().toISOString(),
   }
 }
 
@@ -625,15 +626,10 @@ export default function AppProvider({ children }) {
       setCampaigns((items) => items.map((campaign) => campaign.id === campaignId ? { ...campaign, reviewToken: reviewLink.token, reviewExpiresAt: reviewLink.expiresAt } : campaign))
       return reviewLink.token
     } catch (error) {
-      // Never share a locally generated token for a real campaign when the API fails.
-      if (current?.databaseId || !shouldUseLocalCampaignFallback(error)) {
-        const message = getApiErrorMessage(error, 'Không thể lấy link Brand Review. Vui lòng thử lại.')
-        showToast(message)
-        throw new Error(message)
-      }
-      const token = current ? campaignReviewToken(current) : ''
-      if (token) setCampaigns((items) => items.map((campaign) => campaign.id === campaignId ? { ...campaign, reviewToken: token, reviewExpiresAt: null } : campaign))
-      return token
+      // A browser-only demo token cannot be opened by Brand on another device.
+      const message = getApiErrorMessage(error, 'Không thể lấy link Brand Review. Campaign cần được lưu trên server trước khi chia sẻ.')
+      showToast(message)
+      throw new Error(message)
     }
   }
 

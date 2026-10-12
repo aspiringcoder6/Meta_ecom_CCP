@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { authApi } from '../services/authApi'
 import { clearCsrfToken, setCsrfToken } from '../services/apiClient'
 import { AuthContext } from './authContext'
+import { useLocation } from 'react-router-dom'
+import { canManageWorkspace } from '../config/permissions'
 
 const PENDING_ACCOUNT_KEY = 'meta-ecom-pending-account'
 
@@ -19,6 +21,8 @@ function savePendingAccount(account) {
 }
 
 export default function AuthProvider({ children }) {
+  const { pathname } = useLocation()
+  const isPublicReview = pathname.startsWith('/client-review/')
   const [user, setUser] = useState(null)
   const [pendingAccount, setPendingAccountState] = useState(readPendingAccount)
   const [isCheckingSession, setIsCheckingSession] = useState(true)
@@ -36,13 +40,16 @@ export default function AuthProvider({ children }) {
   }, [setPendingAccount])
 
   useEffect(() => {
+    // Brand Review uses its own public API and never waits for a staff session.
+    if (isPublicReview) { setIsCheckingSession(false); return undefined }
     let active = true
+    setIsCheckingSession(true)
     authApi.me()
       .then((data) => { if (active) applySession(data) })
       .catch(() => { if (active) { clearCsrfToken(); setUser(null) } })
       .finally(() => { if (active) setIsCheckingSession(false) })
     return () => { active = false }
-  }, [applySession])
+  }, [applySession, isPublicReview])
 
   const login = useCallback(async (payload) => {
     try {
@@ -104,7 +111,7 @@ export default function AuthProvider({ children }) {
     refreshSession,
     clearPendingAccount: () => setPendingAccount(null),
     isAdmin: user?.role === 'ADMIN',
-    canManageCreators: user?.role === 'ADMIN',
+    canManageCreators: canManageWorkspace(user?.role),
   }), [user, pendingAccount, isCheckingSession, login, signup, loginWithGoogle, logout, refreshSession, setPendingAccount])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

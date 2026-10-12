@@ -130,6 +130,14 @@
 .client-review-submit small { color: #8292a5; font-size: 8.5px; }
 .client-review-submit button { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 20px; border-radius: 10px; color: white; background: var(--review-navy); font-size: 10px; font-weight: 750; box-shadow: 0 8px 20px rgba(1,32,82,.16); }
 .client-review-submit button:disabled { cursor: not-allowed; opacity: .42; }
+.client-review-draft-status { width: min(calc(100% - 40px),1180px); display: flex; align-items: center; gap: 10px; margin: 16px auto 0; padding: 12px 15px; border: 1px solid #c9e6d9; border-radius: 11px; color: #237351; background: #effaf5; }
+.client-review-draft-status > svg { flex-shrink: 0; }
+.client-review-draft-status > div { flex: 1; min-width: 0; }
+.client-review-draft-status strong { font-size: 11px; }
+.client-review-draft-status p { margin: 4px 0 0; font-size: 9px; line-height: 1.5; }
+.client-review-draft-status button { flex-shrink: 0; padding: 8px 10px; border: 1px solid currentColor; border-radius: 8px; background: white; color: inherit; font-size: 10px; }
+.client-review-draft-status button:disabled { opacity: .5; }
+.client-review-draft-status.has-error { color: #a32b43; border-color: #f0bcc4; background: #fff3f5; }
 .client-review-submission-report { width: min(calc(100% - 40px),1180px); margin: 16px auto; padding: 16px; border: 1px solid #f0bcc4; border-radius: 13px; color: #a32b43; background: #fff3f5; font-size: 11px; }
 .client-review-submission-report > div { display: flex; align-items: flex-start; gap: 10px; }
 .client-review-submission-report > div > svg { flex: 0 0 auto; }

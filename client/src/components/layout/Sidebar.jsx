@@ -56,7 +56,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, mobileOpen, onClo
         </nav>
 
         <div className="sidebar-bottom">
-          {user.role === 'ADMIN' && <NavLink to="/settings" className={navClass} onClick={onCloseMobile} title={collapsed ? 'Cài đặt' : undefined}>
+          {['ADMIN', 'CAMPAIGN_MANAGER'].includes(user.role) && <NavLink to="/settings" className={navClass} onClick={onCloseMobile} title={collapsed ? 'Cài đặt' : undefined}>
             <Icon name="settings" /><span>Cài đặt</span>
           </NavLink>}
           {canUseCreatorGuide && <button type="button" className="help-card" onClick={startPageGuide} title={collapsed ? guideLabel : undefined}>

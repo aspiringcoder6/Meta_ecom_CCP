@@ -132,7 +132,7 @@ function createImportedCreator(values, index) {
       scope: String(values.scope || ''), contact: String(values.contact || ''), concept: String(values.concept || ''), productFocus: String(values.productFocus || ''),
       historicalCampaign, mcnNote: String(values.mcnNote || ''),
       engagement: 0, status: 'Available', email: 'Chưa cung cấp', phone: 'Chưa cung cấp', bookingPrice: Number.isFinite(cost) ? cost : 0,
-      campaigns: 0, color: '#dcecff', accent: '#1769aa',
+      campaigns: 0, color: '#dcecff', accent: '#1769aa', createdAt: new Date().toISOString(),
     },
   }
 }
@@ -161,7 +161,7 @@ function mergeImportedCreator(existing, imported, values) {
 
 function replaceImportedCreator(existing, imported) {
   if (!existing) return imported
-  return { ...imported, id: existing.id, name: existing.name || imported.name, initials: existing.initials || imported.initials }
+  return { ...imported, id: existing.id, name: existing.name || imported.name, initials: existing.initials || imported.initials, createdAt: existing.createdAt }
 }
 
 export function parseCreatorRows(rows, existingCreators = [], mode = 'append') {

@@ -26,7 +26,7 @@ export default function UserMenu({ open, onToggle }) {
         <div className="popover user-popover">
           <div className="user-popover-account"><strong>{user.name}</strong><small>{user.email}</small></div>
           <span />
-          {user.role === 'ADMIN' && <button onClick={() => navigate('/settings')}>Cài đặt Workspace</button>}
+          {['ADMIN', 'CAMPAIGN_MANAGER'].includes(user.role) && <button onClick={() => navigate('/settings')}>Cài đặt Workspace</button>}
           <button onClick={signOut}>Đăng xuất</button>
         </div>
       )}

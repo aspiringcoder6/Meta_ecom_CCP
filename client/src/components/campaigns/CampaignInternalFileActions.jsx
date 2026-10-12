@@ -25,7 +25,7 @@ export default function CampaignInternalFileActions({ campaign, creators, canEdi
   return <>
     <div className="internal-file-actions" title={disabled ? 'Hoàn tất hoặc hủy chỉnh sửa trước khi import/export' : undefined}>
       <a className="secondary-button" href={templateUrl} download="campaign-internal-listings-template.xlsx"><Icon name="download" size={15} />Tải template</a>
-      {canEdit && <button type="button" className="secondary-button" title={!canImport ? 'Chỉ Admin được import vì thao tác này tạo/cập nhật kho Creator' : undefined} disabled={disabled || isReading || !canImport} onClick={() => fileInput.current?.click()}><Icon name="upload" size={15} />{isReading ? 'Đang đọc...' : 'Import'}</button>}
+      {canEdit && <button type="button" className="secondary-button" title={!canImport ? 'Role hiện tại không có quyền import Creator' : undefined} disabled={disabled || isReading || !canImport} onClick={() => fileInput.current?.click()}><Icon name="upload" size={15} />{isReading ? 'Đang đọc...' : 'Import'}</button>}
       <button type="button" className="secondary-button" disabled={disabled || !campaign.creators?.length} onClick={() => { exportInternalListings(campaign, creators); onNotify?.('Đã export Internal Listings ra CSV') }}><Icon name="download" size={15} />Export CSV</button>
       <input ref={fileInput} type="file" accept=".xlsx,.csv" onChange={handleFile} hidden />
     </div>
