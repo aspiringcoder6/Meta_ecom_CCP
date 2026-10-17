@@ -11,7 +11,7 @@ const unexpected = async () => { throw new Error('Unexpected database access in 
 const prisma = {
   user: { findUnique: unexpected }, creator: { findMany: unexpected },
   campaignCreator: { count: unexpected }, reviewLink: { findUnique: unexpected },
-  campaign: { findFirst: unexpected }, $transaction: unexpected,
+  campaign: { findFirst: unexpected }, $transaction: unexpected, $queryRaw: unexpected,
 }
 // Inject a plain in-memory client before loading any route/service.
 ;(globalThis as { prisma?: unknown }).prisma = prisma
@@ -26,6 +26,7 @@ test('workspace writes allow Admin/Manager but preserve account administration a
   }))
   t.mock.method(prisma.creator, 'findMany', async () => [])
   t.mock.method(prisma.campaignCreator, 'count', async () => 1)
+  t.mock.method(prisma.campaign, 'findFirst', async () => ({ id: 'campaign-db', externalId: 'CMP-TEST', name: 'Test Campaign', client: 'Brand' }))
   t.mock.method(prisma, '$transaction', async (action: (tx: typeof prisma) => Promise<unknown>) => action(prisma))
   const server = app.listen(0)
   const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
@@ -36,6 +37,7 @@ test('workspace writes allow Admin/Manager but preserve account administration a
     { path: '/creators/test-id', method: 'PATCH', status: 400 },
     { path: '/creators/test-id', method: 'DELETE', status: 409 },
     { path: '/campaigns/CMP-TEST/creators/import', method: 'POST', status: 400 },
+    { path: '/campaigns/CMP-TEST/shipments', method: 'POST', status: 422 },
   ]
   try {
     for (const role of roles) await t.test(role, async () => {
@@ -77,6 +79,8 @@ test('Brand review is public even without staff cookies or with a stale staff se
   t.mock.method(prisma.reviewLink, 'findUnique', async ({ where }: { where: { token: string } }) => where.token === 'public-token'
     ? { token: where.token, campaignId: campaign.id, revoked: false, expiresAt: null, campaign } : null)
   t.mock.method(prisma.campaign, 'findFirst', async () => campaign)
+  t.mock.method(prisma.creator, 'findMany', async () => [])
+  t.mock.method(prisma, '$queryRaw', async () => [{ revision: 'test-version' }])
   const server = app.listen(0)
   const url = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api/public/reviews`
   try {
@@ -89,6 +93,15 @@ test('Brand review is public even without staff cookies or with a stale staff se
       }
     }
     assert.equal(authLookup.mock.callCount(), 0)
+    const shipping = await fetch(`${url}/public-token/shipments`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{"updates":[]}' })
+    assert.equal(shipping.status, 422, 'public shipping reaches validation without a staff login/CSRF')
+    const controller = new AbortController()
+    const stream = await fetch(`${url}/public-token/events`, { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]) })
+    assert.equal(stream.status, 200)
+    assert.match(stream.headers.get('content-type')!, /text\/event-stream/)
+    const chunk = await stream.body!.getReader().read()
+    assert.match(new TextDecoder().decode(chunk.value), /test-version/)
+    controller.abort()
     const response = await fetch(`${url}/unknown-token`)
     assert.equal(response.status, 404)
     assert.equal((await response.json()).error.code, 'REVIEW_LINK_INVALID')

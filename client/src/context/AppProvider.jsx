@@ -60,6 +60,12 @@ function campaignWithUnsyncedCreatorChanges(campaign, unsyncedCreatorChanges) {
 }
 
 function replaceCampaign(current, campaign, unsyncedCreatorChanges) {
+  if (campaign.partial) {
+    const previous = current.find((item) => item.id === campaign.id)
+    if (!previous) return current
+    const changed = new Map((campaign.creators || []).map((creator) => [String(creator.creatorId), creator]))
+    campaign = { ...previous, creators: (previous.creators || []).map((creator) => changed.has(String(creator.creatorId)) ? { ...creator, ...changed.get(String(creator.creatorId)) } : creator) }
+  }
   const normalized = campaignWithUnsyncedCreatorChanges(campaign, unsyncedCreatorChanges)
   return current.some((item) => item.id === normalized.id)
     ? current.map((item) => item.id === normalized.id ? normalized : item)

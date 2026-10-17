@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useNavigate, useParams } from 'react-router-dom'
 import CampaignInternalListingsTab from '../components/campaigns/CampaignInternalListingsTab'
 import CampaignDeliverablesPreview from '../components/campaigns/CampaignDeliverablesPreview'
@@ -12,11 +12,16 @@ import { useApp } from '../hooks/useApp'
 import { useAuth } from '../hooks/useAuth'
 import { useCampaignTour } from '../hooks/useCampaignTour'
 import { finalCampaignCreators } from '../utils/campaignDeliverables'
+import { campaignApi } from '../services/campaignApi'
+import useCampaignUpdates from '../hooks/useCampaignUpdates'
+
+const ShippingWorkspace = lazy(() => import('../components/campaigns/ShippingWorkspace'))
 
 const TABS = [
   { value: 'overview', label: 'Tổng quan', icon: 'dashboard' },
   { value: 'internal-listings', label: 'Internal Listings', icon: 'fileSpreadsheet' },
   { value: 'external-listings', label: 'External Listings', icon: 'users' },
+  { value: 'shipping', label: 'Giao & nhận hàng', icon: 'briefcase' },
   { value: 'deliverables', label: 'Deliverables', icon: 'checkSquare' },
   { value: 'financial-listings', label: 'Financial Listings', icon: 'trending' },
   { value: 'information', label: 'Thông tin', icon: 'briefcase' },
@@ -33,6 +38,11 @@ export default function CampaignDetailPage() {
   const requestedTab = rawTab === 'creators' ? 'internal-listings' : rawTab === 'timeline' ? 'overview' : rawTab === 'final-creators' ? 'financial-listings' : rawTab === 'settings' ? 'information' : rawTab
   const activeTab = TABS.some((tab) => tab.value === requestedTab) ? requestedTab : 'overview'
   const canEdit = ['ADMIN', 'CAMPAIGN_MANAGER'].includes(user?.role)
+  const [shippingReload, setShippingReload] = useState(0)
+  const shippingApi = useMemo(() => ({ load: (query) => campaignApi.shipping(campaignId, query), save: (updates) => campaignApi.saveShipments(campaignId, updates), history: (id) => campaignApi.shippingHistory(campaignId, id), markRead: (shipments) => campaignApi.readShipments(campaignId, shipments) }), [campaignId])
+  const liveStatus = useCampaignUpdates({ eventsUrl: campaignApi.eventsUrl(campaignId), getRevision: () => campaignApi.revision(campaignId), enabled: campaignBackendAvailable,
+    onChange: () => { void refreshCampaign(campaignId); setShippingReload((value) => value + 1) },
+  })
   const changeTab = (tab) => setSearchParams(tab === 'overview' ? {} : { tab })
   const openDeliverables = (progress) => setSearchParams({ tab: 'deliverables', progress })
   useCampaignTour({ mode: 'detail', canManage: canEdit, activeTab, openTab: changeTab })
@@ -40,12 +50,7 @@ export default function CampaignDetailPage() {
   useEffect(() => {
     if (!campaignBackendAvailable) return undefined
     void refreshCampaign(campaignId)
-    const interval = window.setInterval(() => {
-      const activeElement = document.activeElement
-      if (activeElement?.matches('input, textarea, select, [contenteditable="true"]')) return
-      void refreshCampaign(campaignId)
-    }, 3000)
-    return () => window.clearInterval(interval)
+    return undefined
   }, [campaignBackendAvailable, campaignId, refreshCampaign])
 
   if (!campaign && isLoadingCampaigns) return <main className="page campaign-detail-page"><section className="campaign-detail-empty panel"><span><Icon name="clock" size={27} /></span><h1>Đang tải Campaign...</h1><p>Hệ thống đang đồng bộ dữ liệu mới nhất.</p></section></main>
@@ -55,13 +60,14 @@ export default function CampaignDetailPage() {
     <main className="page campaign-detail-page">
       <button type="button" className="campaign-back-button" onClick={() => navigate('/campaigns')}><Icon name="chevronRight" size={18} />Danh sách Campaign</button>
       <section className="campaign-detail-heading" data-tour="campaign-detail-heading">
-        <div><p className="page-kicker">{campaign.id} · {campaign.client}</p><h1>{campaign.name}</h1><p>{campaign.owner} · {campaign.creators?.length || 0} Creator</p></div>
+        <div><p className="page-kicker">{campaign.id} · {campaign.client}</p><h1>{campaign.name}</h1><p>{campaign.owner} · {campaign.creators?.length || 0} Creator · {liveStatus === 'live' ? 'Đồng bộ trực tiếp' : 'Đồng bộ theo thay đổi'}</p></div>
         <CampaignStatusControl status={campaign.status} canEdit={canEdit} onChange={(status) => updateCampaignStatus(campaign.id, status)} />
       </section>
       <nav className="campaign-detail-tabs" data-tour="campaign-tabs" aria-label="Các phần của Campaign">{TABS.map((tab) => <button type="button" data-tour={`campaign-tab-${tab.value}`} className={activeTab === tab.value ? 'is-active' : ''} aria-current={activeTab === tab.value ? 'page' : undefined} onClick={() => changeTab(tab.value)} key={tab.value}><Icon name={tab.icon} size={16} />{tab.label}{tab.value === 'financial-listings' && <span>{finalCampaignCreators(campaign).length}</span>}</button>)}</nav>
       {activeTab === 'overview' && <CampaignOverviewTab campaign={campaign} canEdit={canEdit} onOpenTab={changeTab} onOpenDeliverables={openDeliverables} onSaveTimeline={(milestones) => updateCampaignMilestones(campaign.id, milestones)} />}
       {activeTab === 'internal-listings' && <CampaignInternalListingsTab campaign={campaign} creators={creators} canEdit={canEdit} canImport={canEdit} onAddCreators={(ids) => addCampaignCreators(campaign.id, ids)} onImport={(rows) => importCampaignCreators(campaign.id, rows)} onAssignExisting={(creatorId, changes) => assignExistingCampaignCreator(campaign.id, creatorId, changes)} onQuickAdd={(form) => createAndAssignCampaignCreator(campaign.id, form)} onRemoveCreator={(creatorId) => removeCampaignCreator(campaign.id, creatorId)} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onUpdateSourceCreator={updateCampaignSourceCreator} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onNotify={showToast} />}
       {activeTab === 'external-listings' && <CampaignDeliverablesPreview campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onEnsureLink={() => ensureCampaignReviewLink(campaign.id)} onNotify={showToast} />}
+      {activeTab === 'shipping' && <section className="campaign-detail-card" style={{ minWidth: 0 }}><Suspense fallback={<p>Đang tải giao/nhận hàng...</p>}><ShippingWorkspace scope={`team:${user.id}:${campaignId}`} api={shippingApi} isTeam canEdit={canEdit} initialUnread={searchParams.get('unread') === '1'} reloadSignal={shippingReload} key={`team:${user.id}:${campaignId}:${searchParams.get('unread') || 'all'}`} /></Suspense></section>}
       {activeTab === 'deliverables' && <CampaignDeliverablesTab campaign={campaign} creators={creators} canEdit={canEdit} initialProgress={searchParams.get('progress') || ''} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} onMarkChangesRead={() => markCampaignClientChangesRead(campaign.id)} onNotify={showToast} key={`${campaign.id}-${searchParams.get('progress') || 'all'}`} />}
       {activeTab === 'financial-listings' && <CampaignFinalCreatorsTab campaign={campaign} creators={creators} canEdit={canEdit} onUpdateCreator={(creatorId, changes) => updateCampaignCreator(campaign.id, creatorId, changes)} />}
       {activeTab === 'information' && <CampaignSettingsTab campaign={campaign} creators={creators} canEdit={canEdit} onSave={(changes) => updateCampaignInformation(campaign.id, changes)} key={campaign.id} />}

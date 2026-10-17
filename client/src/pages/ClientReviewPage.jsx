@@ -1,127 +1,54 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import ClientDeliverablesReviewTab from '../components/campaigns/ClientDeliverablesReviewTab'
-import ClientKocListingTab from '../components/campaigns/ClientKocListingTab'
-import BrandReviewDraftStatus from '../components/campaigns/BrandReviewDraftStatus'
-import Icon from '../components/common/Icon'
-import useBrandReviewDraft from '../hooks/useBrandReviewDraft'
+import useBrandPortal from '../hooks/useBrandPortal'
 import { publicReviewApi } from '../services/publicReviewApi'
-import { getApiErrorMessage } from '../services/apiClient'
-import { acceptedCampaignCreators, campaignCreatorDeliverables, deliverableFeedbackState } from '../utils/campaignDeliverables'
-import { clientResponseChanges } from '../utils/clientProductResponses'
-import { initialClientResponses, reconcileFeedbackDrafts, reconcileListingDrafts, reviewSubmissionMessage, reviewSubmissionResult } from '../utils/clientReviewSubmission'
-import { readBrandReviewDraft, restoreBrandReviewDraft, writeBrandReviewDraft } from '../utils/brandReviewDraft'
-import { reviewLoadFailure } from '../utils/publicReviewLoad'
+import ClientReviewFilterBar from '../components/campaigns/ClientReviewFilterBar'
+import BrandReviewDraftStatus from '../components/campaigns/BrandReviewDraftStatus'
+import BrandListingTable from '../components/campaigns/BrandListingTable'
+import WorkspacePagination from '../components/campaigns/WorkspacePagination'
+import { cycleCreatorSort } from '../utils/creatorSorting'
+import '../styles/brand-workspace.css'
+
+const ShippingWorkspace = lazy(() => import('../components/campaigns/ShippingWorkspace'))
+const BrandDeliverablesTable = lazy(() => import('../components/campaigns/BrandDeliverablesTable'))
+const labels = { APPROVED: 'Đồng ý', PENDING: 'Pending', REJECTED: 'Từ chối' }
+const SORTS = { tiktokId: 'ID TikTok', expense: 'Expense', segment: 'Segment', category: 'Category', type: 'Type', followers: 'Followers', gmvMonth: 'GMV / Month', createdAt: 'Thời gian thêm', clientDecision: 'Brand Pick', kocDecision: 'KOC Confirm' }
+const DELIVERY_SORTS = { tiktokId: 'ID TikTok', product: 'Product', progress: 'Tiến độ', airTime: 'Air Time', codeAdsExpiry: 'Expiry Date Code Ads' }
 
 export default function ClientReviewPage() {
   const { token } = useParams()
-  return <ClientReviewWorkspace token={token} key={token} />
+  return <BrandPortal token={token} key={token} />
 }
 
-function ClientReviewWorkspace({ token }) {
-  const [campaign, setCampaign] = useState(null)
-  const [activeTab, setActiveTab] = useState('listing')
-  const [responses, setResponses] = useState({})
-  const [deliverableFeedback, setDeliverableFeedback] = useState({})
-  const [savedMessage, setSavedMessage] = useState('')
-  const [deliverableSavedMessage, setDeliverableSavedMessage] = useState('')
-  const [listingResult, setListingResult] = useState(null)
-  const [deliverableResult, setDeliverableResult] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState(null)
-  const [retrying, setRetrying] = useState(false)
-  const [loadAttempt, setLoadAttempt] = useState(0)
-  const [restoredCount, setRestoredCount] = useState(0)
-  const [saving, setSaving] = useState(false)
-  const [savingDeliverables, setSavingDeliverables] = useState(false)
-  const draftStatus = useBrandReviewDraft(token, campaign, responses, deliverableFeedback, !loading && Boolean(campaign))
-
-  useEffect(() => {
-    const controller = new AbortController()
-    setLoading(true); setLoadError(null); setRetrying(false)
-    publicReviewApi.get(token, { signal: controller.signal, onRetry: () => setRetrying(true) }).then((serverCampaign) => {
-      if (controller.signal.aborted) return
-      const restored = restoreBrandReviewDraft(serverCampaign, readBrandReviewDraft(token))
-      setCampaign(serverCampaign)
-      setResponses(restored.responses)
-      setDeliverableFeedback(restored.feedback)
-      setRestoredCount(restored.restoredCount)
-    }).catch((error) => {
-      if (!controller.signal.aborted) setLoadError(reviewLoadFailure(error))
-    }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => controller.abort()
-  }, [token, loadAttempt])
-
-  const changedCount = useMemo(() => (campaign?.creators || []).filter((creator) => Boolean(clientResponseChanges(creator, responses[String(creator.creatorId)]))).length, [campaign, responses])
-  const deliverableChangedCount = useMemo(() => acceptedCampaignCreators(campaign).reduce((count, creator) => count + campaignCreatorDeliverables(campaign, creator).filter((item) => (deliverableFeedback[`${creator.creatorId}:${item.id}`] || '').trim() !== (item.brandFeedback || '').trim()).length, 0), [campaign, deliverableFeedback])
-  const acceptedCount = useMemo(() => acceptedCampaignCreators(campaign).length, [campaign])
-
-  if (loading) return <main className="client-review-page client-review-not-found" role="status"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><h1>{retrying ? 'Đang thử kết nối lại...' : 'Đang tải Client Review...'}</h1><p>Backend có thể đang khởi động sau thời gian không sử dụng. Vui lòng giữ trang mở, quá trình này có thể mất khoảng 1–2 phút.</p><p>Bạn không cần đăng nhập. Bản nháp đã lưu trên trình duyệt sẽ được khôi phục khi tải xong.</p></main>
-  if (!campaign) return <main className="client-review-page client-review-not-found"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><h1>{loadError?.title || 'Chưa tải được Client Review'}</h1><p>{loadError?.message}</p><button type="button" className="primary-button" onClick={() => setLoadAttempt((value) => value + 1)}><Icon name="redo" size={17} />Thử tải lại</button></main>
-
-  const updateResponse = (creatorId, field, value) => {
-    setSavedMessage('')
-    setResponses((current) => ({ ...current, [String(creatorId)]: { ...current[String(creatorId)], [field]: value } }))
-  }
-  const submitListing = async () => {
-    if (saving || savingDeliverables) return
-    if (!changedCount) { setSavedMessage('Không có thay đổi mới để gửi.'); return }
-    const changedResponses = (campaign.creators || []).flatMap((creator) => {
-      const changes = clientResponseChanges(creator, responses[String(creator.creatorId)])
-      return changes ? [changes] : []
-    })
-    setSaving(true)
-    try {
-      const updatedCampaign = await publicReviewApi.submit(token, changedResponses)
-      const result = reviewSubmissionResult(updatedCampaign, changedResponses)
-      setCampaign(updatedCampaign)
-      setResponses(reconcileListingDrafts(campaign, updatedCampaign, responses, result.savedCreatorIds))
-      setDeliverableFeedback(reconcileFeedbackDrafts(campaign, updatedCampaign, deliverableFeedback))
-      setListingResult(result)
-      setSavedMessage(reviewSubmissionMessage(result))
-    } catch (error) {
-      setSavedMessage(`Chưa gửi được: ${getApiErrorMessage(error)}. Nội dung đang nhập vẫn được giữ lại.`)
-    } finally { setSaving(false) }
-  }
-  const submitDeliverables = async () => {
-    if (saving || savingDeliverables) return
-    if (!deliverableChangedCount) { setDeliverableSavedMessage('Không có feedback mới để gửi.'); return }
-    const updates = acceptedCampaignCreators(campaign).flatMap((creator) => {
-      const deliverables = campaignCreatorDeliverables(campaign, creator).flatMap((item) => {
-        const value = (deliverableFeedback[`${creator.creatorId}:${item.id}`] || '').trim()
-        return value === (item.brandFeedback || '').trim() ? [] : [{ id: item.id, brandFeedback: value }]
-      })
-      return deliverables.length ? [{ creatorId: creator.creatorId, deliverables }] : []
-    })
-    setSavingDeliverables(true)
-    try {
-      const updatedCampaign = await publicReviewApi.submitDeliverables(token, updates)
-      const result = reviewSubmissionResult(updatedCampaign, updates, true)
-      setCampaign(updatedCampaign)
-      setDeliverableFeedback(reconcileFeedbackDrafts(campaign, updatedCampaign, deliverableFeedback, result.savedDeliverables))
-      setResponses(reconcileListingDrafts(campaign, updatedCampaign, responses))
-      setDeliverableResult(result)
-      setDeliverableSavedMessage(reviewSubmissionMessage(result, true))
-    } catch (error) {
-      setDeliverableSavedMessage(`Chưa gửi được: ${getApiErrorMessage(error)}. Feedback vẫn được giữ lại.`)
-    } finally { setSavingDeliverables(false) }
-  }
-  const discardDraft = () => {
-    if (!window.confirm('Xóa các chỉnh sửa chưa gửi trên trình duyệt này? Dữ liệu đã gửi đến team không bị thay đổi.')) return
-    if (!writeBrandReviewDraft(token, { version: 1, listing: [], feedback: [] }).ok) { setSavedMessage('Không thể xóa bản nháp trên trình duyệt.'); return }
-    setResponses(initialClientResponses(campaign)); setDeliverableFeedback(deliverableFeedbackState(campaign))
-    setListingResult(null); setDeliverableResult(null); setRestoredCount(0)
-    setSavedMessage('Đã xóa bản nháp chưa gửi.'); setDeliverableSavedMessage('Đã xóa bản nháp chưa gửi.')
-  }
-
-  return (
-    <main className="client-review-page">
-      <header className="client-review-topbar"><div><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><span><strong>Meta Ecom</strong><small>Client Selection Portal</small></span></div><em>Kết nối bảo mật</em></header>
-      <section className="client-review-hero"><p className="page-kicker">Client Review · {campaign.id}</p><h1>{campaign.name}</h1><p>{campaign.description}</p><div><span>Client / Brand <strong>{campaign.client}</strong></span><span>Creators <strong>{campaign.creators?.length || 0}</strong></span></div></section>
-      <BrandReviewDraftStatus status={draftStatus} restored={restoredCount > 0} saving={saving || savingDeliverables} onDiscard={discardDraft} />
-      <nav className="client-review-tabs" aria-label="Client Review"><button type="button" disabled={saving || savingDeliverables} className={activeTab === 'listing' ? 'is-active' : ''} onClick={() => setActiveTab('listing')}><Icon name="users" size={16} />KOC Listing<span>{campaign.creators?.length || 0}</span></button><button type="button" disabled={saving || savingDeliverables} className={activeTab === 'deliverables' ? 'is-active' : ''} onClick={() => setActiveTab('deliverables')}><Icon name="checkSquare" size={16} />Deliverables<span>{acceptedCount}</span></button></nav>
-      {activeTab === 'listing' && <ClientKocListingTab campaign={campaign} responses={responses} onUpdate={updateResponse} changedCount={changedCount} savedMessage={savedMessage} submissionResult={listingResult} saving={saving} onSubmit={submitListing} />}
-      {activeTab === 'deliverables' && <ClientDeliverablesReviewTab campaign={campaign} feedback={deliverableFeedback} onChange={(key, value) => { setDeliverableSavedMessage(''); setDeliverableFeedback((current) => ({ ...current, [key]: value })) }} changedCount={deliverableChangedCount} savedMessage={deliverableSavedMessage} submissionResult={deliverableResult} saving={savingDeliverables} onSubmit={submitDeliverables} />}
-    </main>
-  )
+function BrandPortal({ token }) {
+  const portal = useBrandPortal(token)
+  const { data, tab, query, draft, loadError } = portal
+  const shippingApi = useMemo(() => ({ load: (query) => publicReviewApi.workspace(token, { ...query, tab: 'shipping' }), save: (updates) => publicReviewApi.saveShipments(token, updates), history: (id) => publicReviewApi.shippingHistory(token, id) }), [token])
+  if (!data && (portal.loading || portal.retrying)) return <main className="client-review-page client-review-not-found"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><h1>{portal.retrying ? 'Đang thử kết nối lại...' : 'Đang tải Client Review...'}</h1><p>Bạn không cần đăng nhập. Backend có thể đang khởi động, vui lòng giữ trang mở.</p></main>
+  if (!data || loadError?.invalid) return <main className="client-review-page client-review-not-found"><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><h1>{loadError?.title || 'Chưa tải được Client Review'}</h1><p>{loadError?.message}</p><button type="button" onClick={portal.refresh}>Thử tải lại</button></main>
+  const options = data.options || {}, filters = query.filters || {}
+  const descriptors = tab === 'listing' ? [['segment', 'Segment', options.segment], ['category', 'Category', options.category], ['type', 'Type', options.type], ['brandPick', 'Brand Pick', (options.brandPick || []).map((value) => labels[value] || value)], ['kocConfirm', 'KOC Confirm', (options.kocConfirm || []).map((value) => labels[value] || value)]] : [['progress', 'Tiến độ', options.progress], ['product', 'Product', options.product], ['sdha', 'SDHA', ['Có SDHA', 'Không SDHA']], ['airStatus', 'Link Air', ['Đã có Link Air', 'Chưa có Link Air']]]
+  const listingCount = Object.keys(draft.listing).length, feedbackCount = Object.keys(draft.feedback).length
+  const count = tab === 'listing' ? listingCount : feedbackCount
+  const rows = data.tab === tab ? data.creators : []
+  const onSort = (key) => portal.changeQuery({ page: 1, sort: cycleCreatorSort(query.sort, key) })
+  return <main className="client-review-page brand-workspace">
+    <header className="client-review-topbar"><div><img src="/Logo/metaIcon.jpg" alt="Meta Ecom" /><span><strong>Meta Ecom</strong><small>Brand Collaboration Portal</small></span></div><em>{({ live: 'Đang đồng bộ trực tiếp', reconnecting: 'Đang kết nối lại...', connecting: 'Đang kết nối...', offline: 'Kết nối tạm gián đoạn' })[portal.liveStatus] || 'Đồng bộ theo thay đổi'}</em></header>
+    <section className="client-review-hero"><p className="page-kicker">CLIENT REVIEW · {data.id}</p><h1>{data.name}</h1>{data.description && <p>{data.description}</p>}<div><span>Client / Brand <strong>{data.client}</strong></span><span>Danh sách <strong>{data.summary.total} KOC</strong></span><span>Đã chốt hai bên <strong>{data.summary.accepted} KOC</strong></span></div></section>
+    <BrandReviewDraftStatus status={{ ...portal.storageStatus, count: listingCount + feedbackCount }} restored={listingCount + feedbackCount > 0} saving={portal.saving} onDiscard={portal.discardAll} />
+    <nav className="client-review-tabs" aria-label="Client Review">{[['listing', 'Duyệt KOC', data.summary.total], ['shipping', 'Giao & nhận hàng', data.summary.accepted], ['deliverables', 'Duyệt nội dung', data.summary.accepted]].map(([id, name, total]) => <button type="button" disabled={portal.saving} className={tab === id ? 'is-active' : ''} onClick={() => portal.changeTab(id)} key={id}>{name}<span>{total}</span></button>)}</nav>
+    {tab === 'shipping' ? <div className="brand-workspace-body"><Suspense fallback={<p>Đang tải giao/nhận hàng...</p>}><ShippingWorkspace scope={`brand:${token}`} api={shippingApi} reloadSignal={portal.reload} key={`shipping:${token}`} /></Suspense></div> : <>
+      <section className="brand-workspace-body">
+        <header className="brand-section-heading"><div><h2>{tab === 'listing' ? 'Duyệt danh sách KOC' : 'Duyệt nội dung & theo dõi lịch air'}</h2><p>{tab === 'listing' ? 'Chọn Brand Pick, ghi note và sản phẩm. Bấm Xem chi tiết để xem Category, Followers và GMV.' : 'Feedback được giữ trong bản nháp cho tới khi bấm gửi. Thông tin Air / Ads nằm trong Xem thêm.'}</p></div><button type="button" onClick={portal.refresh} disabled={portal.loading}>Làm mới</button></header>
+        {tab === 'listing' && <div className="brand-overview-cards">{[['approved', 'Đồng ý', 'Đồng ý'], ['pending', 'Chờ duyệt', 'Pending'], ['rejected', 'Từ chối', 'Từ chối']].map(([key, label, value]) => <button type="button" key={key} onClick={() => portal.changeQuery({ page: 1, filters: { ...filters, brandPick: [value] } })}><span>{label}</span><strong>{data.summary[key]}</strong></button>)}</div>}
+        {loadError && <div className="brand-conflict" role="alert">{loadError.message} Dữ liệu đang nhập vẫn được giữ.</div>}
+        {portal.submission?.errors?.length > 0 && <details className="brand-submission-errors" open><summary>{portal.submission.errors.length} mục chưa lưu · các mục hợp lệ khác đã được gửi</summary>{portal.submission.errors.map((issue, i) => <p key={`${issue.creatorId}:${issue.deliverableId}:${i}`}><strong>{data.creators.find((row) => row.creatorId === issue.creatorId)?.tiktokId || issue.creatorId}: </strong>{issue.message}</p>)}</details>}
+        <ClientReviewFilterBar search={query.search} filters={descriptors.map(([key, label, values]) => ({ key, label, values: filters[key] || [], options: values || [] }))} resultLabel={`${data.pagination.total} KOC phù hợp`} onSearch={(search) => portal.changeQuery({ page: 1, search })} onChange={(key, values) => portal.changeQuery({ page: 1, filters: { ...filters, [key]: values } })} onClear={() => portal.changeQuery({ page: 1, search: '', filters: {} })} />
+        <div className="brand-sort-bar"><label>Thêm tiêu chí sắp xếp <select aria-label="Thêm tiêu chí sắp xếp" value="" onChange={(event) => onSort(event.target.value)}><option value="">Chọn cột...</option>{Object.entries(tab === 'listing' ? SORTS : DELIVERY_SORTS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>{query.sort.map((item, index) => <button type="button" key={item.key} onClick={() => onSort(item.key)} title="Bấm để đổi tăng/giảm hoặc bỏ tiêu chí">{index + 1}. {SORTS[item.key] || DELIVERY_SORTS[item.key]} {item.direction === 'asc' ? '↑' : '↓'}</button>)}{portal.loading && <span role="status">Đang cập nhật trang...</span>}</div>
+        {rows.length ? tab === 'listing' ? <BrandListingTable rows={rows} drafts={draft.listing} errors={portal.submission?.errors} saving={portal.saving} onEdit={portal.editListing} onRebase={portal.rebase} options={options.productRecommendations || []} sort={query.sort} onSort={onSort} /> : <Suspense fallback={<p>Đang tải bảng nội dung...</p>}><BrandDeliverablesTable rows={rows} drafts={draft.feedback} errors={portal.submission?.errors} saving={portal.saving} onEdit={portal.editFeedback} onRebase={portal.rebase} /></Suspense> : <p className="brand-empty">{portal.loading || data.tab !== tab ? 'Đang tải dữ liệu...' : 'Không có KOC phù hợp. Duyệt nội dung dành cho KOC đã được hai bên đồng ý.'}</p>}
+        <WorkspacePagination value={data.pagination} onChange={portal.changeQuery} disabled={portal.loading || portal.saving} />
+      </section>
+      <footer className="client-review-submit"><div><strong>{count} {tab === 'listing' ? 'KOC có thay đổi' : 'feedback'} chưa gửi</strong><small role="status">{portal.message || 'Bản nháp được giữ khi đổi trang hoặc đóng tab. Chỉ gửi phần đã chỉnh sửa.'}</small></div><button type="button" disabled={!count || portal.saving} onClick={portal.submit}>{portal.saving ? 'Đang gửi...' : tab === 'listing' ? 'Gửi phản hồi' : 'Gửi Brand Feedback'}</button></footer>
+    </>}
+  </main>
 }

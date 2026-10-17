@@ -303,3 +303,27 @@ test('Brand feedback also isolates creator storage errors and saves the rest', a
   assert.equal(data.notifications.length, 2)
   assert.match(data.notifications[0]?.detail, /199 feedback · 199 KOC/)
 })
+
+test('versioned Brand changes reject stale edits but preserve other valid creator updates', async () => {
+  const data = fixture()
+  data.assignments[0]!.revision = 4
+  const result = await submitPublicReview('token', [
+    { creatorId: 'c1', expectedRevision: 3, note: 'must not overwrite' },
+    { creatorId: 'c2', expectedRevision: 0, note: 'valid note' },
+  ], data.database, true)
+  assert.equal(result.submissionResult.savedCount, 1)
+  assert.equal(result.submissionResult.errors[0]!.code, 'REVIEW_CONFLICT')
+  assert.equal(data.assignments[0]!.clientNote, 'Keep this note')
+  assert.equal(data.assignments[1]!.clientNote, 'valid note')
+  assert.equal(result.creators.length, 1, 'compact response contains only saved profiles')
+  assert.equal(result.creators[0]!.revision, 1)
+})
+
+test('versioned Brand feedback detects a team edit before replacing any feedback', async () => {
+  const data = fixture()
+  data.assignments[0]!.revision = 8
+  const result = await submitPublicDeliverableFeedback('token', [{ creatorId: 'c1', expectedRevision: 7, deliverables: [{ id: 'existing', brandFeedback: 'stale' }] }], data.database, true)
+  assert.equal(result.submissionResult.savedCount, 0)
+  assert.equal(result.submissionResult.errors[0]!.code, 'REVIEW_CONFLICT')
+  assert.equal(result.creators.length, 0)
+})

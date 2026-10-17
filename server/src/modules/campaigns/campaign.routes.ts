@@ -1,8 +1,15 @@
 import { Router } from 'express'
 import { requireAuth, requireCsrf, requireRoles } from '../../middleware/auth.js'
 import * as controller from './campaign.controller.js'
+import * as workspace from './brand-workspace.controller.js'
 
 export const publicReviewRouter = Router()
+publicReviewRouter.use((_request, response, next) => { response.set('Cache-Control', 'private, no-store'); next() })
+publicReviewRouter.get('/:token/workspace', workspace.workspace)
+publicReviewRouter.get('/:token/revision', workspace.brandRevision)
+publicReviewRouter.get('/:token/events', workspace.brandEvents)
+publicReviewRouter.post('/:token/shipments', workspace.saveBrandShipping)
+publicReviewRouter.get('/:token/shipments/:shipmentId/history', workspace.shippingHistory)
 publicReviewRouter.get('/:token', controller.publicReview)
 publicReviewRouter.post('/:token', controller.submitPublicReview)
 publicReviewRouter.post('/:token/deliverables', controller.submitPublicDeliverableFeedback)
@@ -10,6 +17,12 @@ publicReviewRouter.post('/:token/deliverables', controller.submitPublicDeliverab
 export const campaignRouter = Router()
 campaignRouter.use(requireAuth, requireRoles('ADMIN', 'CAMPAIGN_MANAGER', 'MEMBER'))
 campaignRouter.get('/', controller.list)
+campaignRouter.get('/:id/revision', workspace.staffRevision)
+campaignRouter.get('/:id/events', workspace.staffEvents)
+campaignRouter.get('/:id/shipments', workspace.shippingWorkspace)
+campaignRouter.post('/:id/shipments/read', requireCsrf, workspace.readShipping)
+campaignRouter.get('/:id/shipments/:shipmentId/history', workspace.shippingHistory)
+campaignRouter.post('/:id/shipments', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, workspace.saveTeamShipping)
 campaignRouter.post('/', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.create)
 campaignRouter.get('/:id', controller.getOne)
 campaignRouter.patch('/:id', requireRoles('ADMIN', 'CAMPAIGN_MANAGER'), requireCsrf, controller.updateInformation)

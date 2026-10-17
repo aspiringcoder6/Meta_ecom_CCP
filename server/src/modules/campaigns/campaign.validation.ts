@@ -145,6 +145,7 @@ export function validateClientResponses(value: unknown) {
     }
     return {
       creatorId: String(item.creatorId),
+      ...(Number.isInteger(item.expectedRevision) && Number(item.expectedRevision) >= 0 ? { expectedRevision: Number(item.expectedRevision) } : {}),
       ...(decision !== undefined ? { decision } : {}),
       ...(item.note !== undefined ? { note: text(item.note, 'Ghi chú').slice(0, 2000) } : {}),
       ...(item.brandProducts !== undefined ? { brandProducts: productValues(item.brandProducts) } : {}),
@@ -160,6 +161,7 @@ export function validateDeliverableFeedback(value: unknown) {
     if (!item.creatorId || !Array.isArray(item.deliverables)) throw new ApiError(422, 'Brand Feedback không hợp lệ.', 'INVALID_DELIVERABLE_FEEDBACK')
     return {
       creatorId: String(item.creatorId),
+      ...(Number.isInteger(item.expectedRevision) && Number(item.expectedRevision) >= 0 ? { expectedRevision: Number(item.expectedRevision) } : {}),
       deliverables: item.deliverables.map((rawDeliverable) => {
         const deliverable = (rawDeliverable && typeof rawDeliverable === 'object' ? rawDeliverable : {}) as Record<string, unknown>
         if (!deliverable.id) throw new ApiError(422, 'Không tìm thấy Deliverable.', 'INVALID_DELIVERABLE_FEEDBACK')
@@ -202,7 +204,7 @@ export function parseDeliverableFeedback(updates: unknown) {
       try { deliverables.push(validateDeliverableFeedback({ updates: [{ creatorId, deliverables: [rawDeliverable] }] })[0]!.deliverables[0]!) }
       catch (error) { errors.push(validationIssue(error, { row: index + 1, creatorId, deliverableId: String(deliverable.id || '') })) }
     })
-    if (deliverables.length) items.push({ creatorId, deliverables, row: index + 1 })
+    if (deliverables.length) items.push({ creatorId, deliverables, row: index + 1, ...(Number.isInteger(item.expectedRevision) && Number(item.expectedRevision) >= 0 ? { expectedRevision: Number(item.expectedRevision) } : {}) })
   })
   return { items, errors }
 }

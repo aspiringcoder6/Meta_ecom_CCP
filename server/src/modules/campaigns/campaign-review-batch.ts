@@ -5,7 +5,7 @@ export const REVIEW_TRANSACTION_OPTIONS = { maxWait: 5_000, timeout: 15_000 }
 
 const reviewCreatorSelect = {
   id: true, creatorId: true, clientDecision: true, clientNote: true, brandProducts: true,
-  deliverablesData: true, creatorConfirmed: true, status: true, clientChangedAt: true, clientChangeUnread: true,
+  deliverablesData: true, creatorConfirmed: true, status: true, clientChangedAt: true, clientChangeUnread: true, revision: true,
 } satisfies Prisma.CampaignCreatorSelect
 
 type ReviewCreator = Prisma.CampaignCreatorGetPayload<{ select: typeof reviewCreatorSelect }>

@@ -50,6 +50,20 @@ Tạo một **OAuth 2.0 Web Client** trong Google Cloud Console. Dùng cùng Cli
 
 Thêm `http://localhost:5173` và URL frontend production vào **Authorized JavaScript origins**. Luồng này chỉ cần Web Client ID, không cần API key hoặc Client Secret.
 
+## Brand collaboration và giao/nhận hàng
+
+Migration `20261017100000_brand_shipping_workspace` cần được áp dụng trước khi chạy bản backend mới. Xem hướng dẫn triển khai trong `../DEPLOYMENT.md`. Migration thêm bảng giao hàng/lịch sử/đã xem và phiên bản theo KOC, không thay đổi token review hay xóa dữ liệu cũ.
+
+- `GET /api/public/reviews/:token/workspace?tab=listing|shipping|deliverables&page=1&pageSize=25` — dữ liệu công khai theo trang, lọc/sort trên server, không gửi nội dung video khi chỉ xem listing. `filters` và `sort` là JSON; kích cỡ trang cho phép: 25/50/100.
+- `POST /api/public/reviews/:token/shipments` — Brand gửi `{ updates: [{ id, creatorId, expectedRevision, changes }] }`, tối đa 200. Kết quả gồm `saved`, `errors`, `savedCount`. Lỗi từng dòng không hoàn tác những dòng đã lưu. Brand không thể tự đặt xác nhận thực nhận của team.
+- `GET/POST /api/campaigns/:id/shipments` — đọc giao hàng cho Admin/Manager/Member, chỉnh sửa chỉ Admin/Manager + CSRF.
+- `POST /api/campaigns/:id/shipments/read` — từng nhân viên xác nhận đã xem đúng phiên bản của đợt hàng, không xóa trạng thái chưa xem của người khác.
+- `GET /api/public/reviews/:token/shipments/:shipmentId/history` và `GET /api/campaigns/:id/shipments/:shipmentId/history` — lịch sử tối đa 50 cập nhật, kiểm tra đúng phạm vi Campaign.
+- `GET /api/public/reviews/:token/events` và `GET /api/campaigns/:id/events` — SSE chỉ gửi hash phiên bản. Frontend chỉ tải lại dữ liệu nếu hash đổi, ngắt khi tab ẩn; fallback kiểm tra hash mỗi 15 giây. Không cần Redis/worker riêng cho bản một instance hiện tại.
+- Listing và feedback gửi `expectedRevision` để tránh ghi đè thay đổi đồng thời. `?compact=1` trên các API gửi phản hồi/chỉnh sửa KOC trả riêng những dòng đã lưu. Các endpoint cũ vẫn được giữ tương thích, nhưng dữ liệu public luôn được whitelist.
+
+Mỗi đợt hàng có danh sách sản phẩm/số gửi/số Brand báo đã nhận, trạng thái vận chuyển, ngày gửi/dự kiến nhận/ngày báo nhận, vận đơn và note. `teamReceipt` lưu xác nhận thực nhận riêng. Brand sửa sản phẩm/trạng thái/vận đơn sẽ bỏ xác nhận cũ để team kiểm tra lại. Các chỉnh sửa được lưu theo phiên bản và có nhật ký; không dùng ô note thay cho dữ liệu tiến độ.
+
 ## API Creator
 
 - `GET /api/creators` — Admin, Campaign Manager, Member và Viewer; Viewer nhận dữ liệu đã ẩn contact.

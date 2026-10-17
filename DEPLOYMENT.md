@@ -49,4 +49,26 @@ When troubleshooting a shared link:
 
 Brand drafts (decisions, notes, products and deliverable feedback) are stored only in that browser's local storage, separately for each review token. Reopening the same link in the same browser restores unsent changes. Only acknowledged saves are removed from the draft. Drafts are not sent to the team until the Brand submits, and they are not synchronized between devices. Do not share a browser profile containing confidential Brand drafts; use **Xóa bản nháp** to discard them. Storage errors are shown on the page.
 
-Campaign Managers can now create/edit/delete/import Creator data, including campaign Internal Listings. Account creation, approval and role administration remain Admin-only. Deploy both frontend and backend for these changes; no new database migration is required for this update.
+Campaign Managers can create/edit/delete/import Creator data, including campaign Internal Listings. Account creation, approval and role administration remain Admin-only.
+
+## Brand collaboration workspace — October 17, 2026
+
+Deploy the backend before the frontend. This update **does require** migration `20261017100000_brand_shipping_workspace`:
+
+1. Back up the production database through your database provider.
+2. Run `npm run prisma:deploy` from `server` (or keep it in the Render Pre-Deploy / Free Start Command above).
+3. Deploy the backend, then rebuild/redeploy the frontend. No new environment variables are required.
+
+The migration preserves existing Creators, Campaigns, permanent review tokens and Deliverables. It adds per-assignment revisions, shipment records, append-only shipment history, and per-user read markers. It has been exercised against an isolated PostgreSQL-compatible database, not the production database.
+
+Brand Review now has **Duyệt KOC**, **Giao & nhận hàng**, and **Duyệt nội dung**. The new `/api/public/reviews/:token/workspace` API serves 25/50/100 KOCs per page and loads Deliverable JSON only for the active Deliverables tab. Thin scalar public listing fields are filtered/sorted on the server (including computed quote prices); very large campaigns can still benefit from further database-query pagination optimization. Public responses whitelist approved fields and no longer include internal Cost, Extra, AGI, contact, PIC, financial notes, or review tokens. Existing public endpoints remain available with safe projections.
+
+Shipment edits autosave after an 800ms pause. Up to 20 pending shipments are sent per client batch; the server accepts up to 200 and reports individual failed rows without undoing successful rows. Local shipment drafts are scoped separately for Brand links and staff accounts. Team confirmation of KOC receipt is distinct from Brand-reported delivery. Brand changes to products/status/tracking invalidate an earlier confirmation. Shipment products describe physical shipments and do not automatically alter the Campaign's video requirements.
+
+Campaigns use Server-Sent Events for lightweight version changes instead of full-campaign polling every 3 seconds. One version check is shared per watched Campaign per API process. A 15-second lightweight version fallback covers networks that block event streams. Hidden tabs disconnect; visibility reconnects recover missed changes. Keep SSE streaming enabled in any additional reverse proxy (no buffering). Render requires no extra service/environment for these HTTP event streams. Staff streams reconnect at least every two minutes to recheck session permissions; revoked Brand links are rechecked during heartbeats and all subsequent API requests.
+
+Opening a notification links to `?tab=shipping&unread=1`. Shipment changes accumulate in one notification per Campaign and recipient. **Đã xem thay đổi** records exactly the Brand revision that the signed-in user has seen; another staff member's unread state is not cleared. A later Brand update becomes unread again.
+
+Frontend listing/feedback drafts migrate from the previous local format and remain available across pages. Concurrent changes are rejected with a comparison UI, not silently overwritten. Never treat a local draft as a submitted Brand decision. Backend row autosaves return only the affected Creator; unrelated rows, active inputs and pending changes are retained.
+
+Upgrading the backend off Free is still recommended for live Brand use: these code changes do not remove Render Free cold starts. Frontend Static Site hosting can remain unchanged.

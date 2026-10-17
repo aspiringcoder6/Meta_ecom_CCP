@@ -1,6 +1,12 @@
 import { apiClient } from './apiClient'
 
 export const campaignApi = {
+  async revision(id) { return (await apiClient.get(`/campaigns/${encodeURIComponent(id)}/revision`)).data.data },
+  eventsUrl(id) { return `${apiClient.defaults.baseURL}/campaigns/${encodeURIComponent(id)}/events` },
+  async shipping(id, query) { return (await apiClient.get(`/campaigns/${encodeURIComponent(id)}/shipments`, { params: query })).data.data },
+  async readShipments(id, shipments) { return (await apiClient.post(`/campaigns/${encodeURIComponent(id)}/shipments/read`, { shipments })).data.data },
+  async saveShipments(id, updates) { return (await apiClient.post(`/campaigns/${encodeURIComponent(id)}/shipments`, { updates }, { timeout: 120_000 })).data.data },
+  async shippingHistory(id, shipmentId) { return (await apiClient.get(`/campaigns/${encodeURIComponent(id)}/shipments/${encodeURIComponent(shipmentId)}/history`)).data.data },
   async list() {
     const response = await apiClient.get('/campaigns')
     return response.data.data
@@ -30,7 +36,7 @@ export const campaignApi = {
     return response.data.data
   },
   async updateCreator(campaignId, creatorId, changes) {
-    const response = await apiClient.patch(`/campaigns/${campaignId}/creators/${creatorId}`, changes)
+    const response = await apiClient.patch(`/campaigns/${campaignId}/creators/${creatorId}?compact=1`, changes)
     return response.data.data
   },
   async removeCreator(campaignId, creatorId) {

@@ -46,7 +46,7 @@ function toCampaignDto(campaign: CampaignRecord) {
     deliverables: jsonArray(campaign.defaultDeliverables),
     milestones: campaign.milestones.map((milestone) => ({ id: milestone.id, title: milestone.title, date: dateOnly(milestone.dueDate), owner: milestone.owner, status: milestone.status })),
     creators: campaign.creators.map((item) => ({
-      creatorId: item.creatorId, createdAt: item.creator.createdAt, name: item.creator.name, tiktokLink: item.creator.tiktokLink, tiktokId: item.creator.tiktokId, segment: item.creator.segment || '',
+      creatorId: item.creatorId, revision: item.revision || 0, createdAt: item.creator.createdAt, name: item.creator.name, tiktokLink: item.creator.tiktokLink, tiktokId: item.creator.tiktokId, segment: item.creator.segment || '',
       category: item.creator.category, type: item.creator.type, concept: item.creator.concept || '', followers: item.creator.followers,
       gmvMonth: Number(item.creator.gmvMonth), status: item.status,
       suggestedPrice: Number(item.suggestedPrice), actualPrice: item.actualPrice == null ? '' : Number(item.actualPrice),
@@ -65,8 +65,10 @@ function toCampaignDto(campaign: CampaignRecord) {
   }
 }
 
-async function campaignRecord(identifier: string, database = prisma) {
-  const campaign = await database.campaign.findFirst({ where: { OR: [{ externalId: identifier }, { id: identifier }] }, include: campaignInclude })
+async function campaignRecord(identifier: string, database = prisma, creatorIds?: string[]) {
+  const campaign = await database.campaign.findFirst({ where: { OR: [{ externalId: identifier }, { id: identifier }] }, include: {
+    ...campaignInclude, creators: { ...campaignInclude.creators, ...(creatorIds ? { where: { creatorId: { in: creatorIds } } } : {}) },
+  } })
   if (!campaign) throw new ApiError(404, 'Không tìm thấy Campaign.', 'CAMPAIGN_NOT_FOUND')
   return campaign
 }
@@ -88,8 +90,8 @@ export async function listCampaigns() {
   return campaigns.map(toCampaignDto)
 }
 
-export async function getCampaign(identifier: string, database = prisma) {
-  return toCampaignDto(await campaignRecord(identifier, database))
+export async function getCampaign(identifier: string, database = prisma, creatorIds?: string[]) {
+  return toCampaignDto(await campaignRecord(identifier, database, creatorIds))
 }
 
 export async function updateCampaignStatus(identifier: string, status: string) {
@@ -170,8 +172,8 @@ export async function addCreators(identifier: string, creatorIds: string[]) {
   return getCampaign(campaign.id)
 }
 
-export async function updateCampaignCreator(identifier: string, creatorId: string, changes: Record<string, unknown>, database = prisma) {
-  const campaign = await campaignRecord(identifier, database)
+export async function updateCampaignCreator(identifier: string, creatorId: string, changes: Record<string, unknown>, database = prisma, compact = false) {
+  const campaign = await campaignRecord(identifier, database, compact ? [creatorId] : undefined)
   const assignment = await database.campaignCreator.findUnique({ where: { campaignId_creatorId: { campaignId: campaign.id, creatorId } } })
   if (!assignment) throw new ApiError(404, 'Creator không thuộc Campaign.', 'CAMPAIGN_CREATOR_NOT_FOUND')
   await database.$transaction(async (tx) => {
@@ -196,7 +198,7 @@ export async function updateCampaignCreator(identifier: string, creatorId: strin
       ...(changes.creatorConfirmed !== undefined && changes.kocDecision === undefined ? { creatorConfirmed: Boolean(changes.creatorConfirmed), kocDecision: Boolean(changes.creatorConfirmed) ? 'APPROVED' : 'PENDING' } : {}),
     } })
   })
-  return getCampaign(campaign.id, database)
+  return getCampaign(campaign.id, database, compact ? [creatorId] : undefined)
 }
 
 export async function removeCreator(identifier: string, creatorId: string) {
@@ -272,7 +274,7 @@ async function reviewSubmissionCampaign(link: Awaited<ReturnType<typeof reviewLi
   catch { return toCampaignDto(link.campaign) } // Earlier commits remain acknowledged if the connection drops afterwards.
 }
 
-export async function submitPublicReview(token: string, responses: unknown, database = prisma) {
+export async function submitPublicReview(token: string, responses: unknown, database = prisma, compact = false) {
   const reviewLink = await reviewLinkRecord(token, database)
   const parsed = parseClientResponses(responses)
   const responsesByCreator = new Map<string, typeof parsed.items[number]>()
@@ -293,6 +295,10 @@ export async function submitPublicReview(token: string, responses: unknown, data
       const assignment = assignmentByCreator.get(response.creatorId)
       if (!assignment) {
         chunkErrors.push({ row: response.row, creatorId: response.creatorId, code: 'KOC_NOT_FOUND', message: 'KOC không còn thuộc Campaign này.' })
+        continue
+      }
+      if (response.expectedRevision !== undefined && response.expectedRevision !== (assignment.revision || 0)) {
+        chunkErrors.push({ row: response.row, creatorId: response.creatorId, code: 'REVIEW_CONFLICT', message: 'KOC vừa được cập nhật. Bản nháp vẫn giữ; tải dữ liệu mới để đối chiếu trước khi gửi lại.' })
         continue
       }
       accepted.push(response.creatorId)
@@ -325,7 +331,7 @@ export async function submitPublicReview(token: string, responses: unknown, data
       await reviewSummaryNotification(tx, reviewLink, notificationKey, `${reviewLink.campaign.name} · ${parts.join(' · ')}`, false, changedAt)
     }
     const patchesById = new Map(patches.map((patch) => [patch.id, patch]))
-    const states = [...assignmentByCreator.values()].map((state) => ({ ...state, ...(patchesById.has(state.id) ? { ...patchesById.get(state.id), clientChangedAt: changedAt, clientChangeUnread: true } : {}) }))
+    const states = [...assignmentByCreator.values()].map((state) => ({ ...state, ...(patchesById.has(state.id) ? { ...patchesById.get(state.id), revision: (state.revision || 0) + 1, clientChangedAt: changedAt, clientChangeUnread: true } : {}) }))
     return { accepted, counts, errors: chunkErrors, states }
   }, (item) => ({ row: item.row, creatorId: item.creatorId }), (receipt) => {
     savedCreatorIds.push(...receipt.accepted); errors.push(...receipt.errors)
@@ -337,10 +343,11 @@ export async function submitPublicReview(token: string, responses: unknown, data
     }
   })
   errors.push(...outcome.errors)
-  return { ...await reviewSubmissionCampaign(reviewLink, database), submissionResult: { savedCount: savedCreatorIds.length, skippedCount: errors.length, savedCreatorIds, savedDeliverables: [], errors, interrupted: outcome.interrupted } }
+  const refreshed = compact ? toCampaignDto({ ...reviewLink.campaign, creators: reviewLink.campaign.creators.filter((item) => savedCreatorIds.includes(item.creatorId)) }) : await reviewSubmissionCampaign(reviewLink, database)
+  return { ...refreshed, submissionResult: { savedCount: savedCreatorIds.length, skippedCount: errors.length, savedCreatorIds, savedDeliverables: [], errors, interrupted: outcome.interrupted } }
 }
 
-export async function submitPublicDeliverableFeedback(token: string, updates: unknown, database = prisma) {
+export async function submitPublicDeliverableFeedback(token: string, updates: unknown, database = prisma, compact = false) {
   const reviewLink = await reviewLinkRecord(token, database)
   const parsed = parseDeliverableFeedback(updates)
   const updatesByCreator = new Map<string, typeof parsed.items[number]>()
@@ -367,6 +374,10 @@ export async function submitPublicDeliverableFeedback(token: string, updates: un
       const assignment = assignmentByCreator.get(update.creatorId)
       if (!assignment || assignment.clientDecision !== 'APPROVED' || !assignment.creatorConfirmed) {
         chunkErrors.push(...update.deliverables.map((item) => ({ row: update.row, creatorId: update.creatorId, deliverableId: item.id, code: 'KOC_NOT_ACCEPTED', message: 'KOC không còn thuộc Campaign hoặc chưa được Brand và KOC cùng đồng ý.' })))
+        continue
+      }
+      if (update.expectedRevision !== undefined && update.expectedRevision !== (assignment.revision || 0)) {
+        chunkErrors.push(...update.deliverables.map((item) => ({ row: update.row, creatorId: update.creatorId, deliverableId: item.id, code: 'REVIEW_CONFLICT', message: 'Deliverables vừa thay đổi. Đối chiếu bản mới trước khi gửi lại feedback.' })))
         continue
       }
       let changedCount = 0
@@ -400,7 +411,7 @@ export async function submitPublicDeliverableFeedback(token: string, updates: un
       await reviewSummaryNotification(tx, reviewLink, notificationKey, `${reviewLink.campaign.name} · ${committedDeliverables + totalDeliverables} feedback · ${committedCreators + changedCreators} KOC`, true, changedAt)
     }
     const patchesById = new Map(patches.map((patch) => [patch.id, patch]))
-    const states = [...assignmentByCreator.values()].map((state) => ({ ...state, ...(patchesById.has(state.id) ? { ...patchesById.get(state.id), clientChangedAt: changedAt, clientChangeUnread: true } : {}) }))
+    const states = [...assignmentByCreator.values()].map((state) => ({ ...state, ...(patchesById.has(state.id) ? { ...patchesById.get(state.id), revision: (state.revision || 0) + 1, clientChangedAt: changedAt, clientChangeUnread: true } : {}) }))
     return { accepted, errors: chunkErrors, totalDeliverables, changedCreators, states }
   }, (item) => ({ row: item.row, creatorId: item.creatorId }), (receipt) => {
     savedDeliverables.push(...receipt.accepted); errors.push(...receipt.errors)
@@ -414,5 +425,7 @@ export async function submitPublicDeliverableFeedback(token: string, updates: un
     const update = updatesByCreator.get(issue.creatorId || '')
     errors.push(...(update ? update.deliverables.map((item) => ({ ...issue, deliverableId: item.id })) : [issue]))
   }
-  return { ...await reviewSubmissionCampaign(reviewLink, database), submissionResult: { savedCount: savedDeliverables.length, skippedCount: errors.length, savedCreatorIds: [], savedDeliverables, errors, interrupted: outcome.interrupted } }
+  const savedIds = new Set(savedDeliverables.map((item) => item.creatorId))
+  const refreshed = compact ? toCampaignDto({ ...reviewLink.campaign, creators: reviewLink.campaign.creators.filter((item) => savedIds.has(item.creatorId)) }) : await reviewSubmissionCampaign(reviewLink, database)
+  return { ...refreshed, submissionResult: { savedCount: savedDeliverables.length, skippedCount: errors.length, savedCreatorIds: [], savedDeliverables, errors, interrupted: outcome.interrupted } }
 }

@@ -56,6 +56,7 @@ model User {
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   notifications   Notification[]
+  shipmentReads   ShipmentRead[]
 
   @@index([status])
   @@index([role])
@@ -146,11 +147,64 @@ model CampaignCreator {
   clientChangedAt    DateTime?
   clientChangeUnread Boolean          @default(false)
   creatorConfirmed   Boolean          @default(false)
+  revision           Int              @default(0)
+  updatedAt          DateTime         @default(now()) @updatedAt
+  shipments          CampaignShipment[]
   deliverables       Deliverable[]
   feedback           ClientFeedback[]
 
   @@unique([campaignId, creatorId])
   @@index([campaignId, clientChangeUnread])
+}
+
+model CampaignShipment {
+  id                String          @id
+  campaignCreatorId String
+  campaignCreator   CampaignCreator @relation(fields: [campaignCreatorId], references: [id], onDelete: Cascade)
+  items             Json            @default("[]")
+  status            String          @default("NOT_SENT")
+  carrier           String          @default("")
+  trackingCode      String          @default("")
+  sentDate          String          @default("")
+  expectedDate      String          @default("")
+  receivedDate      String          @default("")
+  note              String          @default("")
+  teamReceipt       String          @default("UNCONFIRMED")
+  confirmedBy       String          @default("")
+  confirmedAt       DateTime?
+  revision          Int             @default(1)
+  lastBrandRevision Int             @default(0)
+  updatedBy         String
+  updatedByType     String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @default(now()) @updatedAt
+  events            ShipmentEvent[]
+  reads             ShipmentRead[]
+
+  @@index([campaignCreatorId, updatedAt])
+}
+
+model ShipmentRead {
+  shipmentId    String
+  userId        String
+  brandRevision Int              @default(0)
+  shipment      CampaignShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([shipmentId, userId])
+  @@index([userId])
+}
+
+model ShipmentEvent {
+  id          String           @id @default(uuid())
+  shipmentId  String
+  shipment    CampaignShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  actor       String
+  actorType   String
+  snapshot    Json
+  createdAt   DateTime         @default(now())
+
+  @@index([shipmentId, createdAt])
 }
 
 model Deliverable {
